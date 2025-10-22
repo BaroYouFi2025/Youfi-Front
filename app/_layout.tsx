@@ -1,26 +1,60 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { useEffect, useRef, useState } from 'react';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getRefreshToken } from '@/utils/authStorage';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [hasRefreshToken, setHasRefreshToken] = useState<boolean | undefined>(undefined);
+  const [isTokenChecked, setIsTokenChecked] = useState(false);
+  const splashPreventedRef = useRef(false);
 
-  if (!loaded) {
+  useEffect(() => {
+    if (!splashPreventedRef.current) {
+      SplashScreen.preventAutoHideAsync().catch(() => null);
+      splashPreventedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkRefreshToken = async () => {
+      try {
+        const token = await getRefreshToken();
+        setHasRefreshToken(Boolean(token));
+      } finally {
+        setIsTokenChecked(true);
+      }
+    };
+
+    checkRefreshToken();
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && isTokenChecked) {
+      SplashScreen.hideAsync().catch(() => null);
+    }
+  }, [fontsLoaded, isTokenChecked]);
+
+  if (!fontsLoaded || !isTokenChecked || typeof hasRefreshToken === 'undefined') {
     // Async font loading only occurs in development.
     return null;
   }
 
+  const initialRouteName = hasRefreshToken ? '(tabs)' : 'login';
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack initialRouteName={initialRouteName}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
