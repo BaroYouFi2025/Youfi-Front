@@ -1,5 +1,5 @@
- 
-import { SafeAreaView, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // eslint-disable-next-line import/no-named-as-default
 import styled from 'styled-components/native';
 
