@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+// eslint-disable-next-line import/no-named-as-default
 import styled from 'styled-components/native';
 import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
