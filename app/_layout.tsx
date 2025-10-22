@@ -13,6 +13,7 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const bypassAuth = process.env.EXPO_PUBLIC_BYPASS_AUTH === 'true';
   const [hasRefreshToken, setHasRefreshToken] = useState<boolean | undefined>(undefined);
   const [isTokenChecked, setIsTokenChecked] = useState(false);
   const splashPreventedRef = useRef(false);
@@ -25,6 +26,12 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    if (bypassAuth) {
+      setHasRefreshToken(true);
+      setIsTokenChecked(true);
+      return;
+    }
+
     const checkRefreshToken = async () => {
       try {
         const token = await getRefreshToken();
@@ -35,7 +42,7 @@ export default function RootLayout() {
     };
 
     checkRefreshToken();
-  }, []);
+  }, [bypassAuth]);
 
   useEffect(() => {
     if (fontsLoaded && isTokenChecked) {
