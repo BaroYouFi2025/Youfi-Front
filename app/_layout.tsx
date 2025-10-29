@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getRefreshToken } from '@/utils/authStorage';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -18,6 +19,9 @@ export default function RootLayout() {
   const [hasRefreshToken, setHasRefreshToken] = useState<boolean | undefined>(undefined);
   const [isTokenChecked, setIsTokenChecked] = useState(false);
   const splashPreventedRef = useRef(false);
+  
+  // 푸시 알림 초기화
+  const { isPermissionGranted, isLoading: isPushLoading } = usePushNotifications();
 
   useEffect(() => {
     if (!splashPreventedRef.current) {
@@ -46,12 +50,12 @@ export default function RootLayout() {
   }, [bypassAuth]);
 
   useEffect(() => {
-    if (fontsLoaded && isTokenChecked) {
+    if (fontsLoaded && isTokenChecked && !isPushLoading) {
       SplashScreen.hideAsync().catch(() => null);
     }
-  }, [fontsLoaded, isTokenChecked]);
+  }, [fontsLoaded, isTokenChecked, isPushLoading]);
 
-  if (!fontsLoaded || !isTokenChecked || typeof hasRefreshToken === 'undefined') {
+  if (!fontsLoaded || !isTokenChecked || typeof hasRefreshToken === 'undefined' || isPushLoading) {
     // Async font loading only occurs in development.
     return null;
   }
