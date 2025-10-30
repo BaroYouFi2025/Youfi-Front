@@ -68,6 +68,9 @@ export default function RootLayout() {
         <Stack initialRouteName={initialRouteName}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="found-notification" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="missing-report" options={{ headerShown: false }} />
+          <Stack.Screen name="gps-tracking" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />
