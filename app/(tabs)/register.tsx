@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-// eslint-disable-next-line import/no-named-as-default
-import styled from 'styled-components/native';
+import React, { useState } from 'react';
+import { Alert, ScrollView } from 'react-native';
+ 
 import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
-import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
-import { validateMissingPersonForm, hasFormErrors } from '@/utils/validation';
 import { createMissingPersonReport, uploadPhoto } from '@/services/missingPersonAPI';
+import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
+import { hasFormErrors, validateMissingPersonForm } from '@/utils/validation';
+import Entypo from '@expo/vector-icons/Entypo';
+import Feather from '@expo/vector-icons/Feather';
+import styled from 'styled-components/native';
 
 const Container = styled.View`
   flex: 1;
@@ -18,7 +20,7 @@ const Header = styled.View`
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  padding-top: 21px;
+  margin-top: 32px;
 `;
 
 const Title = styled.Text`
@@ -290,12 +292,7 @@ export default function RegisterScreen() {
     <Container>
       <Header>
         <YouFiLogo />
-        <Title>실종자 등록</Title>
-        <AIButton>
-          <AIButtonText>wand_stars</AIButtonText>
-        </AIButton>
       </Header>
-
       <ScrollView showsVerticalScrollIndicator={false}>
         <FormContainer>
           <InputGroup>
@@ -316,7 +313,7 @@ export default function RegisterScreen() {
                 value={formData.birthDate}
                 onChangeText={(value: string) => handleInputChange('birthDate', value)}
               />
-              <CalendarIcon>Calendar_Month</CalendarIcon>
+              <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
             </DateInputContainer>
             {errors.birthDate && <ErrorText>{errors.birthDate}</ErrorText>}
           </InputGroup>
@@ -324,7 +321,7 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>실종자 사진 업로드</InputLabel>
             <PhotoUploadContainer onPress={handlePhotoUpload}>
-              <UploadIcon>upload</UploadIcon>
+              <Feather name="upload" size={32} color="#949494" />
               <UploadText>사진을 업로드 해주세요</UploadText>
             </PhotoUploadContainer>
           </InputGroup>
@@ -361,7 +358,7 @@ export default function RegisterScreen() {
                 value={formData.missingDate}
                 onChangeText={(value: string) => handleInputChange('missingDate', value)}
               />
-              <CalendarIcon>Calendar_Month</CalendarIcon>
+              <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
             </DateInputContainer>
             {errors.missingDate && <ErrorText>{errors.missingDate}</ErrorText>}
           </InputGroup>
