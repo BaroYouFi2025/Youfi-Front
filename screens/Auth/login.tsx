@@ -1,21 +1,53 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+import { login as loginRequest } from '@/services/authAPI';
+import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 
 export default function LoginScreen() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignupPress = () => {
     router.push('/signup');
   };
 
+  const handleLogin = async () => {
+    if (!userId.trim() || !password.trim()) {
+      setErrorMessage('아이디와 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const { accessToken, refreshToken } = await loginRequest({
+        uid: userId.trim(),
+        password,
+      });
+
+      if (!refreshToken) {
+        throw new Error('리프레시 토큰을 받아오지 못했습니다.');
+      }
+
+      await Promise.all([setAccessToken(accessToken), setRefreshToken(refreshToken)]);
+      router.replace('/(tabs)');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해주세요.';
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Main Content */}
       <View style={styles.contentArea}>
-        {/* Logo */}
         <View style={styles.logoContainer}>
           <Text style={styles.logoText}>
             <Text style={styles.logoBlack}>You</Text>
@@ -23,7 +55,6 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {/* Input Fields */}
         <View style={styles.inputContainer}>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>아이디</Text>
@@ -32,6 +63,8 @@ export default function LoginScreen() {
               value={userId}
               onChangeText={setUserId}
               placeholder=""
+              returnKeyType="next"
+              autoCapitalize="none"
             />
             <View style={styles.inputLine} />
           </View>
@@ -45,9 +78,10 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 placeholder=""
+                autoCapitalize="none"
               />
-              <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
                 style={styles.visibilityIcon}
               >
                 <Text style={styles.visibilityText}>👁</Text>
@@ -57,19 +91,28 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>로그인</Text>
+          {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+          <TouchableOpacity
+            style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={isSubmitting}
+            activeOpacity={isSubmitting ? 1 : 0.7}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.loginButtonText}>로그인</Text>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.signupButton} onPress={handleSignupPress}>
+          <TouchableOpacity style={styles.signupButton} onPress={handleSignupPress} disabled={isSubmitting}>
             <Text style={styles.signupButtonText}>회원가입</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Home Indicator */}
       <View style={styles.homeIndicator}>
         <View style={styles.homeIndicatorBar} />
       </View>
@@ -138,12 +181,21 @@ const styles = StyleSheet.create({
   buttonContainer: {
     gap: 12,
   },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
   loginButton: {
     backgroundColor: '#25b2e2',
     height: 48,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#ffffff',
