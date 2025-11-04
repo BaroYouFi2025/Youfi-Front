@@ -1,57 +1,162 @@
-import React, { useState } from 'react';
-import FormInput from '../../components/FormInput';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert } from 'react-native';
+
+import FormInput from '@/components/FormInput';
+import { signup as signupRequest } from '@/services/authAPI';
+import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
+
 import {
+  BottomSpace,
+  ButtonContainer,
+  CalendarIcon,
   Container,
-  ScrollContainer,
-  StatusBarSpace,
+  FormContainer,
   HeaderContainer,
   HeaderTitle,
-  FormContainer,
-  PhoneContainer,
-  PhoneInput,
-  VerifyButton,
-  VerifyButtonText,
-  InputLabel,
-  InputLine,
-  CheckIcon,
-  CancelIcon,
-  CalendarIcon,
-  ButtonContainer,
-  SignupButton,
-  SignupButtonText,
-  BottomSpace,
   HomeIndicator,
   HomeIndicatorBar,
+  ScrollContainer,
+  SignupButton,
+  SignupButtonText,
+  StatusBarSpace,
+  WarningText,
 } from './signup.styles';
 
+interface FormState {
+  uid: string;
+  password: string;
+  confirmPassword: string;
+  username: string;
+  birthDate: string;
+}
+
+const BIRTHDATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
 export default function SignupScreen() {
-  const [formData, setFormData] = useState({
-    username: '',
+  const params = useLocalSearchParams<{ phoneNumber?: string | string[]; verified?: string | string[] }>();
+
+  const verifiedPhoneNumber = useMemo(() => {
+    if (typeof params.phoneNumber === 'string') {
+      return params.phoneNumber;
+    }
+
+    if (Array.isArray(params.phoneNumber) && params.phoneNumber.length > 0) {
+      return params.phoneNumber[0];
+    }
+
+    return '';
+  }, [params.phoneNumber]);
+
+  const isVerified = useMemo(() => {
+    if (typeof params.verified === 'string') {
+      return params.verified === 'true';
+    }
+
+    if (Array.isArray(params.verified) && params.verified.length > 0) {
+      return params.verified[0] === 'true';
+    }
+
+    return false;
+  }, [params.verified]);
+
+  useEffect(() => {
+    if (!isVerified || !verifiedPhoneNumber) {
+      router.replace('/phone-verification');
+    }
+  }, [isVerified, verifiedPhoneNumber]);
+
+  const [formData, setFormData] = useState<FormState>({
+    uid: '',
     password: '',
     confirmPassword: '',
-    phoneNumber: '',
-    verificationCode: '',
-    name: '',
+    username: '',
     birthDate: '',
   });
 
-  const handleSignup = () => {
-    console.log('Signup pressed:', formData);
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handlePhoneVerification = () => {
-    console.log('Phone verification pressed');
-  };
-
-  const updateFormData = (key: string, value: string) => {
+  const updateFormData = (key: keyof FormState, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+    setErrorMessage(null);
+  };
+
+  const validateForm = (): boolean => {
+    const { uid, password, confirmPassword, username, birthDate } = formData;
+
+    if (!uid.trim() || !password || !confirmPassword || !username.trim() || !birthDate.trim()) {
+      setErrorMessage('필수 정보를 모두 입력해주세요.');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return false;
+    }
+
+    if (password.length < 8 || password.length > 20) {
+      setErrorMessage('비밀번호는 8자 이상 20자 이하여야 합니다.');
+      return false;
+    }
+
+    if (!BIRTHDATE_REGEX.test(birthDate.trim())) {
+      setErrorMessage('생년월일은 YYYY-MM-DD 형식으로 입력해주세요.');
+      return false;
+    }
+
+    if (!verifiedPhoneNumber || verifiedPhoneNumber.length !== 11) {
+      setErrorMessage('전화번호 인증을 다시 진행해주세요.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignup = async () => {
+    if (!isVerified || !verifiedPhoneNumber) {
+      router.replace('/phone-verification');
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const { uid, password, username, birthDate } = formData;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await signupRequest({
+        uid: uid.trim(),
+        password,
+        username: username.trim(),
+        birthDate: birthDate.trim(),
+        phone: verifiedPhoneNumber,
+      });
+
+      if (!response.refreshToken) {
+        throw new Error('리프레시 토큰을 받아오지 못했습니다.');
+      }
+
+      await Promise.all([setAccessToken(response.accessToken), setRefreshToken(response.refreshToken)]);
+      router.replace('/(tabs)');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '회원가입에 실패했습니다. 다시 시도해주세요.';
+      setErrorMessage(message);
+      Alert.alert('회원가입 실패', message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Container>
       <ScrollContainer showsVerticalScrollIndicator={false}>
         <StatusBarSpace />
-        
+
         <HeaderContainer>
           <HeaderTitle>회원가입</HeaderTitle>
         </HeaderContainer>
@@ -59,8 +164,8 @@ export default function SignupScreen() {
         <FormContainer>
           <FormInput
             label="아이디"
-            value={formData.username}
-            onChangeText={(text) => updateFormData('username', text)}
+            value={formData.uid}
+            onChangeText={(text) => updateFormData('uid', text)}
             placeholder=""
             autoCapitalize="none"
           />
@@ -83,53 +188,42 @@ export default function SignupScreen() {
             autoCapitalize="none"
           />
 
-          <PhoneContainer>
-            <InputLabel>전화번호</InputLabel>
-            <PhoneInput
-              value={formData.phoneNumber}
-              onChangeText={(text) => updateFormData('phoneNumber', text)}
-              placeholder=""
-              keyboardType="phone-pad"
-            />
-            <InputLine />
-            <VerifyButton onPress={handlePhoneVerification}>
-              <VerifyButtonText>확인</VerifyButtonText>
-            </VerifyButton>
-          </PhoneContainer>
-
           <FormInput
-            label="인증코드"
-            value={formData.verificationCode}
-            onChangeText={(text) => updateFormData('verificationCode', text)}
+            label="전화번호"
+            value={verifiedPhoneNumber}
+            editable={false}
             placeholder=""
-            rightIcon={
-              <>
-                <CheckIcon>✓</CheckIcon>
-                <CancelIcon>✕</CancelIcon>
-              </>
-            }
           />
 
           <FormInput
             label="이름"
-            value={formData.name}
-            onChangeText={(text) => updateFormData('name', text)}
+            value={formData.username}
+            onChangeText={(text) => updateFormData('username', text)}
             placeholder=""
-            autoCapitalize="words"
           />
 
           <FormInput
             label="생년월일"
             value={formData.birthDate}
             onChangeText={(text) => updateFormData('birthDate', text)}
-            placeholder=""
+            placeholder="YYYY-MM-DD"
+            keyboardType="numbers-and-punctuation"
             rightIcon={<CalendarIcon>📅</CalendarIcon>}
           />
         </FormContainer>
 
         <ButtonContainer>
-          <SignupButton onPress={handleSignup}>
-            <SignupButtonText>회원가입</SignupButtonText>
+          {errorMessage && <WarningText>{errorMessage}</WarningText>}
+          <SignupButton
+            onPress={handleSignup}
+            disabled={isSubmitting}
+            activeOpacity={isSubmitting ? 1 : 0.7}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <SignupButtonText>회원가입</SignupButtonText>
+            )}
           </SignupButton>
         </ButtonContainer>
 

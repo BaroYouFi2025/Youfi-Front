@@ -1,219 +1,173 @@
+import { ImageBackground, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { TouchableOpacity, ImageBackground, Text, View, Image } from 'react-native';
 
-export const Container = styled.View`
+export const Container = styled(SafeAreaView)`
   flex: 1;
   background-color: #ffffff;
 `;
 
-export const StatusBarContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding-horizontal: 16px;
-  padding-top: 21px;
-  height: 54px;
-  background-color: #ffffff;
-`;
-
-export const StatusBarTime = styled.Text`
-  font-family: 'SF Pro';
-  font-weight: 600;
-  font-size: 17px;
-  color: #000000;
-`;
-
-export const StatusBarIcons = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 7px;
-`;
-
-export const StatusIcon = styled(Image)`
-  width: 20px;
-  height: 12px;
-`;
-
-export const HeaderContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding-horizontal: 24px;
-  padding-vertical: 8px;
-`;
-
-export const AddButton = styled(TouchableOpacity)`
-  background-color: #25b2e2;
-  border-radius: 16px;
-  padding-horizontal: 8px;
-  padding-vertical: 2px;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const AddIcon = styled(Text)`
-  font-weight: 300;
-  font-size: 24px;
-  color: #ffffff;
-  line-height: 24px;
-`;
-
-export const ContentArea = styled.View`
+export const ScreenScroll = styled(ScrollView).attrs(() => ({
+  contentContainerStyle: {
+    paddingBottom: 32,
+  },
+  showsVerticalScrollIndicator: false,
+}))`
   flex: 1;
-  padding-horizontal: 16px;
 `;
 
-export const MapContainer = styled.View`
-  height: 371px;
-  border-radius: 16px;
-  overflow: hidden;
+export const Header = styled.View`
+  padding: 20px 16px 12px;
+`;
+
+export const TitleRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  padding: 0 16px;
   margin-bottom: 20px;
+`;
+
+export const Title = styled.Text`
+  font-size: 24px;
+  font-weight: 700;
+  color: #16171a;
+  margin-right: 4px;
+`;
+
+export const MapCard = styled.View`
+  margin: 0 16px 24px;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: #eaf6ff;
   shadow-color: #000000;
-  shadow-offset: 0px 2px;
   shadow-opacity: 0.12;
-  shadow-radius: 4px;
-  elevation: 4;
-  position: relative;
+  shadow-radius: 12px;
+  shadow-offset: 0px 8px;
+  elevation: 6;
 `;
 
 export const MapImage = styled(ImageBackground)`
   width: 100%;
-  height: 100%;
+  height: 280px;
+  justify-content: center;
+  align-items: center;
 `;
 
-export const PersonCard = styled.View`
+export const MarkerWrapper = styled.View`
+  width: 140px;
+  height: 140px;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const MarkerPulse = styled.View`
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 70px;
+  background-color: rgba(37, 178, 226, 0.25);
+`;
+
+export const MarkerIcon = styled.View`
+  width: 64px;
+  height: 64px;
+  border-radius: 24px;
+  background-color: #25b2e2;
+  align-items: center;
+  justify-content: center;
+  shadow-color: #25b2e2;
+  shadow-opacity: 0.32;
+  shadow-radius: 10px;
+  shadow-offset: 0px 6px;
+  elevation: 8;
+`;
+
+export const MarkerCallout = styled.View`
+  position: absolute;
+  right: -50px;
+  top: -10px;
+  width: 72px;
+  height: 56px;
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(22, 23, 26, 0.1);
+  shadow-color: #000000;
+  shadow-opacity: 0.12;
+  shadow-radius: 6px;
+  shadow-offset: 0px 3px;
+  elevation: 4;
+`;
+
+export const PersonSection = styled.View`
+  margin: 0 16px;
+  border-radius: 16px;
+  background-color: #ffffff;
+`;
+
+export const PersonRow = styled.View`
   flex-direction: row;
   align-items: center;
   padding: 16px;
-  height: 80px;
-  background-color: #ffffff;
-  border-bottom-width: 1px;
-  border-bottom-color: #f2f3f4;
-  gap: 16px;
 `;
 
-export const PersonImage = styled(View)`
-  width: 48px;
-  height: 48px;
+export const Avatar = styled.View`
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   background-color: #545454;
+  margin-right: 16px;
 `;
 
-export const PersonInfo = styled.View`
+export const PersonContent = styled.View`
   flex: 1;
-  gap: 8px;
 `;
 
-export const PersonName = styled(Text)`
-  font-weight: 500;
-  font-size: 15px;
-  color: #16171a;
-  line-height: 17px;
-`;
-
-export const PersonRelation = styled(Text)`
-  background-color: #ffffff;
-  border: 1px solid #4dc0e7;
-  border-radius: 15px;
-  padding-horizontal: 12px;
-  padding-vertical: 3px;
-  align-self: flex-start;
-  font-weight: 500;
-  font-size: 10px;
-  color: #000000;
-  text-align: center;
-  line-height: 13px;
-`;
-
-export const BatterySection = styled.View`
+export const NameRow = styled.View`
   flex-direction: row;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 8px;
 `;
 
-export const BatteryIcon = styled(Image)`
-  width: 27px;
-  height: 13px;
-`;
-
-export const BatteryText = styled(Text)`
-  font-weight: 500;
-  font-size: 10px;
+export const PersonName = styled.Text`
+  font-size: 16px;
+  font-weight: 600;
   color: #16171a;
-  line-height: 13px;
 `;
 
-export const Distance = styled(Text)`
-  font-weight: 500;
-  font-size: 15px;
+export const SeparatorDot = styled.Text`
+  margin: 0 6px;
+  font-size: 14px;
   color: #848587;
-  line-height: 17px;
 `;
 
-export const ReportButton = styled(TouchableOpacity)`
-  background-color: #ff6f61;
-  border-radius: 16px;
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
+export const DistanceText = styled.Text`
+  font-size: 14px;
+  font-weight: 500;
+  color: #848587;
 `;
 
-export const ReportButtonText = styled(Text)`
-  font-weight: 700;
-  font-size: 20px;
-  color: #ffffff;
-  line-height: 22px;
-`;
-
-export const RefreshButton = styled(TouchableOpacity)`
-  background-color: #25b2e2;
-  border-radius: 16px;
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-`;
-
-export const RefreshButtonText = styled(Text)`
-  font-weight: 700;
-  font-size: 20px;
-  color: #ffffff;
-  line-height: 22px;
-`;
-
-export const TabBar = styled.View`
-  height: 83px;
-  background-color: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(25px);
-  border-top-width: 0.333px;
-  border-top-color: rgba(0, 0, 0, 0.3);
-`;
-
-export const TabBarContent = styled.View`
+export const BatteryChip = styled.View`
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 7px;
-  height: 47px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background-color: rgba(36, 200, 121, 0.12);
+  align-self: flex-start;
 `;
 
-export const TabButton = styled(TouchableOpacity)<{ active?: boolean }>`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
+export const BatteryText = styled.Text`
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #24c879;
 `;
 
-export const TabIcon = styled(Text)`
-  font-weight: 300;
-  font-size: 24px;
-  margin-bottom: 2px;
+export const Divider = styled.View`
+  height: 1px;
+  background-color: #f2f3f4;
+  margin: 0 16px;
 `;
 
-export const TabText = styled(Text)<{ active?: boolean }>`
-  font-weight: ${(props: { active?: boolean }) => props.active ? '400' : '500'};
-  font-size: 10px;
-  color: ${(props: { active?: boolean }) => props.active ? '#25b2e2' : '#848587'};
-  text-align: center;
-  line-height: 10px;
+export const Spacer = styled.View`
+  height: 48px;
 `;
