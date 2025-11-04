@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponseHeaders } from 'axios';
+import axios, { AxiosError } from 'axios';
 
 import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutResponse, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
 
@@ -26,7 +26,7 @@ const extractRefreshToken = (setCookieHeader?: string | string[]): string | unde
   return undefined;
 };
 
-const getSetCookieHeader = (headers: AxiosResponseHeaders): string | string[] | undefined => {
+const getSetCookieHeader = (headers: any): string | string[] | undefined => {
   if (typeof headers.getSetCookie === 'function') {
     const cookies = headers.getSetCookie();
     if (cookies && cookies.length > 0) {
@@ -35,12 +35,12 @@ const getSetCookieHeader = (headers: AxiosResponseHeaders): string | string[] | 
   }
 
   const lowerCaseHeader = headers.get?.('set-cookie');
-  if (lowerCaseHeader) {
+  if (lowerCaseHeader && (typeof lowerCaseHeader === 'string' || Array.isArray(lowerCaseHeader))) {
     return lowerCaseHeader;
   }
 
   const upperCaseHeader = headers.get?.('Set-Cookie');
-  if (upperCaseHeader) {
+  if (upperCaseHeader && (typeof upperCaseHeader === 'string' || Array.isArray(upperCaseHeader))) {
     return upperCaseHeader;
   }
 
