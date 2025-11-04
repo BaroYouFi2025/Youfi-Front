@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponseHeaders } from 'axios';
 
-import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutResponse, RefreshResponse } from '@/types/AuthTypes';
+import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutResponse, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
 
@@ -78,6 +78,22 @@ export const login = async (payload: LoginRequest): Promise<AuthTokensWithRefres
       headers: { 'Content-Type': 'application/json' },
     });
     const refreshToken = extractRefreshToken(getSetCookieHeader(response.headers));
+    return toAuthTokensResult(response.data, refreshToken);
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const signup = async (payload: SignupRequest): Promise<AuthTokensWithRefresh> => {
+  try {
+    const response = await authClient.post<AuthTokensResponse>('/users/register', payload, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const refreshToken = extractRefreshToken(getSetCookieHeader(response.headers));
+    if (!refreshToken) {
+      throw new Error('리프레시 토큰을 받아오지 못했습니다.');
+    }
     return toAuthTokensResult(response.data, refreshToken);
   } catch (error) {
     const axiosError = error as AxiosError;

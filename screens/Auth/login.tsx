@@ -13,7 +13,7 @@ export default function LoginScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignupPress = () => {
-    router.push('/signup');
+    router.push('/phone-verification');
   };
 
   const handleLogin = async () => {

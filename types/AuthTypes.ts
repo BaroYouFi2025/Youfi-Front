@@ -3,6 +3,14 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SignupRequest {
+  uid: string;
+  password: string;
+  phone: string;
+  username: string;
+  birthDate: string;
+}
+
 export interface AuthTokensResponse {
   accessToken: string;
   expiresIn: number;

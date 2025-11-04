@@ -32,82 +32,7 @@ export const HeaderTitle = styled.Text`
 
 export const FormContainer = styled.View`
   padding-horizontal: 33px;
-`;
-
-export const InputGroup = styled.View`
-  margin-bottom: 32px;
-`;
-
-export const InputLabel = styled.Text`
-  font-size: 15px;
-  color: #bbbcbe;
-  margin-bottom: 8px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-`;
-
-export const InputContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-`;
-
-export const TextInput = styled.TextInput`
-  flex: 1;
-  font-size: 16px;
-  padding-vertical: 8px;
-  color: #000000;
-`;
-
-export const InputLine = styled.View`
-  height: 1px;
-  background-color: #bbbcbe;
-  margin-top: 4px;
-`;
-
-export const PhoneContainer = styled.View`
-  position: relative;
-  margin-bottom: 32px;
-`;
-
-export const PhoneInput = styled(TextInput)`
-  padding-right: 80px;
-`;
-
-export const VerifyButton = styled.TouchableOpacity`
-  position: absolute;
-  right: 0px;
-  top: 32px;
-  width: 74px;
-  height: 26px;
-  border-width: 1px;
-  border-color: #848587;
-  border-radius: 4px;
-  justify-content: center;
-  align-items: center;
-`;
-
-export const VerifyButtonText = styled.Text`
-  font-size: 15px;
-  color: #848587;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-`;
-
-export const RightIconContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  margin-left: 8px;
-`;
-
-export const CheckIcon = styled.Text`
-  font-size: 24px;
-  color: #4CAF50;
-`;
-
-export const CancelIcon = styled.Text`
-  font-size: 24px;
-  color: #F44336;
+  gap: 24px;
 `;
 
 export const CalendarIcon = styled.Text`
@@ -134,6 +59,12 @@ export const SignupButtonText = styled.Text`
   font-weight: bold;
   letter-spacing: -0.2px;
   line-height: 22px;
+`;
+
+export const WarningText = styled.Text`
+  color: #ef4444;
+  font-size: 14px;
+  margin-bottom: 16px;
 `;
 
 export const BottomSpace = styled.View`
