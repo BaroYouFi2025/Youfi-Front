@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './profile.style';
 
 export default function ProfileScreen() {
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* 프로필 편집 버튼 → ProfileEdit 페이지로 이동 */}
-      <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/')}>
+      <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/profileEdit')}>
         <Text style={styles.editBtnText}>✏️ 프로필 편집</Text>
       </TouchableOpacity>
     </View>

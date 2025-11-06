@@ -1,6 +1,6 @@
-import React from 'react';
-import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import { Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './detail.styles';
 
 export default function MissingDetail() {
