@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
-import { styles } from './list.styles';
 import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { styles } from './list.styles';
 
 type MissingPerson = {
   id: string;
@@ -45,7 +45,7 @@ export default function MissingList() {
         style={styles.pillBtn2}
         onPress={() =>
           router.push({
-            pathname: '../screens/List/detail',
+            pathname: '/detail',
             params: { ...item },
           })
         }
@@ -70,7 +70,7 @@ export default function MissingList() {
         style={styles.pillBtn}
         onPress={() =>
           router.push({
-            pathname: '../screens/List/detail',
+            pathname: '/detail',
             params: { ...item },
           })
         }

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, ScrollView, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { styles } from './profileEdit.style';
 
 export default function ProfileEdit() {
@@ -10,15 +10,6 @@ export default function ProfileEdit() {
 
   return (
     <View style={styles.container}>
-
-      <View style={styles.header}>
-        <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>프로필 카드 수정</Text>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         <View style={styles.profileImageSection}>
