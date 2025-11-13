@@ -1,6 +1,9 @@
+import messaging from '@react-native-firebase/messaging';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert } from 'react-native';
 import YouFiLogo from '../../components/YouFiLogo';
+import { registerDevice } from '../../services/deviceAPI';
 import {
   CardTitle,
   Container,
@@ -30,6 +33,7 @@ const mapImage = 'http://localhost:3845/assets/16de3020fcb10c3df8d12c2de8111ce16
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleNavPress = (tab: string) => {
     setActiveTab(tab);
@@ -39,6 +43,26 @@ export default function HomeScreen() {
     }
     // TODO: Implement other navigation
   };
+
+  const handleRegisterDevice = useCallback(async () => {
+    setIsRegistering(true);
+    try {
+      // FCM 토큰 발급
+      const token = await messaging().getToken();
+      console.log('FCM Token:', token);
+
+      // 서버로 토큰 전송
+      const response = await registerDevice(token);
+      
+      Alert.alert('성공', '기기가 성공적으로 등록되었습니다.');
+      console.log('Device registered:', response);
+    } catch (error) {
+      console.error('Error registering device:', error);
+      Alert.alert('오류', error instanceof Error ? error.message : '기기 등록에 실패했습니다.');
+    } finally {
+      setIsRegistering(false);
+    }
+  }, []);
 
   return (
     <Container>
@@ -65,6 +89,19 @@ export default function HomeScreen() {
               </MapMarker>
             </MapImage>
           </MapContainer>
+
+          {/* FCM Device Registration Button */}
+          <ReportButton 
+            onPress={handleRegisterDevice}
+            disabled={isRegistering}
+            style={{ marginBottom: 16, opacity: isRegistering ? 0.6 : 1 }}
+          >
+            {isRegistering ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <ReportButtonText>FCM 기기 등록하기</ReportButtonText>
+            )}
+          </ReportButton>
 
           {/* Missing Person Card */}
           <MissingPersonCard>
