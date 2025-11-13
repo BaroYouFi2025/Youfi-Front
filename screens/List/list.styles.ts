@@ -93,5 +93,18 @@ export const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
+  pillBtnBlue: {
+  backgroundColor: '#00AEEF',
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  borderRadius: 8,
+},
+pillBtnRed: {
+  backgroundColor: '#F47B7B',
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  borderRadius: 8,
+},
+
   ctaBtnText: { color: COLORS.pillText, fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
 });
