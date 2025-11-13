@@ -2,31 +2,32 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import YouFiLogo from '../../components/YouFiLogo';
 import {
-  CardTitle,
-  Container,
-  ContentArea,
-  Dot,
-  HeaderContainer,
-  MapContainer,
-  MapImage,
-  MapMarker,
-  MapOverlay,
-  MarkerIcon,
-  MissingPersonCard,
-  NotificationBox,
-  NotificationTitle,
-  PersonDescription,
-  PersonImage,
-  PersonInfo,
-  PersonItem,
-  PersonMainInfo,
-  PersonText,
-  ReportButton,
-  ReportButtonText,
-  ScrollContainer
+    CardTitle,
+    Container,
+    ContentArea,
+    Dot,
+    HeaderContainer,
+    MapContainer,
+    MapImage,
+    MapMarker,
+    MapOverlay,
+    MarkerIcon,
+    MissingPersonCard,
+    NotificationBox,
+    NotificationTitle,
+    PersonDescription,
+    PersonImage,
+    PersonInfo,
+    PersonItem,
+    PersonMainInfo,
+    PersonText,
+    ReportButton,
+    ReportButtonText,
+    ScrollContainer
 } from './home.styles';
 
-const mapImage = 'http://localhost:3845/assets/16de3020fcb10c3df8d12c2de8111ce16efd8a53.png';
+// 임시로 로고 이미지를 지도 배경으로 사용 (실제 지도 이미지로 교체 필요)
+const mapImage = require('../../assets/images/react-logo.png');
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
@@ -58,7 +59,7 @@ export default function HomeScreen() {
 
           {/* Map */}
           <MapContainer>
-            <MapImage source={{ uri: mapImage }} resizeMode="cover">
+            <MapImage source={mapImage} resizeMode="cover">
               <MapOverlay />
               <MapMarker>
                 <MarkerIcon />
