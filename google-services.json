@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "148607577015",
+    "project_id": "baro-youfi",
+    "storage_bucket": "baro-youfi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:148607577015:android:0bece9db0d767160ded632",
+        "android_client_info": {
+          "package_name": "baro.youfi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjSOLbSTy26kO4WZWqxZ-LlIYlQED5V4E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
