@@ -7,19 +7,18 @@ type MissingPerson = {
   id: string;
   name: string;
   location: string;
-  date?: string;   // 실종 일자 (경찰청 탭에서만 표시)
-  info: string;    // 인상착의
-  lat?: string;    // 위도
-  lng?: string;    // 경도
+  date?: string;
+  info: string;
+  lat?: string;
+  lng?: string;
 };
 
-// 기본/경찰청 더미 데이터
-const BASIC_DATA: MissingPerson[] = [
-  { id: '1', name: '이름', location: '실종 위치', info: '(인상착의 정보)', lat: '35.1465', lng: '129.0336' },
-  { id: '2', name: '이름', location: '실종 위치', info: '(인상착의 정보)', lat: '35.1470', lng: '129.0340' },
+const POLICE_DATA: MissingPerson[] = [
+  { id: '1', name: '이름', location: '실종 위치', info: '착의사항', lat: '35.1465', lng: '129.0336' },
+  { id: '2', name: '이름', location: '실종 위치', info: '착의사항', lat: '35.1470', lng: '129.0340' },
 ];
 
-const POLICE_DATA: MissingPerson[] = [
+const BASIC_DATA: MissingPerson[] = [
   { id: '1', name: '이름', location: '실종 위치', date: '실종 일자', info: '(인상착의 정보) - 키, 몸무게, 체형', lat: '35.1465', lng: '129.0336' },
   { id: '2', name: '이름', location: '실종 위치', date: '실종 일자', info: '(인상착의 정보) - 키, 몸무게, 체형', lat: '35.1470', lng: '129.0340' },
 ];
@@ -27,10 +26,9 @@ const POLICE_DATA: MissingPerson[] = [
 export default function MissingList() {
   const [source, setSource] = useState<'basic' | 'police'>('basic');
   const router = useRouter();
-
   const data = useMemo(() => (source === 'basic' ? BASIC_DATA : POLICE_DATA), [source]);
 
-  const TopItem = ({ item }: { item: MissingPerson }) => (
+  const Item = ({ item, isTop }: { item: MissingPerson; isTop?: boolean }) => (
     <View style={styles.itemRow}>
       <Image source={{ uri: 'https://via.placeholder.com/72' }} style={styles.avatar} />
       <View style={styles.itemTextWrap}>
@@ -42,35 +40,10 @@ export default function MissingList() {
       </View>
       <TouchableOpacity
         activeOpacity={0.8}
-        style={styles.pillBtn2}
+        style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
         onPress={() =>
           router.push({
-            pathname: '/detail',
-            params: { ...item },
-          })
-        }
-      >
-        <Text style={styles.pillBtnText}>자세히 보기</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const Item = ({ item }: { item: MissingPerson }) => (
-    <View style={styles.itemRow}>
-      <Image source={{ uri: 'https://via.placeholder.com/72' }} style={styles.avatar} />
-      <View style={styles.itemTextWrap}>    
-        <Text style={styles.itemTitle}>
-          {item.name} • {item.location}
-          {source === 'police' && item.date ? ` • ${item.date}` : ''}
-        </Text>
-        <Text style={styles.itemSub}>{item.info}</Text>
-      </View>
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={styles.pillBtn}
-        onPress={() =>
-          router.push({
-            pathname: '/detail',
+            pathname: source === 'basic' ? '/detail' : '/police_detail',
             params: { ...item },
           })
         }
@@ -83,10 +56,12 @@ export default function MissingList() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* 찾는 중 */}
         <Text style={styles.sectionTitle}>찾는 중</Text>
-        <TopItem item={data[0]} />
+        <Item item={data[0]} isTop />
         <View style={styles.separator} />
 
+        {/* 실종자 목록 */}
         <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>실종자 목록</Text>
           <View style={styles.switchWrap}>
@@ -115,6 +90,7 @@ export default function MissingList() {
           scrollEnabled={false}
         />
 
+        {/* CTA 버튼 */}
         <TouchableOpacity activeOpacity={0.9} style={styles.ctaBtn}>
           <Text style={styles.ctaBtnText}>인근 실종자 목록 지도로 보기</Text>
         </TouchableOpacity>
