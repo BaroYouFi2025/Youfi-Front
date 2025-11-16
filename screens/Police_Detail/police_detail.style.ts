@@ -82,15 +82,13 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   
-  // --- Modal Styles (공통) ---
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', // 반투명 배경
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   
-  // --- 1. 신고 확인 모달 스타일 ---
   modalView: {
     margin: 20,
     backgroundColor: 'white',
