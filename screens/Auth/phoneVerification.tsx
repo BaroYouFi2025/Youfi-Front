@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Platform } from 'react-native';
 
 import { checkPhoneVerificationStatus, requestPhoneVerificationToken } from '@/services/phoneVerificationAPI';
+import { openEmailWithToken } from '@/utils/emailUtils';
 
 import {
   ActionGroup,
@@ -49,9 +50,18 @@ export default function PhoneVerificationScreen() {
     try {
       const response = await requestPhoneVerificationToken({ phoneNumber });
       setToken(response.token);
+
+      // 이메일 앱으로 토큰 발송
+      await openEmailWithToken(response.token, phoneNumber);
+
       Alert.alert(
-        '인증 토큰 발급',
-        `발급된 토큰을 복사해 verifybaro@gmail.com 으로 전달해주세요.\n\n토큰: ${response.token}`,
+        '인증 토큰 발급 완료',
+        '이메일 앱에서 인증 토큰이 포함된 이메일을 확인해주세요. 이메일을 전송하면 관리자가 인증을 진행합니다.',
+        [
+          {
+            text: '확인',
+          },
+        ]
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : '인증 토큰 발급에 실패했습니다.';
@@ -104,10 +114,8 @@ export default function PhoneVerificationScreen() {
           <HeaderArea>
             <Title>전화번호 인증</Title>
             <Description>
-              회원가입을 위해 먼저 휴대폰 번호 인증을 완료해주세요. 토큰을 발급받은 후
-              {' '}
-              verifybaro@gmail.com
-              으로 전달하면 관리자가 인증을 진행합니다.
+              회원가입을 위해 먼저 휴대폰 번호 인증을 완료해주세요. 토큰을 발급받으면 자동으로 이메일 앱이 열리며,
+              관리자에게 인증 요청 이메일이 작성됩니다. 이메일을 전송하면 관리자가 인증을 진행합니다.
             </Description>
           </HeaderArea>
 
@@ -129,8 +137,8 @@ export default function PhoneVerificationScreen() {
               <TokenLabel>발급된 토큰</TokenLabel>
               <TokenValue>{token}</TokenValue>
               <HelperText>
-                토큰은 1회용이며 인증 완료 전까지 안전하게 보관해주세요. 토큰을 재발급하면 이전 토큰은
-                사용할 수 없습니다.
+                토큰은 1회용이며 인증 완료 전까지 유효합니다. 토큰을 재발급하면 이전 토큰은
+                사용할 수 없습니다. 이메일 앱에서 작성된 내용을 확인하고 전송해주세요.
               </HelperText>
             </TokenContainer>
           )}
@@ -158,7 +166,7 @@ export default function PhoneVerificationScreen() {
           </ActionGroup>
 
           <HelperText>
-            인증 요청 후 일정 시간이 소요될 수 있습니다. 인증이 완료되면 위 버튼을 눌러 다시 확인해주세요.
+            이메일을 전송한 후 관리자가 인증을 완료하면 위 버튼을 눌러 인증 상태를 확인해주세요.
           </HelperText>
         </Content>
       </ScrollContainer>

@@ -11,9 +11,12 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   ios: {
+    bundleIdentifier: 'baro.youfi',
     supportsTablet: true,
   },
   android: {
+    package: 'baro.youfi',
+    googleServicesFile: './google-services.json',
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
       foregroundImage: './assets/images/adaptive-icon.png',
@@ -39,6 +42,8 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
+    '@react-native-firebase/app',
+    '@react-native-firebase/messaging',
   ],
   experiments: {
     typedRoutes: true,
