@@ -1,33 +1,41 @@
-import messaging from '@react-native-firebase/messaging';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 import YouFiLogo from '../../components/YouFiLogo';
 import { registerDevice } from '../../services/deviceAPI';
 import {
-    CardTitle,
-    Container,
-    ContentArea,
-    Dot,
-    HeaderContainer,
-    MapContainer,
-    MapImage,
-    MapMarker,
-    MapOverlay,
-    MarkerIcon,
-    MissingPersonCard,
-    NotificationBox,
-    NotificationTitle,
-    PersonDescription,
-    PersonImage,
-    PersonInfo,
-    PersonItem,
-    PersonMainInfo,
-    PersonText,
-    ReportButton,
-    ReportButtonText,
-    ScrollContainer
+  CardTitle,
+  Container,
+  ContentArea,
+  Dot,
+  HeaderContainer,
+  MapContainer,
+  MapImage,
+  MapMarker,
+  MapOverlay,
+  MarkerIcon,
+  MissingPersonCard,
+  NotificationBox,
+  NotificationTitle,
+  PersonDescription,
+  PersonImage,
+  PersonInfo,
+  PersonItem,
+  PersonMainInfo,
+  PersonText,
+  ReportButton,
+  ReportButtonText,
+  ScrollContainer
 } from './home.styles';
+
+// Firebase는 네이티브 빌드에서만 사용 가능 (Expo Go 불가)
+let messaging: any = null;
+try {
+  messaging = require('@react-native-firebase/messaging').default;
+} catch (e) {
+  // Expo Go에서는 Firebase 사용 불가 (정상 동작)
+  // 실제 기기 테스트는 npx expo run:ios 또는 npx expo run:android 사용
+}
 
 // 임시로 로고 이미지를 지도 배경으로 사용 (실제 지도 이미지로 교체 필요)
 const mapImage = require('../../assets/images/react-logo.png');
@@ -46,6 +54,14 @@ export default function HomeScreen() {
   };
 
   const handleRegisterDevice = useCallback(async () => {
+    if (!messaging) {
+      Alert.alert(
+        '개발 모드',
+        'Firebase는 네이티브 빌드에서만 사용 가능합니다.\n\nnpx expo run:android 또는\nnpx expo run:ios 로 실행해주세요.'
+      );
+      return;
+    }
+
     setIsRegistering(true);
     try {
       // FCM 토큰 발급

@@ -42,6 +42,7 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
+    'expo-web-browser',
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
   ],
@@ -51,8 +52,6 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     ...config.extra,
-    bypassAuth: process.env.EXPO_PUBLIC_BYPASS_AUTH ?? 'false',
-    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'https://api.youfi.com',
   },
 });
 
