@@ -1,3 +1,4 @@
+//profile.style.ts
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -30,6 +31,7 @@ export const styles = StyleSheet.create({
     color: "#007AFF",
   },
 
+  // 카드
   card: {
     width: "90%",
     backgroundColor: "#fff",
@@ -46,6 +48,7 @@ export const styles = StyleSheet.create({
     width: 200,
     height: 200,
     marginBottom: 18,
+    borderRadius: 100,
   },
   name: {
     fontSize: 26,
@@ -67,15 +70,21 @@ export const styles = StyleSheet.create({
   // 경험치 바
   progressBar: {
     width: "80%",
-    height: 14,
+    height: 16,
     backgroundColor: "#E0E0E0",
-    borderRadius: 8,
+    borderRadius: 10,
     marginTop: 20,
+    overflow: "hidden", // ✅ 내부 fill이 넘어가지 않게
+    borderWidth: 1,
+    borderColor: "#BDBDBD",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#4FC3F7",
-    borderRadius: 8,
+    backgroundColor: "#4FC3F7", // ✅ 테마 색상
+    borderRadius: 10,
+    position: "absolute",
+    left: 0,
+    top: 0,
   },
   expText: {
     marginTop: 8,
@@ -91,7 +100,8 @@ export const styles = StyleSheet.create({
     resizeMode: "contain",
   },
 
-editBtn: {
+  // 편집 버튼
+  editBtn: {
     width: "80%",
     backgroundColor: "#4FC3F7",
     paddingVertical: 16,
