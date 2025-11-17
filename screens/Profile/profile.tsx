@@ -1,4 +1,5 @@
-import { clearStoredTokens } from '@/utils/authStorage';
+import { logout as logoutRequest } from '@/services/authAPI';
+import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -20,8 +21,19 @@ export default function ProfileScreen() {
           text: '로그아웃',
           style: 'destructive',
           onPress: async () => {
-            await clearStoredTokens();
-            router.replace('/login');
+            try {
+              const refreshToken = await getRefreshToken();
+              const accessToken = await getAccessToken();
+              
+              if (refreshToken) {
+                await logoutRequest(refreshToken, accessToken || undefined);
+              }
+            } catch (error) {
+              console.warn('로그아웃 API 호출 실패:', error);
+            } finally {
+              await clearStoredTokens();
+              router.replace('/login');
+            }
           },
         },
       ]

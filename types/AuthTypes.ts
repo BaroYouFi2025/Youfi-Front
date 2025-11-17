@@ -13,14 +13,25 @@ export interface SignupRequest {
 
 export interface AuthTokensResponse {
   accessToken: string;
+  refreshToken: string;
   expiresIn: number;
 }
 
-export interface AuthTokensWithRefresh extends AuthTokensResponse {
-  refreshToken?: string;
+export interface AuthTokensWithRefresh extends AuthTokensResponse {}
+
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
-export interface RefreshResponse extends AuthTokensResponse {}
+export interface RefreshRequest {
+  refreshToken: string;
+}
+
+export interface LogoutRequest {
+  refreshToken: string;
+}
 
 export interface LogoutResponse {
   message: string;
