@@ -60,19 +60,17 @@ const PoliceDetailScreen = () => {
     console.log('신고 완료 모달 닫기');
   };
 
-  // --- 1. 신고 확인 모달 렌더링 함수 ---
   const renderConfirmModal = () => (
     <Modal
       animationType="fade"
       transparent={true}
-      visible={isConfirmModalVisible} // 상태 변경
+      visible={isConfirmModalVisible}
       onRequestClose={handleCancel}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>정말 신고하시겠습니까?</Text>
 
-          {/* 인물 정보 요약 */}
           <View style={styles.modalPersonInfoRow}>
             <Image source={PERSON_IMAGE} style={styles.modalProfileImage} />
             <View style={styles.modalTextGroup}>
@@ -85,7 +83,6 @@ const PoliceDetailScreen = () => {
             확인 시 실종자 발견 점수를 위해 182번으로 연결됩니다.
           </Text>
 
-          {/* 버튼 영역 */}
           <View style={styles.modalButtonContainer}>
             <TouchableOpacity 
                 style={[styles.modalButton, styles.cancelButton]} 
@@ -106,32 +103,28 @@ const PoliceDetailScreen = () => {
     </Modal>
   );
 
-  // --- 2. 신고 완료 모달 렌더링 함수 (새로 추가) ---
   const renderSuccessModal = () => (
     <Modal
       animationType="fade"
       transparent={true}
-      visible={isSuccessModalVisible} // 두 번째 상태 사용
+      visible={isSuccessModalVisible}
       onRequestClose={handleSuccessClose}
     >
       <View style={styles.centeredView}>
-        {/* 모달 배경 클릭 시 닫기 (빈곳을 클릭해주세요 구현) */}
-        <TouchableOpacity 
-            style={styles.centeredView} 
-            activeOpacity={1} 
-            onPress={handleSuccessClose} 
-        >
-            <TouchableOpacity 
-                style={styles.successModalView} // 신고 완료 모달 스타일
-                activeOpacity={1} // 내부 클릭 시 배경 클릭 이벤트 방지
-            >
-                <Text style={styles.successMessageTitle}>신고 해주셔서 감사합니다</Text>
-                <Text style={styles.successMessageSubtitle}>빈곳을 클릭해주세요</Text>
-            </TouchableOpacity>
-        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ position: 'absolute', inset: 0 }}
+          activeOpacity={1}
+          onPress={handleSuccessClose}
+        />
+        
+        <View style={styles.successModalView}>
+          <Text style={styles.successMessageTitle}>신고 해주셔서 감사합니다</Text>
+          <Text style={styles.successMessageSubtitle}>빈곳을 클릭해주세요</Text>
+        </View>
       </View>
     </Modal>
   );
+  
 
   return (
     <SafeAreaView style={styles.container}>
