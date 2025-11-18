@@ -185,4 +185,85 @@ export const detailStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  // Modal overlay (배경 어둡게)
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.4)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+// 공통 모달 박스
+modalBox: {
+  width: '80%',
+  backgroundColor: '#fff',
+  padding: 25,
+  borderRadius: 10,
+  alignItems: 'center',
+},
+
+modalTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  marginBottom: 15,
+},
+
+modalDesc: {
+  fontSize: 14,
+  color: '#555',
+  marginBottom: 20,
+  textAlign: 'center',
+},
+
+modalButtonRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  width: '100%',
+},
+
+modalButton: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 8,
+  alignItems: 'center',
+  marginHorizontal: 5,
+},
+
+cancelButton: {
+  backgroundColor: '#3498db',
+},
+
+confirmButton: {
+  backgroundColor: '#ff6347',
+},
+
+modalButtonText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
+// 신고 완료 모달 박스
+successModalBox: {
+  width: '80%',
+  backgroundColor: '#fff',
+  paddingVertical: 35,
+  paddingHorizontal: 20,
+  borderRadius: 10,
+  alignItems: 'center',
+},
+
+successTitle: {
+  fontSize: 20,
+  color: '#ff6347',
+  fontWeight: 'bold',
+  marginBottom: 10,
+},
+
+successSubtitle: {
+  fontSize: 16,
+  color: '#666',
+},
+
+  
 });
