@@ -1,4 +1,4 @@
-import { ImageBackground, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 
@@ -39,63 +39,12 @@ export const MapCard = styled.View`
   border-radius: 20px;
   overflow: hidden;
   background-color: #eaf6ff;
+  height: 280px;
   shadow-color: #000000;
   shadow-opacity: 0.12;
   shadow-radius: 12px;
   shadow-offset: 0px 8px;
   elevation: 6;
-`;
-
-export const MapImage = styled(ImageBackground)`
-  width: 100%;
-  height: 280px;
-  justify-content: center;
-  align-items: center;
-`;
-
-export const MarkerWrapper = styled.View`
-  width: 140px;
-  height: 140px;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const MarkerPulse = styled.View`
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  border-radius: 70px;
-  background-color: rgba(37, 178, 226, 0.25);
-`;
-
-export const MarkerIcon = styled.View`
-  width: 64px;
-  height: 64px;
-  border-radius: 24px;
-  background-color: #25b2e2;
-  align-items: center;
-  justify-content: center;
-  shadow-color: #25b2e2;
-  shadow-opacity: 0.32;
-  shadow-radius: 10px;
-  shadow-offset: 0px 6px;
-  elevation: 8;
-`;
-
-export const MarkerCallout = styled.View`
-  position: absolute;
-  right: -50px;
-  top: -10px;
-  width: 72px;
-  height: 56px;
-  border-radius: 18px;
-  background-color: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(22, 23, 26, 0.1);
-  shadow-color: #000000;
-  shadow-opacity: 0.12;
-  shadow-radius: 6px;
-  shadow-offset: 0px 3px;
-  elevation: 4;
 `;
 
 export const PersonSection = styled.View`

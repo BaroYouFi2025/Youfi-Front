@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutResponse, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
+import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
 
@@ -10,53 +10,10 @@ const authClient = axios.create({
   timeout: 10000,
 });
 
-const extractRefreshToken = (setCookieHeader?: string | string[]): string | undefined => {
-  if (!setCookieHeader) {
-    return undefined;
-  }
-
-  const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
-  for (const cookieString of cookies) {
-    const match = cookieString.match(/refreshToken=([^;]+)/);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-
-  return undefined;
-};
-
-const getSetCookieHeader = (headers: any): string | string[] | undefined => {
-  if (typeof headers.getSetCookie === 'function') {
-    const cookies = headers.getSetCookie();
-    if (cookies && cookies.length > 0) {
-      return cookies;
-    }
-  }
-
-  const lowerCaseHeader = headers.get?.('set-cookie');
-  if (lowerCaseHeader && (typeof lowerCaseHeader === 'string' || Array.isArray(lowerCaseHeader))) {
-    return lowerCaseHeader;
-  }
-
-  const upperCaseHeader = headers.get?.('Set-Cookie');
-  if (upperCaseHeader && (typeof upperCaseHeader === 'string' || Array.isArray(upperCaseHeader))) {
-    return upperCaseHeader;
-  }
-
-  const recordHeaders = headers as unknown as Record<string, unknown>;
-  const directHeader = recordHeaders['set-cookie'] ?? recordHeaders['Set-Cookie'];
-  if (typeof directHeader === 'string' || Array.isArray(directHeader)) {
-    return directHeader;
-  }
-
-  return undefined;
-};
-
-const toAuthTokensResult = (response: AuthTokensResponse, refreshToken?: string): AuthTokensWithRefresh => ({
+const toAuthTokensResult = (response: AuthTokensResponse): AuthTokensWithRefresh => ({
   accessToken: response.accessToken,
+  refreshToken: response.refreshToken,
   expiresIn: response.expiresIn,
-  refreshToken,
 });
 
 const resolveErrorMessage = (error: AxiosError): string => {
@@ -77,8 +34,7 @@ export const login = async (payload: LoginRequest): Promise<AuthTokensWithRefres
     const response = await authClient.post<AuthTokensResponse>('/auth/login', payload, {
       headers: { 'Content-Type': 'application/json' },
     });
-    const refreshToken = extractRefreshToken(getSetCookieHeader(response.headers));
-    return toAuthTokensResult(response.data, refreshToken);
+    return toAuthTokensResult(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     throw new Error(resolveErrorMessage(axiosError));
@@ -90,11 +46,7 @@ export const signup = async (payload: SignupRequest): Promise<AuthTokensWithRefr
     const response = await authClient.post<AuthTokensResponse>('/users/register', payload, {
       headers: { 'Content-Type': 'application/json' },
     });
-    const refreshToken = extractRefreshToken(getSetCookieHeader(response.headers));
-    if (!refreshToken) {
-      throw new Error('리프레시 토큰을 받아오지 못했습니다.');
-    }
-    return toAuthTokensResult(response.data, refreshToken);
+    return toAuthTokensResult(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     throw new Error(resolveErrorMessage(axiosError));
@@ -103,28 +55,25 @@ export const signup = async (payload: SignupRequest): Promise<AuthTokensWithRefr
 
 export const refreshTokens = async (refreshToken: string): Promise<AuthTokensWithRefresh> => {
   try {
-    const response = await authClient.post<RefreshResponse>('/auth/refresh', null, {
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `refreshToken=${refreshToken}`,
-      },
+    const payload: RefreshRequest = { refreshToken };
+    const response = await authClient.post<RefreshResponse>('/auth/refresh', payload, {
+      headers: { 'Content-Type': 'application/json' },
     });
-    const nextRefreshToken = extractRefreshToken(getSetCookieHeader(response.headers)) || refreshToken;
-    return toAuthTokensResult(response.data, nextRefreshToken);
+    return toAuthTokensResult(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
 
-export const logout = async (refreshToken: string): Promise<LogoutResponse> => {
+export const logout = async (refreshToken: string, accessToken?: string): Promise<LogoutResponse> => {
   try {
-    const response = await authClient.post<LogoutResponse>('/auth/logout', null, {
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `refreshToken=${refreshToken}`,
-      },
-    });
+    const payload: LogoutRequest = { refreshToken };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+    const response = await authClient.post<LogoutResponse>('/auth/logout', payload, { headers });
     return response.data;
   } catch (error) {
     const axiosError = error as AxiosError;

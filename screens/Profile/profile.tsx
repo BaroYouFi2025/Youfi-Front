@@ -1,13 +1,44 @@
+import { logout as logoutRequest } from '@/services/authAPI';
+import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import axios from 'axios';
+import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './profile.style';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleLogout = async () => {
+    Alert.alert(
+      '로그아웃',
+      '로그아웃 하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '로그아웃',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const refreshToken = await getRefreshToken();
+              const accessToken = await getAccessToken();
+              
+              if (refreshToken) {
+                await logoutRequest(refreshToken, accessToken || undefined);
+              }
+            } catch (error) {
+              console.warn('로그아웃 API 호출 실패:', error);
+            } finally {
+              await clearStoredTokens();
+              router.replace('/login');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // 🔥 프로필 GET
   useEffect(() => {
@@ -42,7 +73,13 @@ export default function ProfileScreen() {
   if (!profile) {
     return (
       <View style={styles.container}>
-        <Text>프로필 정보를 불러올 수 없습니다.</Text>
+        <Text style={{ marginBottom: 20 }}>프로필 정보를 불러올 수 없습니다.</Text>
+        <TouchableOpacity 
+          style={[styles.editBtn, { backgroundColor: '#ff4444' }]} 
+          onPress={handleLogout}
+        >
+          <Text style={styles.editBtnText}>🚪 로그아웃</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -93,6 +130,14 @@ export default function ProfileScreen() {
       {/* 프로필 편집 */}
       <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/profileEdit')}>
         <Text style={styles.editBtnText}>✏️ 프로필 편집</Text>
+      </TouchableOpacity>
+
+      {/* 로그아웃 */}
+      <TouchableOpacity 
+        style={[styles.editBtn, { backgroundColor: '#ff4444', marginTop: 12 }]} 
+        onPress={handleLogout}
+      >
+        <Text style={styles.editBtnText}>🚪 로그아웃</Text>
       </TouchableOpacity>
     </View>
   );
