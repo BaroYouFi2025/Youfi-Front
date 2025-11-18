@@ -1,36 +1,36 @@
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import KakaoMap from '../../components/KakaoMap';
 import YouFiLogo from '../../components/YouFiLogo';
 import {
-  Avatar,
-  BatteryChip,
-  BatteryText,
-  Container,
-  DistanceText,
-  Divider,
-  Header,
-  MapCard,
-  MapImage,
-  MarkerCallout,
-  MarkerIcon,
-  MarkerPulse,
-  MarkerWrapper,
-  NameRow,
-  PersonContent,
-  PersonName,
-  PersonRow,
-  PersonSection,
-  ScreenScroll,
-  SeparatorDot,
-  Spacer,
-  Title,
-  TitleRow
+    Avatar,
+    BatteryChip,
+    BatteryText,
+    Container,
+    DistanceText,
+    Divider,
+    Header,
+    MapCard,
+    NameRow,
+    PersonContent,
+    PersonName,
+    PersonRow,
+    PersonSection,
+    ScreenScroll,
+    SeparatorDot,
+    Spacer,
+    Title,
+    TitleRow
 } from './GpsTrackingScreen.styles';
 
-const mapImage = 'http://localhost:3845/assets/16de3020fcb10c3df8d12c2de8111ce16efd8a53.png';
-
 export default function GpsTrackingScreen() {
+  // TODO: 실제 GPS 데이터로 교체 필요
+  const [userLocation, setUserLocation] = useState({
+    latitude: 37.5665,
+    longitude: 126.9780
+  });
+
   return (
     <Container edges={['top']}>
       <StatusBar style="dark" />
@@ -45,15 +45,11 @@ export default function GpsTrackingScreen() {
         </TitleRow>
 
         <MapCard>
-          <MapImage source={{ uri: mapImage }} resizeMode="cover">
-            <MarkerWrapper>
-              <MarkerPulse />
-              <MarkerIcon>
-                <Ionicons name="person" size={24} color="#ffffff" />
-              </MarkerIcon>
-              <MarkerCallout />
-            </MarkerWrapper>
-          </MapImage>
+          <KakaoMap
+            latitude={userLocation.latitude}
+            longitude={userLocation.longitude}
+            zoom={3}
+          />
         </MapCard>
 
         <PersonSection>
