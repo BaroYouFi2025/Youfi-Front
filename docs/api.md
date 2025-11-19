@@ -498,6 +498,8 @@ DB에 저장된 경찰청 실종자 데이터를 페이징하여 조회합니다
 
 ## Member & Invitation Management
 
+> **Note**: 알림 관련 기능은 이전에 Member API에 포함되어 있었으나, 현재는 별도의 Notification API로 분리되었습니다.
+
 #### POST /members/invitations
 다른 사용자를 멤버로 초대합니다.
 
@@ -575,6 +577,8 @@ DB에 저장된 경찰청 실종자 데이터를 페이징하여 조회합니다
 ---
 
 ## Notification Management
+
+> **API 변경 이력**: 알림 관련 기능이 Member API에서 독립된 Notification API로 분리되었습니다.
 
 #### GET /notifications/me
 현재 로그인한 사용자의 모든 알림을 조회합니다.
