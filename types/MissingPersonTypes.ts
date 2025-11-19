@@ -50,3 +50,34 @@ export interface MissingPersonAPIResponse {
   message: string;
   success: boolean;
 }
+
+export interface NearbyMissingPerson {
+  id: number;
+  name: string;
+  birth_date: string;
+  gender: 'MALE' | 'FEMALE' | 'UNKNOWN';
+  missing_date: string;
+  height: number;
+  weight: number;
+  body: string;
+  body_etc: string;
+  clothes_top: string;
+  clothes_bottom: string;
+  clothes_etc: string;
+  photo_url?: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+  distance?: number; // 거리 (km)
+}
+
+export interface NearbyMissingPersonsResponse {
+  content: NearbyMissingPerson[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}

@@ -1,5 +1,10 @@
+import {
+    MissingPersonAPIRequest,
+    MissingPersonAPIResponse,
+    MissingPersonData,
+    NearbyMissingPersonsResponse
+} from '@/types/MissingPersonTypes';
 import axios from 'axios';
-import { MissingPersonData, MissingPersonAPIRequest, MissingPersonAPIResponse } from '@/types/MissingPersonTypes';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
 
@@ -63,5 +68,36 @@ export const uploadPhoto = async (photoUri: string): Promise<string> => {
   } catch (error) {
     console.error('Error uploading photo:', error);
     throw new Error('사진 업로드에 실패했습니다. 다시 시도해주세요.');
+  }
+};
+
+export const getNearbyMissingPersons = async (
+  latitude: number,
+  longitude: number,
+  radius: number = 1000,
+  page: number = 0,
+  size: number = 20
+): Promise<NearbyMissingPersonsResponse> => {
+  try {
+    const response = await axios.get<NearbyMissingPersonsResponse>(
+      `${API_BASE_URL}/missing-person/nearby`,
+      {
+        params: {
+          latitude,
+          longitude,
+          radius,
+          page,
+          size,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching nearby missing persons:', error);
+    throw new Error('주변 실종자 조회에 실패했습니다. 다시 시도해주세요.');
   }
 };

@@ -171,7 +171,15 @@ export const PersonItem = styled.View`
   border-bottom-color: #f2f3f4;
 `;
 
-export const PersonImage = styled.View`
+export const PersonImage = styled.Image`
+  width: 48px;
+  height: 48px;
+  background-color: #545454;
+  border-radius: 4px;
+  margin-right: 16px;
+`;
+
+export const PersonImagePlaceholder = styled.View`
   width: 48px;
   height: 48px;
   background-color: #545454;
