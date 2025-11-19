@@ -6,11 +6,29 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './profile.style';
 
+// 칭호 → 등급 매핑
+const titleGradeMap: Record<string, string> = {
+  "수색 초보자": "common",
+  "수색 대원": "uncommon",
+  "수색 전문가": "rare",
+};
+
+// 등급 → 뱃지 이미지
+const badgeImages: Record<string, any> = {
+  common: require('../../assets/images/badge/common.png'),
+  uncommon: require('../../assets/images/badge/uncommon.png'),
+  rare: require('../../assets/images/badge/rare.png'),
+};
+
+// 기본 프로필 이미지
+const defaultProfile = require('../../assets/images/default_profile.png');
+
 export default function ProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // 로그아웃
   const handleLogout = async () => {
     Alert.alert(
       '로그아웃',
@@ -24,34 +42,38 @@ export default function ProfileScreen() {
             try {
               const refreshToken = await getRefreshToken();
               const accessToken = await getAccessToken();
-              
               if (refreshToken) {
                 await logoutRequest(refreshToken, accessToken || undefined);
               }
-            } catch (error) {
-              console.warn('로그아웃 API 호출 실패:', error);
+            } catch (e) {
+              console.warn('로그아웃 API 실패:', e);
             } finally {
               await clearStoredTokens();
               router.replace('/login');
             }
-          },
-        },
+          }
+        }
       ]
     );
   };
 
-  // 🔥 프로필 GET
+  // 프로필 GET
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('https://jjm.jojaemin.com/User/getProfile', {
-          headers: {
-            Authorization: `Bearer YOUR_JWT_TOKEN`, // 로그인에서 받은 토큰
-          },
+        const token = await getAccessToken();
+        if (!token) return router.replace('/login');
+
+        const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
         });
+
+        // ❗ 여기 수정됨 — profile이 null일 때 접근하지 않도록 FIX
+        console.log("🔥 profileUrl:", res.data.profileUrl);
+
         setProfile(res.data);
       } catch (e) {
-        console.log('프로필 불러오기 실패:', e);
+        console.log("프로필 불러오기 실패:", e);
       } finally {
         setLoading(false);
       }
@@ -60,7 +82,7 @@ export default function ProfileScreen() {
     fetchProfile();
   }, []);
 
-  // 로딩 표시
+  // 로딩화면
   if (loading) {
     return (
       <View style={styles.container}>
@@ -69,13 +91,13 @@ export default function ProfileScreen() {
     );
   }
 
-  // 프로필 없음
+  // 프로필 실패 화면
   if (!profile) {
     return (
       <View style={styles.container}>
         <Text style={{ marginBottom: 20 }}>프로필 정보를 불러올 수 없습니다.</Text>
         <TouchableOpacity 
-          style={[styles.editBtn, { backgroundColor: '#ff4444' }]} 
+          style={[styles.editBtn, { backgroundColor: '#ff4444' }]}
           onPress={handleLogout}
         >
           <Text style={styles.editBtnText}>🚪 로그아웃</Text>
@@ -88,57 +110,62 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 상단 */}
+
+      {/* Header */}
       <View style={styles.header}>
         <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-        <TouchableOpacity style={styles.settingBtn} onPress={() => router.push('/settings')}>
+        <TouchableOpacity 
+          style={styles.settingBtn} 
+          onPress={() => router.push('/settings')}
+        >
           <Text style={styles.settingIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 카드 */}
-      <View style={[styles.card, { backgroundColor: profile.backgroundColor || '#fff' }]}>
-        
-        {/* 프로필 이미지 */}
-        <Image 
-          source={{ uri: profile.profileUrl }} 
-          style={styles.avatar} 
+      {/* 메인 카드 */}
+      <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}>
+
+        {/* 기본 이미지 */}
+        <Image
+          source={defaultProfile}
+          style={styles.avatar}
         />
 
-        {/* 이름 */}
         <Text style={styles.name}>{profile.name}</Text>
 
-        {/* 레벨 */}
         <Text style={styles.level}>
           Lv <Text style={styles.levelNum}>{profile.level}</Text>
         </Text>
 
-        {/* 경험치 바 */}
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${expRatio * 100}%` }]} />
         </View>
         <Text style={styles.expText}>{profile.exp} / 100</Text>
 
-        {/* 칭호 → 이미지 or 텍스트 */}
-        {profile.titleImageUrl ? (
-          <Image source={{ uri: profile.titleImageUrl }} style={styles.badgeImage} />
+        {profile.title && titleGradeMap[profile.title] ? (
+          <Image 
+            source={badgeImages[titleGradeMap[profile.title]]}
+            style={styles.badgeImage}
+          />
         ) : (
           <Text style={{ marginTop: 18, fontSize: 18 }}>{profile.title}</Text>
         )}
       </View>
 
-      {/* 프로필 편집 */}
-      <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/profileEdit')}>
+      <TouchableOpacity 
+        style={styles.editBtn} 
+        onPress={() => router.push('/profileEdit')}
+      >
         <Text style={styles.editBtnText}>✏️ 프로필 편집</Text>
       </TouchableOpacity>
 
-      {/* 로그아웃 */}
       <TouchableOpacity 
-        style={[styles.editBtn, { backgroundColor: '#ff4444', marginTop: 12 }]} 
+        style={[styles.editBtn, { backgroundColor: '#ff4444', marginTop: 12 }]}
         onPress={handleLogout}
       >
         <Text style={styles.editBtnText}>🚪 로그아웃</Text>
       </TouchableOpacity>
+
     </View>
   );
 }
