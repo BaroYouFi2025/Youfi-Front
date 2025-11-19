@@ -31,26 +31,44 @@ export default function KakaoMap({
 
   if (!apiKey || apiKey === 'your_kakao_javascript_key_here') {
     return (
-      <View style={[{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#eaf6ff' }, style]}>
-        <ActivityIndicator size="large" color="#25b2e2" />
+      <View
+        style={[
+          {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#eaf6ff',
+          },
+          style,
+        ]}
+      >
+        <ActivityIndicator size='large' color='#25b2e2' />
       </View>
     );
   }
 
-  const markersScript = markers.map((marker, index) => `
+  const markersScript = markers
+    .map(
+      (marker, index) => `
     var marker${index} = new kakao.maps.Marker({
       position: new kakao.maps.LatLng(${marker.lat}, ${marker.lng}),
       map: map
     });
-    ${marker.title ? `
+    ${
+      marker.title
+        ? `
     var infowindow${index} = new kakao.maps.InfoWindow({
       content: '<div style="padding:5px;font-size:12px;">${marker.title}</div>'
     });
     kakao.maps.event.addListener(marker${index}, 'click', function() {
       infowindow${index}.open(map, marker${index});
     });
-    ` : ''}
-  `).join('\n');
+    `
+        : ''
+    }
+  `
+    )
+    .join('\n');
 
   const html = `
     <!DOCTYPE html>
@@ -91,34 +109,32 @@ export default function KakaoMap({
               throw new Error('카카오맵 SDK 로드 실패 - kakao.maps 없음');
             }
             
-            kakao.maps.load(function() {
-              console.log('카카오맵 SDK 로드 완료');
-              
-              var container = document.getElementById('map');
-              var options = {
-                center: new kakao.maps.LatLng(${latitude}, ${longitude}),
-                level: ${zoom}
-              };
-              var map = new kakao.maps.Map(container, options);
-              
-              console.log('지도 생성 완료');
-              
-              // 중심 마커 추가
-              var centerMarker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(${latitude}, ${longitude}),
-                map: map
-              });
-              
-              console.log('마커 추가 완료');
-              
-              // 추가 마커들
-              ${markersScript}
-              
-              // React Native로 성공 메시지 전송
-              if (window.ReactNativeWebView) {
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'success' }));
-              }
+            console.log('카카오맵 SDK 로드 완료');
+            
+            var container = document.getElementById('map');
+            var options = {
+              center: new kakao.maps.LatLng(${latitude}, ${longitude}),
+              level: ${zoom}
+            };
+            var map = new kakao.maps.Map(container, options);
+            
+            console.log('지도 생성 완료');
+            
+            // 중심 마커 추가
+            var centerMarker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(${latitude}, ${longitude}),
+              map: map
             });
+            
+            console.log('마커 추가 완료');
+            
+            // 추가 마커들
+            ${markersScript}
+            
+            // React Native로 성공 메시지 전송
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'success' }));
+            }
           } catch (error) {
             console.error('카카오맵 에러:', error);
             document.getElementById('map').style.display = 'none';
@@ -181,8 +197,19 @@ export default function KakaoMap({
           console.error('HTTP 에러:', nativeEvent.statusCode, nativeEvent.url);
         }}
         renderLoading={() => (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: '#eaf6ff' }}>
-            <ActivityIndicator size="large" color="#25b2e2" />
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#eaf6ff',
+            }}
+          >
+            <ActivityIndicator size='large' color='#25b2e2' />
           </View>
         )}
       />
