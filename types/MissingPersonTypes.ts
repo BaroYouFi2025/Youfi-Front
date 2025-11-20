@@ -24,6 +24,7 @@ export interface MissingPersonFormErrors {
   missingDate?: string;
   height?: string;
   weight?: string;
+   location?: string;
   general?: string;
 }
 

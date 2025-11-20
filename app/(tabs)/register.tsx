@@ -1,7 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import * as Location from 'expo-location';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView } from 'react-native';
- 
+import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
 import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
 import { createMissingPersonReport, uploadPhoto } from '@/services/missingPersonAPI';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
@@ -9,6 +10,13 @@ import { hasFormErrors, validateMissingPersonForm } from '@/utils/validation';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import styled from 'styled-components/native';
+
+const INITIAL_REGION: Region = {
+  latitude: 37.5665,
+  longitude: 126.978,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
 
 const Container = styled.View`
   flex: 1;
@@ -154,17 +162,38 @@ const UploadText = styled.Text`
 const MapContainer = styled.View`
   height: 190px;
   border-radius: 16px;
+  overflow: hidden;
   background-color: #e5e7eb;
-  justify-content: center;
-  align-items: center;
+  border: 1px solid #d1d5db;
   margin-top: 16px;
 `;
 
-const MapPlaceholder = styled.Text`
+const MapPlaceholder = styled.View`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+`;
+
+const MapPlaceholderText = styled.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 14px;
   color: #6b7280;
+`;
+
+const LocationSummary = styled.View`
+  margin-top: 8px;
+`;
+
+const LocationText = styled.Text`
+  font-family: 'Wanted Sans';
+  font-weight: 500;
+  font-size: 10px;
+  color: #4b5563;
 `;
 
 const ErrorText = styled.Text`
@@ -209,6 +238,8 @@ export default function RegisterScreen() {
 
   const [errors, setErrors] = useState<MissingPersonFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
+  const [mapRegion, setMapRegion] = useState<Region>(INITIAL_REGION);
 
   const handleInputChange = (field: keyof MissingPersonData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -236,6 +267,40 @@ export default function RegisterScreen() {
       handleInputChange('photo', result.assets[0].uri);
     }
   };
+
+  const handleMapPress = (event: MapPressEvent) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    const nextLocation: LatLng = { latitude, longitude };
+
+    setSelectedLocation(nextLocation);
+    setMapRegion(prev => ({ ...prev, latitude, longitude }));
+    setFormData(prev => ({ ...prev, location: nextLocation }));
+    if (errors.location) {
+      setErrors(prev => ({ ...prev, location: undefined }));
+    }
+  };
+
+  useEffect(() => {
+    const loadCurrentLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          return;
+        }
+        const current = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = current.coords;
+        setMapRegion(prev => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch current location', error);
+      }
+    };
+
+    loadCurrentLocation();
+  }, []);
 
   const handleSubmit = async () => {
     // Validate form
@@ -278,6 +343,8 @@ export default function RegisterScreen() {
               otherFeatures: '',
             });
             setErrors({});
+            setSelectedLocation(null);
+            setMapRegion(INITIAL_REGION);
           }}
         ]);
       }
@@ -431,10 +498,33 @@ export default function RegisterScreen() {
           </InputGroup>
 
           <InputGroup>
-            <InputLabel>위도,경도 설정</InputLabel>
+            <InputLabel>실종 위치</InputLabel>
             <MapContainer>
-              <MapPlaceholder>지도 위치 선택</MapPlaceholder>
+              <MapView
+                style={{ flex: 1, width: '100%' }}
+                region={mapRegion}
+                initialRegion={INITIAL_REGION}
+                onRegionChangeComplete={setMapRegion}
+                onPress={handleMapPress}
+                showsUserLocation
+                showsMyLocationButton
+              >
+                {selectedLocation && <Marker coordinate={selectedLocation} />}
+              </MapView>
+
+              {!selectedLocation && (
+                <MapPlaceholder pointerEvents="none">
+                  <MapPlaceholderText>지도에서 실종 위치를 탭해주세요</MapPlaceholderText>
+                </MapPlaceholder>
+              )}
             </MapContainer>
+            {selectedLocation && (
+              <LocationSummary>
+                <LocationText>위도: {selectedLocation.latitude.toFixed(5)}</LocationText>
+                <LocationText>경도: {selectedLocation.longitude.toFixed(5)}</LocationText>
+              </LocationSummary>
+            )}
+            {errors.location && <ErrorText>{errors.location}</ErrorText>}
           </InputGroup>
         </FormContainer>
 

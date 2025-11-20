@@ -44,6 +44,15 @@ export const validateMissingPersonForm = (data: MissingPersonData): MissingPerso
     errors.weight = '몸무게는 10kg ~ 300kg 사이로 입력해주세요.';
   }
 
+  // Location validation
+  if (
+    !data.location ||
+    data.location.latitude === undefined ||
+    data.location.longitude === undefined
+  ) {
+    errors.location = '실종 위치를 지도에서 선택해주세요.';
+  }
+
   return errors;
 };
 
