@@ -39,11 +39,10 @@ export const styles = StyleSheet.create({
   -------------------------- */
   card: {
     width: "90%",
-    backgroundColor: "#fff",
     borderRadius: 18,
     alignItems: "center",
-    paddingTop: 25,         // 🔥 수정
-    paddingBottom: 45,      // 🔥 수정
+    paddingTop: 50,         // 👈 🔥 증가: 카드 전체를 아래로 내림
+    paddingBottom: 45,      
     marginBottom: "10%",
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -55,11 +54,11 @@ export const styles = StyleSheet.create({
       프로필 이미지 (수정됨)
   -------------------------- */
   avatar: {
-    width: 160,             // 🔥 200 → 160 (디자인 최적)
+    width: 160,             
     height: 160,
     borderRadius: 80,
-    backgroundColor: "#fff", // 기본 이미지 없을 때 깔끔하게
-    marginTop: 10,           // 🔥 추가됨 — 이미지가 카드 안으로 들어오게 함
+    backgroundColor: "#fff",
+    marginTop: 0,           // 👈 🔥 10 → 0: 카드 내부의 세로 간격 조절
     marginBottom: 18,
     resizeMode: "cover",
   },

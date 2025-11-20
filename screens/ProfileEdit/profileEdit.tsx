@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   Modal,
@@ -9,25 +9,43 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
+  ActivityIndicator, 
 } from 'react-native';
-import axios from 'axios';
-import { styles } from './profileEdit.style';
+import axios, { isAxiosError } from 'axios';
+import { styles } from './profileEdit.style'; 
+import { getAccessToken } from '@/utils/authStorage';
 
-export default function ProfileEdit() {
-  const router = useRouter();
+// 기본 프로필 이미지
+const defaultProfile = require('../../assets/images/default_profile.png');
 
-  const [titleModalVisible, setTitleModalVisible] = useState(false);
-  const [backgroundModalVisible, setBackgroundModalVisible] = useState(false);
+const titleGradeMap: Record<string, string> = {
+  "수색 초보자": "common",
+  "수색 대원": "uncommon",
+  "수색 전문가": "rare",
+};
 
-  // 상태
-  const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
-  const [backgroundName, setBackgroundName] = useState('흰색');
-  const [imageUri, setImageUri] = useState<string | null>(null);
+const TITLE_LIST = Object.keys(titleGradeMap); 
 
-  // 🔥 색상 목록 (색이름 + HEX)
-  const colorOptions = [
+const getTitleImageSource = (title: string) => {
+  const grade = titleGradeMap[title];
+  if (grade) {
+    switch (grade) {
+      case 'common':
+        return require('../../assets/images/badge/common.png');
+      case 'uncommon':
+        return require('../../assets/images/badge/uncommon.png');
+      case 'rare':
+        return require('../../assets/images/badge/rare.png');
+      default:
+        return null;
+    }
+  }
+  return null;
+};
+
+// 배경색 옵션
+const colorOptions = [
     { name: '흰색', color: '#FFFFFF' },
     { name: '연회색', color: '#F8F9FA' },
     { name: '연하늘색', color: '#E3F2FD' },
@@ -37,9 +55,60 @@ export default function ProfileEdit() {
     { name: '연주황색', color: '#FFE8D6' },
     { name: '연분홍색', color: '#F8BBD0' },
     { name: '연보라색', color: '#E1BEE7' },
-  ];
+];
 
-  // 🔥 이미지 선택
+export default function ProfileEdit() {
+  const router = useRouter();
+
+  const [titleModalVisible, setTitleModalVisible] = useState(false);
+  const [backgroundModalVisible, setBackgroundModalVisible] = useState(false);
+
+  // State 초기값
+  const [name, setName] = useState('');
+  const [title, setTitle] = useState('수색 초보자');
+  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
+  const [backgroundName, setBackgroundName] = useState('흰색');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); 
+
+  // 🌟 API에서 기존 프로필 데이터를 불러와 State에 설정 🌟
+  useEffect(() => {
+    const fetchCurrentProfile = async () => {
+      setLoading(true); 
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+            setLoading(false);
+            return router.replace('/login');
+        }
+
+        const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = res.data;
+        
+        // 불러온 데이터로 State 값 초기화
+        setName(data.name || ''); 
+        setTitle(data.title || '수색 초보자'); 
+        setImageUri(data.profileUrl || null);
+        
+        // 배경색과 이름 설정
+        const currentBgColor = data.profileBackgroundColor || '#FFFFFF';
+        setBackgroundColor(currentBgColor);
+        const currentBgOption = colorOptions.find(opt => opt.color === currentBgColor);
+        setBackgroundName(currentBgOption ? currentBgOption.name : '기본 색상');
+
+      } catch (e) {
+        console.error("❌ 프로필 초기 데이터 로딩 실패:", e);
+        Alert.alert('오류', '프로필 정보를 불러오는 데 실패했습니다.');
+      } finally {
+        setLoading(false); 
+      }
+    };
+    fetchCurrentProfile();
+  }, []); 
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -51,46 +120,66 @@ export default function ProfileEdit() {
     }
   };
 
-  // 🔥 저장하기 → API 연동
+  // 🔥 저장 로직 (PATCH 요청)
   const handleSave = async () => {
+    // ... (로직 생략 - 이전과 동일)
     try {
-      const formData = new FormData();
-
-      formData.append('name', name);
-      formData.append('title', title);
-      formData.append('backgroundColor', backgroundColor); // HEX만 전달됨
-
-      if (imageUri) {
-        formData.append('profileImage', {
-          uri: imageUri,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        } as any);
+      const token = await getAccessToken();
+      if (!token) {
+        Alert.alert('오류', '로그인이 필요합니다.');
+        return;
       }
 
-      await axios.put('https://jjm.jojaemin.com/User/updateProfile', formData, {
+      const body: any = {};
+
+      if (name.trim() !== '') body.name = name.trim();
+      if (title.trim() !== '') body.title = title.trim();
+      if (imageUri) body.profileUrl = imageUri;
+      if (backgroundColor) body.profileBackgroundColor = backgroundColor; 
+
+      console.log("👉 PATCH 요청 데이터:", body);
+      console.log("⭐ PATCH 요청 이름 값:", body.name); 
+      console.log("⭐ PATCH 요청 칭호 값:", body.title);
+
+      await axios.patch('https://jjm.jojaemin.com/users/me', body, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer YOUR_JWT_TOKEN`, // 🔥 로그인 토큰 주입
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
-      alert('프로필이 저장되었습니다!');
-      router.back();
+      Alert.alert('성공', '프로필이 저장되었습니다!');
+      router.back(); 
+
     } catch (e) {
-      console.error('프로필 저장 실패:', e);
-      alert('프로필 저장에 실패했습니다.');
+      if (isAxiosError(e) && e.response) {
+        console.error('❌ PATCH 에러 상태 코드:', e.response.status); 
+        console.error('❌ PATCH 에러 응답 데이터:', e.response.data);
+        Alert.alert('저장 실패', `프로필 저장에 실패했습니다. (코드: ${e.response.status})`);
+      } else {
+        console.error('❌ 프로필 저장 실패:', e);
+        Alert.alert('저장 실패', '프로필 저장 중 네트워크 오류가 발생했습니다.');
+      }
     }
   };
+
+  // 로딩 화면 표시
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#4FC3F7" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* 프로필 이미지 */}
         <View style={styles.profileImageSection}>
           <Image
-            source={imageUri ? { uri: imageUri } : require('../../assets/images/profile.png')}
+            source={imageUri ? { uri: imageUri } : defaultProfile} 
             style={styles.profileImage}
           />
           <TouchableOpacity style={styles.changePhotoButton} onPress={pickImage}>
@@ -113,17 +202,27 @@ export default function ProfileEdit() {
         <View style={styles.badgeSection}>
           <Text style={styles.label}>칭호</Text>
           <TouchableOpacity onPress={() => setTitleModalVisible(true)}>
-            <View style={[styles.backgroundBox, { backgroundColor: '#F1F5F9' }]}>
-              <Text style={{ color: '#333' }}>{title || '칭호 선택'}</Text>
+            <View style={styles.titleContainer}> 
+              {getTitleImageSource(title) ? (
+                <Image
+                  source={getTitleImageSource(title)}
+                  style={styles.badgeImage}
+                />
+              ) : (
+                <Text style={[styles.titleBackgroundBox, {textAlign: 'center'}]}>
+                    {title || '칭호 선택'}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* 프로필 배경색 */}
+        {/* 배경색 */}
         <View style={styles.backgroundSection}>
           <Text style={styles.label}>프로필 배경</Text>
 
-          <View style={[styles.backgroundBox, { backgroundColor }]}>
+          {/* 배경색은 동적으로 변하므로 인라인 스타일 유지 */}
+          <View style={[styles.backgroundBox, { backgroundColor }]}> 
             <Text style={styles.backgroundLabel}>{backgroundName}</Text>
           </View>
 
@@ -135,20 +234,20 @@ export default function ProfileEdit() {
           </TouchableOpacity>
         </View>
 
-        {/* 저장 버튼 */}
+        {/* 저장 */}
         <TouchableOpacity
-          style={[styles.changeBackgroundButton, { marginTop: 20, borderColor: '#4FC3F7' }]}
+          // 인라인 스타일 제거: styles.changeBackgroundButton과 styles.saveButton 병합 적용
+          style={[styles.changeBackgroundButton, styles.saveButton]}
           onPress={handleSave}
         >
-          <Text style={[styles.changeBackgroundButtonText, { color: '#4FC3F7' }]}>
+          {/* 인라인 스타일 제거: styles.changeBackgroundButtonText와 styles.saveButtonText 병합 적용 */}
+          <Text style={[styles.changeBackgroundButtonText, styles.saveButtonText]}> 
             저장하기
           </Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* ===================================================== */}
       {/* 칭호 모달 */}
-      {/* ===================================================== */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -160,7 +259,8 @@ export default function ProfileEdit() {
             <Text style={styles.modalTitle}>칭호 선택</Text>
 
             <ScrollView>
-              {['마스터', '정예 헌터', '탐험가', '스카우트', '전설'].map((t, idx) => (
+              {/* 칭호 모달 목록 */}
+              {TITLE_LIST.map((t, idx) => (
                 <TouchableOpacity
                   key={idx}
                   style={styles.titleItem}
@@ -169,7 +269,15 @@ export default function ProfileEdit() {
                     setTitleModalVisible(false);
                   }}
                 >
-                  <Text style={{ fontSize: 16 }}>{t}</Text>
+                  {getTitleImageSource(t) ? (
+                    <Image
+                      source={getTitleImageSource(t)}
+                      style={styles.titleBadgeImage} // styles.titleBadgeImage 적용
+                    />
+                  ) : (
+                    <Text style={{ fontSize: 16 }}>{t}</Text>
+                  )}
+                  
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -201,7 +309,7 @@ export default function ProfileEdit() {
               {colorOptions.map((opt, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.backgroundItem, { backgroundColor: opt.color }]}
+                  style={[styles.backgroundItem, { backgroundColor: opt.color }]} 
                   onPress={() => {
                     setBackgroundColor(opt.color);
                     setBackgroundName(opt.name);
@@ -219,6 +327,7 @@ export default function ProfileEdit() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }

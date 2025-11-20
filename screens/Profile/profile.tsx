@@ -1,8 +1,8 @@
 import { logout as logoutRequest } from '@/services/authAPI';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router'; // 👈 useFocusEffect 추가
+import React, { useCallback, useState } from 'react'; // 👈 useCallback 추가
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './profile.style';
 
@@ -57,30 +57,39 @@ export default function ProfileScreen() {
     );
   };
 
-  // 프로필 GET
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = await getAccessToken();
-        if (!token) return router.replace('/login');
+  // 프로필 GET - 🌟 useFocusEffect로 변경하여 화면 포커스 시마다 데이터 새로고침 🌟
+  useFocusEffect(
+    useCallback(() => {
+        const fetchProfile = async () => {
+            setLoading(true); // 데이터 재로딩 시 로딩 상태 설정
+            try {
+                const token = await getAccessToken();
+                if (!token) return router.replace('/login');
 
-        const res = await axios.get('https://jjm.jojaemin.com/users/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+                const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
 
-        // ❗ 여기 수정됨 — profile이 null일 때 접근하지 않도록 FIX
-        console.log("🔥 profileUrl:", res.data.profileUrl);
+                console.log("🔥 새로고침된 profileUrl:", res.data.profileUrl);
+                console.log("🔥 GET 응답:", res.data);
+                console.log("🔥 배경색 (새로고침):", res.data.profileBackgroundColor);
 
-        setProfile(res.data);
-      } catch (e) {
-        console.log("프로필 불러오기 실패:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchProfile();
-  }, []);
+                setProfile(res.data);
+            } catch (e) {
+                console.log("프로필 불러오기 실패:", e);
+                setProfile(null); // 로딩 실패 시 프로필 실패 화면을 띄우기 위함
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+        
+        // 클린업 함수는 필요하지 않으므로 비워둡니다.
+        return () => {};
+    }, [])
+  );
 
   // 로딩화면
   if (loading) {
@@ -123,7 +132,8 @@ export default function ProfileScreen() {
       </View>
 
       {/* 메인 카드 */}
-      <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}>
+      <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}> 
+        {/* 🌟 배경색이 profile.profileBackgroundColor 값으로 적용됩니다. */}
 
         {/* 기본 이미지 */}
         <Image
@@ -158,14 +168,6 @@ export default function ProfileScreen() {
       >
         <Text style={styles.editBtnText}>✏️ 프로필 편집</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={[styles.editBtn, { backgroundColor: '#ff4444', marginTop: 12 }]}
-        onPress={handleLogout}
-      >
-        <Text style={styles.editBtnText}>🚪 로그아웃</Text>
-      </TouchableOpacity>
-
     </View>
   );
 }
