@@ -181,9 +181,6 @@ export default function ProfileEdit() {
         </View>
       </Modal>
 
-      {/* ===================================================== */}
-      {/* 배경색 모달 */}
-      {/* ===================================================== */}
       <Modal
         animationType="slide"
         transparent={true}
