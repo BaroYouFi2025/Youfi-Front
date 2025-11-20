@@ -106,11 +106,13 @@ export const styles = StyleSheet.create({
     marginBottom: 32,
     width: "100%",
   },
+  titleContainer: {
+    alignItems: 'center',
+  },
 
   badgeImage: {
-    width: "auto",
+    width: 300, 
     height: 60,
-    marginBottom: 0,
     resizeMode: "contain",
   },
 
@@ -118,7 +120,15 @@ export const styles = StyleSheet.create({
     marginBottom: 32,
     width: "100%",
   },
+  
+  // 🌟 새 스타일: 칭호 배경 박스 (임시로 사용하던 회색 배경)
+  titleBackgroundBox: {
+    backgroundColor: '#F1F5F9',
+    // 칭호 이미지의 경우 이 스타일은 사용되지 않거나, 이미지 자체의 크기로 대체됩니다.
+    // 텍스트 폴백을 위해 임시로 넣어둡니다.
+  },
 
+  // 배경색 박스 (기존 로직 유지)
   backgroundBox: {
     width: 100,
     height: 100,
@@ -128,9 +138,18 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    backgroundColor: "#f3f4f6",
     alignSelf: "center",
   },
+  
+  // 🌟 저장하기 버튼 스타일 추가
+  saveButton: {
+    marginTop: 20, 
+    borderColor: '#4FC3F7',
+  },
+  saveButtonText: {
+    color: '#4FC3F7', 
+  },
+
 
   backgroundLabel: {
     fontSize: 12,
@@ -183,8 +202,9 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  // 🌟 칭호 모달 목록 이미지 스타일
   titleBadgeImage: {
-    width: 300,
+    width: "100%",
     height: 70,
     resizeMode: "contain",
   },
