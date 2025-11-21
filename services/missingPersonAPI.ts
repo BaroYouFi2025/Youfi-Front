@@ -1,5 +1,5 @@
+import { MissingPersonAPIRequest, MissingPersonAPIResponse, MissingPersonData } from '@/types/MissingPersonTypes';
 import axios from 'axios';
-import { MissingPersonData, MissingPersonAPIRequest, MissingPersonAPIResponse } from '@/types/MissingPersonTypes';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
 
@@ -49,7 +49,7 @@ export const uploadPhoto = async (photoUri: string): Promise<string> => {
     } as any);
 
     const response = await axios.post<{ url: string }>(
-      `${API_BASE_URL}/images/uploadImage`,
+      `${API_BASE_URL}/images`,
       formData,
       {
         headers: {
