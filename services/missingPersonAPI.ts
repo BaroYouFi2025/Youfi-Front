@@ -7,24 +7,23 @@ export const createMissingPersonReport = async (data: MissingPersonData): Promis
   try {
     const requestData: MissingPersonAPIRequest = {
       name: data.name,
-      birth_date: data.birthDate,
+      birthDate: data.birthDate,
       gender: data.gender,
-      missing_date: data.missingDate,
+      missingDate: data.missingDate,
       height: Number(data.height),
       weight: Number(data.weight),
-      body_type: data.bodyType,
-      physical_features: data.physicalFeatures,
-      top_clothing: data.topClothing,
-      bottom_clothing: data.bottomClothing,
-      other_features: data.otherFeatures,
-      photo_url: data.photo,
-      latitude: data.location?.latitude,
-      longitude: data.location?.longitude,
-      address: data.location?.address,
+      body: data.body,
+      bodyEtc: data.bodyEtc,
+      clothesTop: data.clothesTop,
+      clothesBottom: data.clothesBottom,
+      clothesEtc: data.clothesEtc,
+      photoUrl: data.photo,
+      latitude: data.location?.latitude ?? 0,
+      longitude: data.location?.longitude ?? 0,
     };
 
     const response = await axios.post<MissingPersonAPIResponse>(
-      `${API_BASE_URL}/missing-persons`,
+      `${API_BASE_URL}/missing-persons/register`,
       requestData,
       {
         headers: {
