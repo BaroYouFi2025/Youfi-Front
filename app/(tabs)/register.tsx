@@ -167,6 +167,7 @@ const PhotoUploadContainer = styled.TouchableOpacity`
   justify-content: center;
   align-items: center;
   gap: 8px;
+  overflow: hidden;
 `;
 
 const UploadIcon = styled.Text`
@@ -183,6 +184,11 @@ const UploadText = styled.Text`
   line-height: 16px;
   color: #949494;
   letter-spacing: -0.13px;
+`;
+
+const PhotoPreview = styled.Image`
+  width: 100%;
+  height: 100%;
 `;
 
 const MapContainer = styled.View`
@@ -513,8 +519,14 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>실종자 사진 업로드</InputLabel>
             <PhotoUploadContainer onPress={handlePhotoUpload}>
-              <Feather name="upload" size={32} color="#949494" />
-              <UploadText>사진을 업로드 해주세요</UploadText>
+              {formData.photo ? (
+                <PhotoPreview source={{ uri: formData.photo }} resizeMode="cover" />
+              ) : (
+                <>
+                  <Feather name="upload" size={32} color="#949494" />
+                  <UploadText>사진을 업로드 해주세요</UploadText>
+                </>
+              )}
             </PhotoUploadContainer>
           </InputGroup>
 

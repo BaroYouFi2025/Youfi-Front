@@ -42,14 +42,14 @@ export const createMissingPersonReport = async (data: MissingPersonData): Promis
 export const uploadPhoto = async (photoUri: string): Promise<string> => {
   try {
     const formData = new FormData();
-    formData.append('photo', {
+    formData.append('file', {
       uri: photoUri,
       type: 'image/jpeg',
       name: 'missing_person_photo.jpg',
     } as any);
 
     const response = await axios.post<{ url: string }>(
-      `${API_BASE_URL}/upload/photo`,
+      `${API_BASE_URL}/images/uploadImage`,
       formData,
       {
         headers: {
