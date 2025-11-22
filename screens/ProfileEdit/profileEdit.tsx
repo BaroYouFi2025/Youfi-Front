@@ -42,7 +42,7 @@ export default function ProfileEdit() {
   // 🔥 이미지 선택
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       quality: 1,
     });
 

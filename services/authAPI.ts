@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
 
 const authClient = axios.create({
   baseURL: API_BASE_URL,
