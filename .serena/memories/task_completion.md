@@ -1,0 +1,5 @@
+- Run `npm run lint` before committing; fix autofixable issues.
+- If adding tests (not yet configured), place under __tests__/ with *.test.ts[x] and mock async deps.
+- For high-risk areas (auth/location/reporting), document manual QA steps and results in PR description.
+- Use Conventional Commits; keep commits single-purpose.
+- Include screenshots/videos for UI changes in PRs; link related issues.

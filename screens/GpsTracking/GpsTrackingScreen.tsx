@@ -1,27 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import KakaoMap from '../../components/KakaoMap';
 import YouFiLogo from '../../components/YouFiLogo';
 import {
-    Avatar,
-    BatteryChip,
-    BatteryText,
-    Container,
-    DistanceText,
-    Divider,
-    Header,
-    MapCard,
-    NameRow,
-    PersonContent,
-    PersonName,
-    PersonRow,
-    PersonSection,
-    ScreenScroll,
-    SeparatorDot,
-    Spacer,
-    Title,
-    TitleRow
+  ActionButton,
+  ActionButtonText,
+  ActionsContainer,
+  AddButton,
+  Avatar,
+  BatteryRow,
+  BatteryText,
+  Container,
+  DistanceText,
+  Divider,
+  Header,
+  LabelBadge,
+  LabelText,
+  MapCard,
+  NameGroup,
+  NameRow,
+  PersonContent,
+  PersonName,
+  PersonRow,
+  PersonSection,
+  ScreenScroll,
+  Spacer
 } from './GpsTrackingScreen.styles';
 
 export default function GpsTrackingScreen() {
@@ -31,18 +36,29 @@ export default function GpsTrackingScreen() {
     longitude: 126.9780
   });
 
+  const handleReportPress = () => {
+    router.push('/missing-report');
+  };
+
+  const handleRefresh = () => {
+    // 위치 데이터 갱신 후 KakaoMap에 반영되도록 상태 업데이트 예정
+    setUserLocation((prev) => ({ ...prev }));
+  };
+
+  const handleAddPress = () => {
+    router.push('/gps-add');
+  };
+
   return (
     <Container edges={['top']}>
       <StatusBar style="dark" />
       <ScreenScroll>
         <Header>
           <YouFiLogo />
+          <AddButton onPress={handleAddPress}>
+            <Ionicons name="add" size={24} color="#ffffff" />
+          </AddButton>
         </Header>
-
-        <TitleRow>
-          <Title>GPS</Title>
-          <Ionicons name="chevron-forward" size={20} color="#16171a" />
-        </TitleRow>
 
         <MapCard>
           <KakaoMap
@@ -52,24 +68,38 @@ export default function GpsTrackingScreen() {
           />
         </MapCard>
 
+        <Divider />
+
         <PersonSection>
           <PersonRow>
             <Avatar />
             <PersonContent>
               <NameRow>
-                <PersonName>이름</PersonName>
-                <SeparatorDot>·</SeparatorDot>
+                <NameGroup>
+                  <PersonName>이름</PersonName>
+                  <LabelBadge>
+                    <LabelText>동생</LabelText>
+                  </LabelBadge>
+                </NameGroup>
                 <DistanceText>2.4km</DistanceText>
               </NameRow>
-              <BatteryChip>
-                <Ionicons name="battery-full" size={16} color="#24c879" />
+              <BatteryRow>
+                <Ionicons name="battery-full" size={20} color="#24c879" />
                 <BatteryText>78%</BatteryText>
-              </BatteryChip>
+              </BatteryRow>
             </PersonContent>
           </PersonRow>
         </PersonSection>
 
-        <Divider />
+        <ActionsContainer>
+          <ActionButton $variant="alert" onPress={handleReportPress}>
+            <ActionButtonText>실종 신고</ActionButtonText>
+          </ActionButton>
+          <ActionButton $variant="refresh" onPress={handleRefresh} style={{ marginBottom: 0 }}>
+            <ActionButtonText>새로고침</ActionButtonText>
+          </ActionButton>
+        </ActionsContainer>
+
         <Spacer />
       </ScreenScroll>
     </Container>

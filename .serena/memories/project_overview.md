@@ -1,0 +1,7 @@
+- Purpose: YouFi Expo Router RN app for reporting and tracking missing persons (Android/iOS/web). Auth gated by refresh token in secure storage unless `EXPO_PUBLIC_BYPASS_AUTH` is true.
+- Stack: Expo SDK 54, React Native 0.81, React 19, TypeScript, styled-components, Axios. RN Firebase app/messaging included.
+- Structure: `app/` Expo Router entry, `(tabs)` for bottom tabs; standalone routes (e.g., login, missing-report) wrap screen modules. `screens/` page-level components with `*.styles.ts`. `components/` reusable primitives. `services/`, `utils/`, `constants/` shared logic. `assets/` fonts/images; register fonts in app.json + preload in hooks/app/_layout.
+- Navigation: app/_layout.tsx sets Stack + theme/safe area; initial route depends on `getRefreshToken()` in utils/authStorage.ts.
+- Data: services/missingPersonAPI.ts for API calls; request/response types in types/MissingPersonTypes.ts. Validation in utils/validation.ts. Auth via Expo Secure Store.
+- Config: app.config.ts sets Expo config, typedRoutes + React Compiler; API base `https://api.youfi.com` overridable via `EXPO_PUBLIC_API_URL`.
+- Testing: no automated tests yet; manual QA via npm run start across platforms; add Jest tests under __tests__ if needed.
