@@ -29,20 +29,21 @@ export const styles = StyleSheet.create({
     backgroundColor: "#E6F7FF",
   },
 
+  // 🌟 settingIcon 스타일: <Ionicons> 컴포넌트에 적용
   settingIcon: {
-    fontSize: 20,
+    fontSize: 24,
     color: "#007AFF",
   },
 
   /* -------------------------
-      카드 스타일 (수정됨)
+      카드 스타일
   -------------------------- */
   card: {
     width: "90%",
     borderRadius: 18,
     alignItems: "center",
-    paddingTop: 50,         // 👈 🔥 증가: 카드 전체를 아래로 내림
-    paddingBottom: 45,      
+    paddingTop: 50,
+    paddingBottom: 45,
     marginBottom: "10%",
     shadowColor: "#000",
     shadowOpacity: 0.1,
@@ -51,14 +52,14 @@ export const styles = StyleSheet.create({
   },
 
   /* -------------------------
-      프로필 이미지 (수정됨)
+      프로필 이미지
   -------------------------- */
   avatar: {
-    width: 160,             
+    width: 160,
     height: 160,
     borderRadius: 80,
     backgroundColor: "#fff",
-    marginTop: 0,           // 👈 🔥 10 → 0: 카드 내부의 세로 간격 조절
+    marginTop: 0,
     marginBottom: 18,
     resizeMode: "cover",
   },
@@ -133,10 +134,24 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  // 🌟 추가: 아이콘과 텍스트를 담을 컨테이너
+  editBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // 🌟 추가: 연필 아이콘 전용 스타일
+  editIcon: {
+    fontSize: 18,
+    color: "#fff",
+  },
+
   editBtnText: {
     color: "#fff",
     fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
+    marginLeft: 8,
   },
 });

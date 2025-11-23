@@ -72,7 +72,6 @@ export default function ProfileEdit() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); 
 
-  // 🌟 API에서 기존 프로필 데이터를 불러와 State에 설정 🌟
   useEffect(() => {
     const fetchCurrentProfile = async () => {
       setLoading(true); 

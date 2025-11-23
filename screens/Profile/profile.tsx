@@ -1,9 +1,12 @@
 import { logout as logoutRequest } from '@/services/authAPI';
 import apiClient from '@/services/apiClient';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
-import { useRouter, useFocusEffect } from 'expo-router'; // 👈 useFocusEffect 추가
-import React, { useCallback, useState } from 'react'; // 👈 useCallback 추가
+import axios from 'axios';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
+// 🌟 Ionicons 컴포넌트 임포트 추가
+import { Ionicons } from '@expo/vector-icons';
 import { styles } from './profile.style';
 
 // 칭호 → 등급 매핑
@@ -69,12 +72,6 @@ export default function ProfileScreen() {
                 const res = await apiClient.get('/users/me', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-
-                console.log("🔥 새로고침된 profileUrl:", res.data.profileUrl);
-                console.log("🔥 GET 응답:", res.data);
-                console.log("🔥 배경색 (새로고침):", res.data.profileBackgroundColor);
-
-
                 setProfile(res.data);
             } catch (e) {
                 console.log("프로필 불러오기 실패:", e);
@@ -127,7 +124,8 @@ export default function ProfileScreen() {
           style={styles.settingBtn} 
           onPress={() => router.push('/settings')}
         >
-          <Text style={styles.settingIcon}>⚙️</Text>
+          {/* 🌟 설정 아이콘: Ionicons 컴포넌트로 교체 */}
+          <Ionicons name="settings" style={styles.settingIcon} /> 
         </TouchableOpacity>
       </View>
 
@@ -166,7 +164,13 @@ export default function ProfileScreen() {
         style={styles.editBtn} 
         onPress={() => router.push('/profileEdit')}
       >
-        <Text style={styles.editBtnText}>✏️ 프로필 편집</Text>
+        {/* 🌟 편집 버튼: 오류 방지용 <View> 컨테이너 사용 */}
+        <View style={styles.editBtnContent}>
+            <Ionicons name="pencil" style={styles.editIcon} /> 
+            <Text style={styles.editBtnText}>
+                프로필 편집
+            </Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
