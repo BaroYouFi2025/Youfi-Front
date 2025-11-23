@@ -8,7 +8,7 @@ export const Container = styled(SafeAreaView)`
 `;
 
 export const MapWrapper = styled.View`
-  height: 200px;
+  height: 220px;
   background-color: #eaf6ff;
   overflow: hidden;
 `;
@@ -72,6 +72,16 @@ export const SearchField = styled(TextInput)`
   padding: 0;
 `;
 
+export const SearchStatus = styled.View`
+  align-items: flex-start;
+  margin-bottom: 4px;
+`;
+
+export const SearchStatusText = styled.Text`
+  font-size: 12px;
+  color: #8c8d91;
+`;
+
 export const MemberSection = styled.View`
   background-color: #ffffff;
   border-radius: 16px;
@@ -98,6 +108,14 @@ export const Avatar = styled.View`
   elevation: 2;
 `;
 
+export const AvatarImage = styled.Image`
+  width: 55px;
+  height: 55px;
+  border-radius: 32px;
+  background-color: #e0e0e0;
+  margin-right: 16px;
+`;
+
 export const MemberName = styled.Text`
   flex: 1;
   font-size: 20px;
@@ -105,12 +123,12 @@ export const MemberName = styled.Text`
   color: #16171a;
 `;
 
-export const RelationButton = styled.TouchableOpacity`
+export const RelationButton = styled.TouchableOpacity<{ $active?: boolean }>`
   height: 26px;
   padding: 0 12px;
   border-radius: 12px;
-  border: 1.5px solid #4dc0e7;
-  background-color: #f9fdfe;
+  border: 1.5px solid ${({ $active }) => ($active ? '#25b2e2' : '#4dc0e7')};
+  background-color: ${({ $active }) => ($active ? '#e6f7fd' : '#f9fdfe')};
   align-items: center;
   justify-content: center;
 `;
@@ -124,6 +142,13 @@ export const RelationButtonText = styled.Text`
 export const Divider = styled.View`
   height: 1px;
   background-color: #bbbcbe;
+`;
+
+export const ListEmptyText = styled.Text`
+  font-size: 14px;
+  color: #8c8d91;
+  text-align: center;
+  padding: 12px 0;
 `;
 
 export const BottomPanel = styled.View`
@@ -153,26 +178,26 @@ export const ChipsWrap = styled.View`
   margin-bottom: 16px;
 `;
 
-export const RelationChip = styled.TouchableOpacity`
+export const RelationChip = styled.TouchableOpacity<{ $active?: boolean }>`
   padding: 6px 16px;
   height: 32px;
   border-radius: 16px;
-  border: 1.5px solid #4dc0e7;
-  background-color: #f9fdfe;
+  border: 1.5px solid ${({ $active }) => ($active ? '#25b2e2' : '#4dc0e7')};
+  background-color: ${({ $active }) => ($active ? '#25b2e2' : '#f9fdfe')};
   align-items: center;
   justify-content: center;
 `;
 
-export const RelationChipText = styled.Text`
+export const RelationChipText = styled.Text<{ $active?: boolean }>`
   font-size: 17px;
   font-weight: 500;
-  color: #000000;
+  color: ${({ $active }) => ($active ? '#ffffff' : '#000000')};
 `;
 
-export const SubmitButton = styled.TouchableOpacity`
+export const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   height: 48px;
   border-radius: 16px;
-  background-color: #9fddf2;
+  background-color: ${({ disabled }) => (disabled ? '#cdeef9' : '#9fddf2')};
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
