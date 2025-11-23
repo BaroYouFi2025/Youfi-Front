@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, AppState } from 'react-native';
+import KakaoMap from '../../components/KakaoMap/KakaoMap';
 import { NotificationBox } from '../../components/Notification';
 import YouFiLogo from '../../components/YouFiLogo';
 import { getNearbyMissingPersons } from '../../services/missingPersonAPI';
@@ -15,10 +16,6 @@ import {
   Dot,
   HeaderContainer,
   MapContainer,
-  MapImage,
-  MapMarker,
-  MapOverlay,
-  MarkerIcon,
   MissingPersonCard,
   NotificationTitle,
   PersonDescription,
@@ -51,6 +48,58 @@ export default function HomeScreen() {
   const [nearbyPersons, setNearbyPersons] = useState<NearbyMissingPerson[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [lastQueryLocation, setLastQueryLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
+  const [lastNotificationLoadTime, setLastNotificationLoadTime] = useState<number | null>(null);
+
+  // 설정값
+  const TIME_INTERVAL = 60000; // 1분
+  const DISTANCE_THRESHOLD = 10; // 10미터
+  const LOCATION_CHECK_INTERVAL = 10000; // 10초마다 위치 체크
+  const MIN_LOAD_INTERVAL = 3000; // 최소 조회 간격: 3초 (중복 호출 방지)
+
+  // 두 좌표 간 거리 계산 (미터)
+  const calculateDistance = useCallback((
+    loc1: { latitude: number; longitude: number },
+    loc2: { latitude: number; longitude: number }
+  ): number => {
+    const R = 6371e3; // 지구 반지름 (미터)
+    const φ1 = (loc1.latitude * Math.PI) / 180;
+    const φ2 = (loc2.latitude * Math.PI) / 180;
+    const Δφ = ((loc2.latitude - loc1.latitude) * Math.PI) / 180;
+    const Δλ = ((loc2.longitude - loc1.longitude) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // 거리 (미터)
+  }, []);
+
+  // 조회 필요 여부 판단
+  const shouldFetchNearbyPersons = useCallback((currentLoc: { latitude: number; longitude: number }): boolean => {
+    // 초기 로딩 (한 번도 조회 안 함)
+    if (!lastQueryLocation || !lastQueryTime) {
+      return true;
+    }
+
+    // 시간 기반: 1분 경과
+    const timeSinceLastQuery = Date.now() - lastQueryTime;
+    if (timeSinceLastQuery >= TIME_INTERVAL) {
+      console.log(`🗺️ 1분 경과`);
+      return true;
+    }
+
+    // 거리 기반: 10m 이상 이동
+    const distance = calculateDistance(lastQueryLocation, currentLoc);
+    if (distance >= DISTANCE_THRESHOLD) {
+      return true; // 거리 로그는 위치 체크에서 이미 출력됨
+    }
+
+    // 조회 불필요
+    return false;
+  }, [lastQueryLocation, lastQueryTime, TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
 
   const handleNavPress = (tab: string) => {
     setActiveTab(tab);
@@ -64,34 +113,21 @@ export default function HomeScreen() {
   // 위치 정보 가져오기
   const getCurrentLocation = useCallback(async () => {
     try {
-      console.log('📍 위치 정보 가져오기 시작');
-      
       // 먼저 현재 권한 상태 확인
       let { status } = await Location.getForegroundPermissionsAsync();
-      console.log('📍 현재 위치 권한 상태:', status);
       
       // 권한이 없으면 요청
       if (status !== 'granted') {
-        console.log('📍 위치 권한 요청 중...');
         const permissionResult = await Location.requestForegroundPermissionsAsync();
         status = permissionResult.status;
-        console.log('📍 위치 권한 요청 결과:', status);
+        if (status !== 'granted') {
+          console.warn('⚠️ 위치 권한 거부됨');
+          return null;
+        }
       }
       
-      if (status !== 'granted') {
-        console.warn('⚠️ 위치 권한이 거부되었습니다.');
-        return null;
-      }
-      
-      console.log('📍 위치 권한 확인 완료, 현재 위치 조회 중...');
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-      });
-      
-      console.log('📍 위치 정보 가져오기 성공:', {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        accuracy: location.coords.accuracy,
       });
       
       const coords = {
@@ -102,25 +138,39 @@ export default function HomeScreen() {
       setCurrentLocation(coords);
       return coords;
     } catch (error) {
-      console.error('❌ 위치 정보 가져오기 실패:', error);
+      console.error('❌ 위치 조회 실패:', error);
       return null;
     }
   }, []);
 
-  // 근처 실종자 조회
-  const loadNearbyPersons = useCallback(async () => {
+  // 근처 실종자 조회 (Time + Distance 최적화)
+  const loadNearbyPersons = useCallback(async (force: boolean = false) => {
     try {
-      setLoadingNearby(true);
-      
+      // 로딩 중이면 중복 호출 방지
+      if (loadingNearby) {
+        return;
+      }
+
+      // 최소 간격 체크 (3초 이내 재호출 방지) - force일 때도 적용
+      if (lastQueryTime && Date.now() - lastQueryTime < MIN_LOAD_INTERVAL) {
+        return;
+      }
+
       // 위치 정보가 없으면 가져오기
       let location = currentLocation;
       if (!location) {
         location = await getCurrentLocation();
         if (!location) {
-          console.warn('⚠️ 위치 정보가 없어 근처 실종자를 조회할 수 없습니다.');
           return;
         }
       }
+
+      // 조회 필요 여부 판단 (force가 true면 무조건 조회)
+      if (!force && !shouldFetchNearbyPersons(location)) {
+        return;
+      }
+
+      setLoadingNearby(true);
       
       // 근처 실종자 조회 (반경 1km)
       const response = await getNearbyMissingPersons(
@@ -129,8 +179,25 @@ export default function HomeScreen() {
         1000 // 1km
       );
       
+      // 조회 성공 시 마지막 조회 위치/시간 업데이트
+      setLastQueryLocation(location);
+      setLastQueryTime(Date.now());
+      
       // 최대 2명만 표시
       const displayedPersons = response.content.slice(0, 2);
+      
+      if (displayedPersons.length > 0) {
+        console.log(`🗺️ ========== 홈 화면 실종자 데이터 확인 ==========`);
+        console.log(`🗺️ 발견된 실종자 수: ${displayedPersons.length}`);
+        displayedPersons.forEach((person, index) => {
+          console.log(`🗺️ [${index + 1}] ID: ${person.id}, 이름: ${person.name}`);
+          console.log(`🗺️ [${index + 1}] latitude: ${person.latitude} (타입: ${typeof person.latitude})`);
+          console.log(`🗺️ [${index + 1}] longitude: ${person.longitude} (타입: ${typeof person.longitude})`);
+          console.log(`🗺️ [${index + 1}] 위치 유효성: ${!!(person.latitude && person.longitude)}`);
+        });
+        console.log(`🗺️ ===========================================`);
+      }
+      
       setNearbyPersons(displayedPersons);
     } catch (error) {
       console.error('❌ 근처 실종자 로드 실패:', error);
@@ -139,46 +206,29 @@ export default function HomeScreen() {
     } finally {
       setLoadingNearby(false);
     }
-  }, [currentLocation, getCurrentLocation]);
+  }, [currentLocation, getCurrentLocation, shouldFetchNearbyPersons, loadingNearby, lastQueryTime, MIN_LOAD_INTERVAL]);
 
   const loadNotifications = useCallback(async () => {
     try {
+      // 로딩 중이면 중복 호출 방지
+      if (loadingNotifications) {
+        return;
+      }
+
+      // 최소 간격 체크 (3초 이내 재호출 방지)
+      if (lastNotificationLoadTime && Date.now() - lastNotificationLoadTime < MIN_LOAD_INTERVAL) {
+        return;
+      }
+
       setLoadingNotifications(true);
-      const startTime = Date.now();
-      console.log('📬 ========== 알림 조회 시작 ==========');
-      console.log('📬 조회 시점:', new Date().toISOString());
-      console.log('📬 현재 앱 상태:', AppState.currentState);
+      setLastNotificationLoadTime(Date.now());
       
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
-      const endTime = Date.now();
-      const duration = endTime - startTime;
       
-      console.log('📬 ========== 알림 조회 성공 ==========');
-      console.log('📬 조회 소요 시간:', `${duration}ms`);
-      console.log('📬 총 알림 개수:', allNotifications.length);
-      console.log('📬 읽지 않은 알림 개수:', allNotifications.filter(n => !n.isRead).length);
-      console.log('📬 읽은 알림 개수:', allNotifications.filter(n => n.isRead).length);
-      
-      if (allNotifications.length > 0) {
-        console.log('📬 ========== 알림 상세 정보 ==========');
-        allNotifications.forEach((notification, index) => {
-          console.log(`📬 [${index + 1}] 알림 ID:`, notification.id);
-          console.log(`📬 [${index + 1}] 메시지:`, notification.message);
-          console.log(`📬 [${index + 1}] 읽음 상태:`, notification.isRead ? '✅ 읽음' : '❌ 읽지 않음');
-          console.log(`📬 [${index + 1}] 생성 시간:`, notification.createdAt);
-          console.log(`📬 [${index + 1}] 생성 시간 (포맷):`, new Date(notification.createdAt).toLocaleString('ko-KR'));
-          if (notification.type) {
-            console.log(`📬 [${index + 1}] 알림 타입:`, notification.type);
-          }
-          if (notification.relatedEntityId) {
-            console.log(`📬 [${index + 1}] 관련 ID:`, notification.relatedEntityId);
-          }
-          console.log(`📬 [${index + 1}] 전체 데이터:`, JSON.stringify(notification, null, 2));
-          console.log('📬 ----------------------------------------');
-        });
-      } else {
-        console.log('📬 알림이 없습니다.');
+      const unreadCount = allNotifications.filter(n => !n.isRead).length;
+      if (unreadCount > 0) {
+        console.log(`📬 알림 ${unreadCount}개`);
       }
       
       // 최신순으로 정렬하고 최신 3개만 표시
@@ -187,69 +237,34 @@ export default function HomeScreen() {
       );
       const displayedNotifications = sortedNotifications.slice(0, 3);
       
-      console.log('📬 ========== 화면에 표시할 알림 ==========');
-      console.log('📬 표시할 알림 개수:', displayedNotifications.length);
-      displayedNotifications.forEach((notification, index) => {
-        console.log(`📬 [표시 ${index + 1}] ${notification.isRead ? '✅' : '❌'} ${notification.message.substring(0, 30)}...`);
-      });
-      console.log('📬 ========== 알림 조회 완료 ==========');
-      
       setNotifications(displayedNotifications);
     } catch (error) {
-      console.error('❌ ========== 알림 로드 실패 ==========');
-      console.error('❌ 에러 발생 시점:', new Date().toISOString());
-      console.error('❌ 에러 타입:', error instanceof Error ? error.constructor.name : typeof error);
-      console.error('❌ 에러 메시지:', error instanceof Error ? error.message : String(error));
-      console.error('❌ 에러 스택:', error instanceof Error ? error.stack : 'N/A');
-      console.error('❌ 전체 에러 객체:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-      console.error('❌ ========================================');
+      console.error('❌ 알림 로드 실패:', error instanceof Error ? error.message : String(error));
       // 에러가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
       setNotifications([]);
     } finally {
       setLoadingNotifications(false);
-      console.log('📬 알림 로딩 상태: 완료');
     }
-  }, []);
+  }, [loadingNotifications, lastNotificationLoadTime, MIN_LOAD_INTERVAL]);
 
   // 화면이 포커스될 때마다 알림 및 근처 실종자 새로고침
   useFocusEffect(
     useCallback(() => {
-      console.log('📬 홈 화면 포커스 - 알림 및 근처 실종자 조회 트리거');
       loadNotifications();
-      loadNearbyPersons();
+      loadNearbyPersons(true); // 화면 포커스 시 강제 조회
     }, [loadNotifications, loadNearbyPersons])
   );
 
-  // 앱이 포그라운드에 있을 때 주기적으로 알림 목록 및 근처 실종자 새로고침
+  // 포그라운드에 있을 때 주기적으로 새로고침 (30초마다)
   useEffect(() => {
-    // 앱이 포그라운드로 돌아올 때 즉시 새로고침
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      console.log('📬 앱 상태 변경:', {
-        이전: AppState.currentState,
-        다음: nextAppState,
-        시점: new Date().toISOString(),
-      });
-      if (nextAppState === 'active') {
-        console.log('📬 앱이 포그라운드로 복귀 - 알림 및 근처 실종자 조회 트리거');
-        loadNotifications();
-        loadNearbyPersons();
-      }
-    });
-
-    // 포그라운드에 있을 때 주기적으로 새로고침 (30초마다)
     const interval = setInterval(() => {
       if (AppState.currentState === 'active') {
-        console.log('📬 주기적 알림 및 근처 실종자 조회 트리거 (30초마다)');
         loadNotifications();
-        loadNearbyPersons();
+        loadNearbyPersons(); // 주기적 조회는 Time+Distance 최적화 적용 (force=false)
       }
     }, 30000); // 30초마다
 
-    console.log('📬 주기적 조회 설정 완료 (30초 간격)');
-
     return () => {
-      console.log('📬 조회 리스너 정리');
-      subscription.remove();
       clearInterval(interval);
     };
   }, [loadNotifications, loadNearbyPersons]);
@@ -262,16 +277,8 @@ export default function HomeScreen() {
 
     // 포그라운드에서 푸시 알림 수신 시
     const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
-      console.log('📬 ========== 포그라운드 푸시 알림 수신 ==========');
-      console.log('📬 수신 시점:', new Date().toISOString());
-      console.log('📬 알림 데이터:', JSON.stringify(remoteMessage, null, 2));
-      console.log('📬 알림 제목:', remoteMessage?.notification?.title || 'N/A');
-      console.log('📬 알림 본문:', remoteMessage?.notification?.body || 'N/A');
-      console.log('📬 알림 데이터 (data):', remoteMessage?.data || 'N/A');
-      console.log('📬 메시지 ID:', remoteMessage?.messageId || 'N/A');
-      console.log('📬 ============================================');
+      console.log('📬 푸시 수신');
       // 알림 목록 새로고침
-      console.log('📬 푸시 알림 수신으로 인한 알림 목록 새로고침 트리거');
       loadNotifications();
     });
 
@@ -279,6 +286,56 @@ export default function HomeScreen() {
       unsubscribe();
     };
   }, [loadNotifications]);
+
+  // 주기적으로 위치 체크하여 거리 변화 감지 (5초마다)
+  useEffect(() => {
+    const locationCheckInterval = setInterval(async () => {
+      if (AppState.currentState === 'active') {
+        try {
+          // 위치 권한 확인
+          const { status } = await Location.getForegroundPermissionsAsync();
+          if (status !== 'granted') {
+            return;
+          }
+
+          // 현재 위치 가져오기
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+
+          const newCoords = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          };
+
+          // 이전 위치와 비교
+          if (currentLocation) {
+            const distance = calculateDistance(currentLocation, newCoords);
+
+            // 10m 이상 이동 시 즉시 근처 실종자 조회
+            if (distance >= DISTANCE_THRESHOLD) {
+              console.log(`📍 ${Math.round(distance)}m 이동 감지`);
+              setCurrentLocation(newCoords);
+              // 위치가 업데이트되면 loadNearbyPersons()가 자동으로 거리 체크 후 조회
+              loadNearbyPersons();
+            } else {
+              // 작은 이동은 currentLocation만 업데이트 (로그 생략)
+              setCurrentLocation(newCoords);
+            }
+          } else {
+            // 초기 위치 설정
+            setCurrentLocation(newCoords);
+          }
+        } catch (error) {
+          // 위치 조회 에러는 조용히 무시 (너무 빈번함)
+        }
+      }
+    }, LOCATION_CHECK_INTERVAL); // 10초마다
+
+    return () => {
+      clearInterval(locationCheckInterval);
+    };
+  }, [currentLocation, calculateDistance, DISTANCE_THRESHOLD, LOCATION_CHECK_INTERVAL, loadNearbyPersons]);
 
 
   return (
@@ -416,12 +473,10 @@ export default function HomeScreen() {
 
           {/* Map */}
           <MapContainer>
-            <MapImage source={mapImage} resizeMode="cover">
-              <MapOverlay />
-              <MapMarker>
-                <MarkerIcon />
-              </MapMarker>
-            </MapImage>
+            <KakaoMap 
+              currentLocation={currentLocation}
+              nearbyPersons={nearbyPersons}
+            />
           </MapContainer>
 
           {/* Missing Person Card */}

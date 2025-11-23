@@ -55,6 +55,24 @@ export interface MissingPersonAPIResponse {
   success: boolean;
 }
 
+export interface MissingPersonDetail {
+  missingPersonId: number;
+  name: string;
+  birthDate: string;
+  address: string;
+  missingDate: string;
+  height: number;
+  weight: number;
+  body: string;
+  bodyEtc: string;
+  clothesTop: string;
+  clothesBottom: string;
+  clothesEtc: string;
+  latitude: number;
+  longitude: number;
+  photoUrl?: string;
+}
+
 export interface NearbyMissingPerson {
   id: number;
   name: string;
