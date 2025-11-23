@@ -236,6 +236,7 @@ export default function RootLayout() {
           <Stack.Screen name="signup" options={{ headerShown: false }} />
           <Stack.Screen name="gps-tracking" options={{ headerShown: false }} />
           <Stack.Screen name="missing-report" options={{ headerShown: false }} />
+          <Stack.Screen name="gps-add" options={{ headerShown: false }} />
           <Stack.Screen name="person-found" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
