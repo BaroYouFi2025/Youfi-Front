@@ -1,8 +1,7 @@
 import { MissingPersonAPIRequest, MissingPersonAPIResponse, MissingPersonData, MissingPersonDetail, NearbyMissingPersonsResponse } from '@/types/MissingPersonTypes';
 import { getAccessToken } from '@/utils/authStorage';
-import apiClient from './apiClient';
-import { API_BASE_URL } from './config';
 import { AxiosError, isAxiosError } from 'axios';
+import apiClient from './apiClient';
 
 const requireAccessToken = async (): Promise<string> => {
   const token = await getAccessToken();
@@ -111,11 +110,11 @@ export const getMissingPersonDetail = async (id: number): Promise<MissingPersonD
     
     console.log('🔍 실종자 상세 조회 시작:', { id });
     
-    const response = await axios.get<MissingPersonDetail>(
-      `${API_BASE_URL}/missing-persons/${id}`,
+    const response = await apiClient.get<MissingPersonDetail>(
+      `/missing-persons/${id}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       }
@@ -246,7 +245,7 @@ export const getNearbyMissingPersons = async (
           } catch (error) {
             const personId = person.id || person.missingPersonId || person.personId;
             console.error(`❌ 실종자 ${personId} 상세 조회 실패:`, error);
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
               console.error('❌ 응답 상태:', error.response?.status);
               console.error('❌ 응답 데이터:', error.response?.data);
             }

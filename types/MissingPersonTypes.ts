@@ -74,7 +74,11 @@ export interface MissingPersonDetail {
 }
 
 export interface NearbyMissingPerson {
-  id: number;
+  // API 응답에서 ID 필드명이 상황에 따라 달라 예외적으로 모두 허용
+  id?: number;
+  missingPersonId?: number;
+  personId?: number;
+  missing_person_id?: number;
   name: string;
   birth_date: string;
   gender: 'male' | 'female' | 'private';
