@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { login as loginRequest } from '@/services/authAPI';
@@ -36,6 +36,8 @@ export default function LoginScreen() {
       }
 
       await Promise.all([setAccessToken(accessToken), setRefreshToken(refreshToken)]);
+      
+      // 로그인 성공 후 홈 화면으로 이동 (기기 등록은 회원가입 시에만 수행)
       router.replace('/(tabs)');
     } catch (error) {
       const message = error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해주세요.';

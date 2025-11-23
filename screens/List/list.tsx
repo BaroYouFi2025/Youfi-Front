@@ -23,7 +23,7 @@ export default function MissingList() {
   const router = useRouter();
   const [source, setSource] = useState<'basic' | 'police'>('basic');
 
-  // 👉 API에서 불러올 데이터
+  // 👉 API 데이터 상태
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
 
   // ------------------------------------------------
@@ -38,7 +38,15 @@ export default function MissingList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const mapped = res.data.map((it: any) => ({
+      // 🔥 res.data.content 기반
+      const list = res.data.content;
+
+      if (!Array.isArray(list)) {
+        console.log('❌ content가 배열이 아님:', list);
+        return;
+      }
+
+      const mapped = list.map((it: any) => ({
         id: it.missingPersonId.toString(),
         name: it.name,
         location: it.address,
@@ -58,7 +66,7 @@ export default function MissingList() {
   }, []);
 
   // ------------------------------------------------
-  // 🔥 2) 기존 코드 유지 — 데이터만 API로 교체
+  // 🔥 2) 기본 / 경찰청 데이터 스위칭
   // ------------------------------------------------
   const data = useMemo(
     () => (source === 'basic' ? basicData : POLICE_DATA),
@@ -66,7 +74,7 @@ export default function MissingList() {
   );
 
   // ------------------------------------------------
-  // 🔥 3) 기존 Item UI 유지
+  // 🔥 3) Item UI - 버튼은 항상 "수정하기", 상단(isTop) 클릭은 비활성화
   // ------------------------------------------------
   const Item = ({ item, isTop }: { item: MissingPerson; isTop?: boolean }) => (
     <View style={styles.itemRow}>
@@ -80,8 +88,10 @@ export default function MissingList() {
       />
 
       <View style={styles.itemTextWrap}>
-        <Text style={styles.itemTitle}>
-          {item.name} • {item.location}
+        <Text style={styles.nameText}>{item.name}</Text>
+
+        <Text style={styles.locationDateText}>
+          {item.location}
           {item.date ? ` • ${item.date}` : ''}
         </Text>
 
@@ -91,14 +101,18 @@ export default function MissingList() {
       <TouchableOpacity
         activeOpacity={0.8}
         style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
-        onPress={() =>
+        onPress={() => {
+          // 🔥 찾는 중 항목은 아무 동작 안함
+          if (isTop) return;
+
+          // 🔥 나머지는 수정하기 화면으로 이동 (경로 변경 가능)
           router.push({
-            pathname: source === 'basic' ? '/detail' : '/police_detail',
+            pathname: '/', //여기에 수정하기 경로 집어 넣으면 됨!!!!!!!
             params: { ...item },
-          })
-        }
+          });
+        }}
       >
-        <Text style={styles.pillBtnText}>자세히 보기</Text>
+        <Text style={styles.pillBtnText}>수정하기</Text>
       </TouchableOpacity>
     </View>
   );
