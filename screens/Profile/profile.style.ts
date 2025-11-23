@@ -1,4 +1,3 @@
-//profile.style.ts
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -8,6 +7,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 40,
   },
+
   header: {
     width: "100%",
     paddingHorizontal: 20,
@@ -16,83 +16,104 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   logo: {
     width: 110,
     height: 35,
     resizeMode: "contain",
   },
+
   settingBtn: {
     padding: 8,
     borderRadius: 20,
     backgroundColor: "#E6F7FF",
   },
+
   settingIcon: {
     fontSize: 20,
     color: "#007AFF",
   },
 
-  // 카드
+  /* -------------------------
+      카드 스타일 (수정됨)
+  -------------------------- */
   card: {
     width: "90%",
-    backgroundColor: "#fff",
     borderRadius: 18,
     alignItems: "center",
-    paddingVertical: 45,
+    paddingTop: 50,         // 👈 🔥 증가: 카드 전체를 아래로 내림
+    paddingBottom: 45,      
     marginBottom: "10%",
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+
+  /* -------------------------
+      프로필 이미지 (수정됨)
+  -------------------------- */
   avatar: {
-    width: 200,
-    height: 200,
+    width: 160,             
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "#fff",
+    marginTop: 0,           // 👈 🔥 10 → 0: 카드 내부의 세로 간격 조절
     marginBottom: 18,
-    borderRadius: 100,
+    resizeMode: "cover",
   },
+
   name: {
     fontSize: 26,
     fontWeight: "700",
     color: "#000",
   },
+
   level: {
     fontSize: 20,
     fontWeight: "500",
     color: "#333",
     marginTop: 8,
   },
+
   levelNum: {
     fontSize: 22,
     fontWeight: "700",
     color: "#007AFF",
   },
 
-  // 경험치 바
+  /* -------------------------
+      경험치 바
+  -------------------------- */
   progressBar: {
     width: "80%",
     height: 16,
     backgroundColor: "#E0E0E0",
     borderRadius: 10,
     marginTop: 20,
-    overflow: "hidden", // ✅ 내부 fill이 넘어가지 않게
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "#BDBDBD",
   },
+
   progressFill: {
     height: "100%",
-    backgroundColor: "#4FC3F7", // ✅ 테마 색상
+    backgroundColor: "#4FC3F7",
     borderRadius: 10,
     position: "absolute",
     left: 0,
     top: 0,
   },
+
   expText: {
     marginTop: 8,
     fontSize: 15,
     color: "#333",
   },
 
-  // 칭호 뱃지
+  /* -------------------------
+      칭호 뱃지
+  -------------------------- */
   badgeImage: {
     marginTop: 18,
     width: 280,
@@ -100,7 +121,9 @@ export const styles = StyleSheet.create({
     resizeMode: "contain",
   },
 
-  // 편집 버튼
+  /* -------------------------
+      프로필 편집 버튼
+  -------------------------- */
   editBtn: {
     width: "80%",
     backgroundColor: "#4FC3F7",
@@ -109,6 +132,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   editBtnText: {
     color: "#fff",
     fontSize: 17,

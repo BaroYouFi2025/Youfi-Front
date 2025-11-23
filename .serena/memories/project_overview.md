@@ -1,0 +1,8 @@
+# Project Overview
+- Purpose: YouFi is an Expo Router-based React Native app to help users report and track missing persons; auth gated by refresh token stored in secure storage unless `EXPO_PUBLIC_BYPASS_AUTH` is true.
+- Platforms/Tech: Expo SDK 54, React Native 0.81, React 19.1, TypeScript, styled-components; uses Expo Router, axios, react-native-maps, AsyncStorage, Secure Store, RN Firebase (app/messaging), React Navigation tabs; path aliases in tsconfig.
+- Architecture: `app/` holds Expo Router entry and per-route wrappers; `(tabs)` for bottom tab layout, standalone routes like `login.tsx`, `missing-report.tsx` wrap screen modules. `screens/` contains page-level components with colocated `*.styles.ts`. Reusable UI primitives live in `components/`. Shared logic in `services/`, `utils/`, `constants/`. Assets/fonts in `assets/` and registered in `app.json` + loaded in `app/_layout.tsx`.
+- Navigation: `app/_layout.tsx` wires Stack + Safe Area + theme providers and chooses `(tabs)` vs `login` based on `getRefreshToken()` in `utils/authStorage.ts`. Tabs in `app/(tabs)` wrap screen modules and use router navigation helpers.
+- Data & Services: API calls via `services/missingPersonAPI.ts` with types in `types/MissingPersonTypes.ts`; validation helpers in `utils/validation.ts`; auth state stored in secure store and must be cleared on logout.
+- Styling: styled-components in `*.styles.ts`, definitions near bottom; reuse design tokens; prefer existing components like `YouFiLogo`, `ThemedView` before new primitives.
+- Env/Config: `app.config.ts` surfaces `EXPO_PUBLIC_API_URL` (default `https://api.youfi.com`), enables typed routes + React Compiler. Fonts loaded via `useFonts` in `app/_layout.tsx`.

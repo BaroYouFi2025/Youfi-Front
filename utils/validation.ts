@@ -15,15 +15,17 @@ export const validateMissingPersonForm = (data: MissingPersonData): MissingPerso
     errors.birthDate = '생년월일을 입력해주세요.';
   } else if (!isValidDate(data.birthDate)) {
     errors.birthDate = '올바른 날짜 형식으로 입력해주세요. (YYYY-MM-DD)';
+  } else if (new Date(data.birthDate) > new Date()) {
+    errors.birthDate = '생년월일은 오늘 이전이어야 합니다.';
   }
 
   // Missing date validation
   if (!data.missingDate.trim()) {
     errors.missingDate = '실종일자를 입력해주세요.';
-  } else if (!isValidDate(data.missingDate)) {
-    errors.missingDate = '올바른 날짜 형식으로 입력해주세요. (YYYY-MM-DD)';
+  } else if (!isValidDateTime(data.missingDate)) {
+    errors.missingDate = '올바른 날짜/시간으로 입력해주세요.';
   } else if (new Date(data.missingDate) > new Date()) {
-    errors.missingDate = '실종일자는 오늘 이전이어야 합니다.';
+    errors.missingDate = '실종일자는 현재 시각 이전이어야 합니다.';
   }
 
   // Height validation
@@ -44,6 +46,25 @@ export const validateMissingPersonForm = (data: MissingPersonData): MissingPerso
     errors.weight = '몸무게는 10kg ~ 300kg 사이로 입력해주세요.';
   }
 
+  if (!data.body.trim()) {
+    errors.body = '체형을 입력해주세요.';
+  }
+  if (!data.clothesTop.trim()) {
+    errors.clothesTop = '상의 정보를 입력해주세요.';
+  }
+  if (!data.clothesBottom.trim()) {
+    errors.clothesBottom = '하의 정보를 입력해주세요.';
+  }
+
+  // Location validation
+  if (
+    !data.location ||
+    data.location.latitude === undefined ||
+    data.location.longitude === undefined
+  ) {
+    errors.location = '실종 위치를 지도에서 선택해주세요.';
+  }
+
   return errors;
 };
 
@@ -51,6 +72,11 @@ export const isValidDate = (dateString: string): boolean => {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(dateString)) return false;
 
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date.getTime());
+};
+
+export const isValidDateTime = (dateString: string): boolean => {
   const date = new Date(dateString);
   return date instanceof Date && !isNaN(date.getTime());
 };

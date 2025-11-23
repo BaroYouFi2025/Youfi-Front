@@ -2,7 +2,7 @@ import { generateDeviceUuid, getDeviceUuid, setDeviceUuid, setStoredFCMToken } f
 import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.youfi.com';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
 
 const deviceClient = axios.create({
   baseURL: API_BASE_URL,
