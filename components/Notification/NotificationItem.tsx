@@ -102,6 +102,7 @@ export default function NotificationItem({
           <FoundReportIconContainer>
             <FoundReportIconGradient>
               <LinearGradient
+                key="gradient-1"
                 colors={['#cef1fc', '#2ccbff']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -114,6 +115,7 @@ export default function NotificationItem({
                 }}
               />
               <LinearGradient
+                key="gradient-2"
                 colors={['#cef1fc', '#2ccbff']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -128,6 +130,7 @@ export default function NotificationItem({
                 }}
               />
               <LinearGradient
+                key="gradient-3"
                 colors={['#cef1fc', '#2ccbff']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -142,6 +145,7 @@ export default function NotificationItem({
                 }}
               />
               <LinearGradient
+                key="gradient-4"
                 colors={['#cef1fc', '#2ccbff']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
