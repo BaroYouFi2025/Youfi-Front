@@ -45,6 +45,16 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
     'expo-web-browser',
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission: 'YouFi는 실종자 추적을 위해 위치 정보가 필요합니다.',
+        locationAlwaysPermission: 'YouFi는 실종자 추적을 위해 백그라운드에서도 위치 정보가 필요합니다.',
+        locationWhenInUsePermission: 'YouFi는 실종자 추적을 위해 위치 정보가 필요합니다.',
+        isIosBackgroundLocationEnabled: true,
+        isAndroidBackgroundLocationEnabled: true,
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
