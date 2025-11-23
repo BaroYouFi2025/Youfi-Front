@@ -1,62 +1,110 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import axios from 'axios';
+import { useLocalSearchParams } from 'expo-router';
 import { styles } from './police_detail.style';
 import ConfirmReportModal from './ConfirmReportModal';
 import SuccessReportModal from './SuccessReportModal';
+import { getAccessToken } from '@/utils/authStorage';
 
-const PERSON_IMAGE = require('../../assets/images/people.png');
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
+const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 
-const personData = {
-  name: '아르쿠',
-  ageAtTime: '32세',
-  currentAge: '52세',
-  date: '20050821',
-  clothing: '캐주얼차림',
-  category: '가출인',
-  gender: '남자',
-  location: '부산소프트웨어마이스터고등학교',
-  description: '수염이 있음, 평소 집을 자주 나감, 금일도 식재료를 사기 위해 집을 나갔다가 실종됨, 아내가 계속해서 112에 신고함',
+type PoliceDetail = {
+  id: string;
+  name?: string;
+  ageAtTime?: number | string;
+  currentAge?: number | string;
+  occurrenceDate?: string;
+  dress?: string;
+  category?: string;
+  gender?: string;
+  location?: string;
+  description?: string;
+  photoUrl?: string;
 };
 
-const infoFields = [
-  { label: '이름', value: personData.name },
-  { label: '나이(당시)', value: personData.ageAtTime },
-  { label: '나이(현재)', value: personData.currentAge },
-  { label: '발생일시', value: personData.date },
-  { label: '착의사항', value: personData.clothing },
-  { label: '대상구분', value: personData.category },
-  { label: '성별구분', value: personData.gender },
-  { label: '발생장소', value: personData.location },
-];
+const resolvePhotoUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const base = API_BASE_URL.replace(/\/+$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+};
 
 const PoliceDetailScreen = () => {
-  // 상태 변수 변경: isModalVisible -> isConfirmModalVisible 로 변경하여 명확하게 구분
+  const params = useLocalSearchParams<{ id?: string; name?: string; photoUrl?: string }>();
   const [isConfirmModalVisible, setConfirmModalVisible] = useState(false);
-  // 새로운 상태 추가: 신고 완료 모달 관리
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
+  const [detail, setDetail] = useState<PoliceDetail | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleGoBack = () => {
-    console.log('뒤로가기');
+  const personId = params.id;
+
+  const fetchDetail = async () => {
+    if (!personId) return;
+    try {
+      setLoading(true);
+      const token = await getAccessToken();
+      const res = await axios.get(`${API_BASE_URL}/missing/police/missing-persons/${personId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      const data = res.data;
+      setDetail({
+        id: (data.missingPersonPoliceId ?? data.id ?? '').toString(),
+        name: data.name,
+        ageAtTime: data.missingAge,
+        currentAge: data.ageNow,
+        occurrenceDate: data.occurrenceDate,
+        dress: data.dress,
+        category: data.statusCode,
+        gender: data.gender,
+        location: data.occurrenceAddress,
+        description: data.specialFeatures,
+        photoUrl: resolvePhotoUrl(data.photoUrl ?? params.photoUrl),
+      });
+    } catch (err) {
+      console.log('❌ 경찰청 상세 불러오기 실패:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 신고하기 버튼 핸들러 -> 첫 번째 모달 (확인) 오픈
+  useEffect(() => {
+    fetchDetail();
+  }, [personId]);
+
+  const uiData = useMemo(() => {
+    const d = detail;
+    return {
+      name: d?.name || params.name || '이름 미상',
+      ageAtTime: d?.ageAtTime ?? '-',
+      currentAge: d?.currentAge ?? '-',
+      occurrenceDate: d?.occurrenceDate ?? '-',
+      dress: d?.dress ?? '-',
+      category: d?.category ?? '-',
+      gender: d?.gender ?? '-',
+      location: d?.location ?? '-',
+      description: d?.description ?? '-',
+      photo: d?.photoUrl || resolvePhotoUrl(params.photoUrl),
+    };
+  }, [detail, params.name, params.photoUrl]);
+
   const handleReport = () => {
     setConfirmModalVisible(true);
   };
 
-  // 첫 번째 모달: 취소 버튼 핸들러
   const handleCancel = () => {
     setConfirmModalVisible(false);
   };
 
-  // ⭐️ 핵심 수정: '확인' 클릭 시 첫 번째 모달을 닫고, 두 번째 모달을 엽니다.
   const handleConfirm = () => {
     setConfirmModalVisible(false);
-    setSuccessModalVisible(true); // 두 번째 모달 열기
+    setSuccessModalVisible(true);
     console.log('확인 클릭: 182로 연결');
   };
 
-  // 두 번째 모달: 닫기 핸들러 (빈 곳 클릭 시)
   const handleSuccessClose = () => {
     setSuccessModalVisible(false);
     console.log('신고 완료 모달 닫기');
@@ -68,9 +116,9 @@ const PoliceDetailScreen = () => {
         visible={isConfirmModalVisible}
         onCancel={handleCancel}
         onConfirm={handleConfirm}
-        name={personData.name}
-        ageAtTime={personData.ageAtTime}
-        avatar={PERSON_IMAGE}
+        name={uiData.name}
+        ageAtTime={typeof uiData.ageAtTime === 'number' ? `${uiData.ageAtTime}세` : uiData.ageAtTime}
+        avatar={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
       />
       <SuccessReportModal
         visible={isSuccessModalVisible}
@@ -78,12 +126,30 @@ const PoliceDetailScreen = () => {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {loading && (
+          <View style={{ paddingVertical: 20 }}>
+            <ActivityIndicator />
+          </View>
+        )}
+
         <View style={styles.imageContainer}>
-          <Image source={PERSON_IMAGE} style={styles.profileImage} />
+          <Image
+            source={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
+            style={styles.profileImage}
+          />
         </View>
 
         <View style={styles.infoSection}>
-          {infoFields.map((item, index) => (
+          {[
+            { label: '이름', value: uiData.name },
+            { label: '나이(당시)', value: typeof uiData.ageAtTime === 'number' ? `${uiData.ageAtTime}세` : uiData.ageAtTime },
+            { label: '나이(현재)', value: typeof uiData.currentAge === 'number' ? `${uiData.currentAge}세` : uiData.currentAge },
+            { label: '발생일시', value: uiData.occurrenceDate },
+            { label: '착의사항', value: uiData.dress },
+            { label: '대상구분', value: uiData.category },
+            { label: '성별구분', value: uiData.gender },
+            { label: '발생장소', value: uiData.location },
+          ].map((item, index) => (
             <View key={index} style={styles.infoRow}>
               <Text style={styles.infoLabel}>{item.label} : </Text>
               <Text style={styles.infoValue}>{item.value}</Text>
@@ -93,7 +159,7 @@ const PoliceDetailScreen = () => {
         
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>기타사항 : </Text>
-            <Text style={styles.infoValue}>{personData.description}</Text>
+            <Text style={styles.infoValue}>{uiData.description}</Text>
         </View>
 
         <View style={styles.spacer} />
