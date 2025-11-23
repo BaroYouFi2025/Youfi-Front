@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import { styles } from './list.styles';
 import { getAccessToken } from '@/utils/authStorage';
 
@@ -34,7 +34,7 @@ export default function MissingList() {
       const token = await getAccessToken();
       if (!token) return;
 
-      const res = await axios.get('https://jjm.jojaemin.com/missing-persons/me', {
+      const res = await apiClient.get('/missing-persons/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

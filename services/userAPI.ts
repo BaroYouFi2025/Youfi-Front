@@ -1,13 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 
 import { SliceResponse, UserSearchRequest, UserSummary } from '@/types/UserTypes';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
-
-const userClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-});
+import apiClient from './apiClient';
 
 const resolveErrorMessage = (error: AxiosError): string => {
   if (error.response?.data) {
@@ -38,7 +33,7 @@ export const searchUsers = async (
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const response = await userClient.post<SliceResponse<UserSummary>>(
+    const response = await apiClient.post<SliceResponse<UserSummary>>(
       '/users/search',
       withDefaults(payload),
       { headers },

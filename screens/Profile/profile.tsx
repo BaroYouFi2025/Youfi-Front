@@ -1,6 +1,6 @@
 import { logout as logoutRequest } from '@/services/authAPI';
+import apiClient from '@/services/apiClient';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
-import axios from 'axios';
 import { useRouter, useFocusEffect } from 'expo-router'; // 👈 useFocusEffect 추가
 import React, { useCallback, useState } from 'react'; // 👈 useCallback 추가
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
                 const token = await getAccessToken();
                 if (!token) return router.replace('/login');
 
-                const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+                const res = await apiClient.get('/users/me', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 

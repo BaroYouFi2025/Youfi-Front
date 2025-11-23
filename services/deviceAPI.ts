@@ -1,60 +1,9 @@
-import { generateDeviceUuid, getDeviceUuid, setDeviceUuid, setStoredFCMToken } from '@/utils/authStorage';
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
-
-const deviceClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-});
-
-// 요청 인터셉터: 실제 전송되는 요청 로깅
-deviceClient.interceptors.request.use(
-  (config) => {
-    console.log('📤 실제 전송되는 요청:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      headers: config.headers,
-      data: config.data,
-    });
-    return config;
-  },
-  (error) => {
-    console.error('❌ 요청 설정 오류:', error);
-    return Promise.reject(error);
-  }
-);
-
-// 응답 인터셉터: 실제 받은 응답 로깅
-deviceClient.interceptors.response.use(
-  (response) => {
-    console.log('📥 실제 받은 응답:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.config.url,
-      data: response.data,
-      headers: response.headers,
-    });
-    return response;
-  },
-  (error) => {
-    console.error('❌ 실제 받은 에러 응답:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-      fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
-      headers: error.config?.headers,
-      requestData: error.config?.data,
-      responseData: error.response?.data,
-      responseHeaders: error.response?.headers,
-    });
-    return Promise.reject(error);
-  }
-);
+import apiClient from './apiClient';
+import { API_BASE_URL } from './config';
+import { generateDeviceUuid, getDeviceUuid, setDeviceUuid, setStoredFCMToken } from '@/utils/authStorage';
 
 // 레거시 인터페이스 (하위 호환성을 위해 유지)
 interface RegisterDeviceRequest {
@@ -170,7 +119,7 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       tokenLength: accessToken?.length || 0,
     });
 
-    const response = await deviceClient.post<DeviceRegisterResponse>(
+    const response = await apiClient.post<DeviceRegisterResponse>(
       '/devices/register',
       requestBody,
       { headers }
@@ -284,7 +233,7 @@ export const registerDeviceWithUuid = async (
       },
     });
 
-    const response = await deviceClient.post<DeviceRegisterResponse>(
+    const response = await apiClient.post<DeviceRegisterResponse>(
       '/devices/register',
       requestBody,
       { headers }
@@ -377,7 +326,7 @@ export const updateGpsLocation = async (
       hasAuth: !!accessToken,
     });
 
-    const response = await deviceClient.post<GpsUpdateResponse>(
+    const response = await apiClient.post<GpsUpdateResponse>(
       '/devices/gps',
       requestBody,
       { headers }

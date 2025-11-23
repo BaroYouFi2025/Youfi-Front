@@ -1,8 +1,8 @@
 import { MissingPersonAPIRequest, MissingPersonAPIResponse, MissingPersonData, MissingPersonDetail, NearbyMissingPersonsResponse } from '@/types/MissingPersonTypes';
 import { getAccessToken } from '@/utils/authStorage';
-import axios, { AxiosError } from 'axios';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
+import apiClient from './apiClient';
+import { API_BASE_URL } from './config';
+import { AxiosError, isAxiosError } from 'axios';
 
 const requireAccessToken = async (): Promise<string> => {
   const token = await getAccessToken();
@@ -53,8 +53,8 @@ export const createMissingPersonReport = async (data: MissingPersonData): Promis
       longitude: data.location?.longitude ?? 0,
     };
 
-    const response = await axios.post<MissingPersonAPIResponse>(
-      `${API_BASE_URL}/missing-persons/register`,
+    const response = await apiClient.post<MissingPersonAPIResponse>(
+      '/missing-persons/register',
       requestData,
       {
         headers: {
@@ -82,8 +82,8 @@ export const uploadPhoto = async (photoUri: string): Promise<string> => {
       name: 'missing_person_photo.jpg',
     } as any);
 
-    const response = await axios.post<{ url: string }>(
-      `${API_BASE_URL}/images`,
+    const response = await apiClient.post<{ url: string }>(
+      '/images',
       formData,
       {
         headers: {
@@ -154,18 +154,23 @@ export const getNearbyMissingPersons = async (
     console.log('🗺️ 조회 시점:', new Date().toISOString());
     console.log('🗺️ 위치 정보:', { latitude, longitude, radius });
     
-    const response = await axios.get<NearbyMissingPersonsResponse>(
-      `${API_BASE_URL}/missing-persons/nearby`,
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    const response = await apiClient.get<NearbyMissingPersonsResponse>(
+      '/missing-persons/nearby',
       {
         params: {
           latitude,
           longitude,
           radius,
         },
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       }
     );
     
@@ -278,7 +283,7 @@ export const getNearbyMissingPersons = async (
     console.error('❌ 에러 발생 시점:', new Date().toISOString());
     console.error('❌ 에러 타입:', error instanceof Error ? error.constructor.name : typeof error);
     console.error('❌ 에러 메시지:', error instanceof Error ? error.message : String(error));
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       console.error('❌ 응답 상태:', error.response?.status);
       console.error('❌ 응답 데이터:', JSON.stringify(error.response?.data, null, 2));
     }
