@@ -1,9 +1,10 @@
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import apiClient from '@/services/apiClient';
-import { styles } from './list.styles';
 import { getAccessToken } from '@/utils/authStorage';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
@@ -162,22 +163,11 @@ export default function MissingList() {
 
   const fetchBasicData = async () => {
     try {
-      const token = await getAccessToken();
+      console.log('[MissingList] 내 실종자 목록 불러오기 시작: GET /missing-persons/me');
+      const list = await getMyMissingPersons();
+      console.log('[MissingList] 내 실종자 목록 API 응답', list);
 
-      const res = await axios.get(`${API_BASE_URL}/missing-persons/search`, {
-        params: { page: 0, size: 20 },
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-
-      // API 응답이 페이지 객체({ content: [...] }) 형태라 content를 우선 사용
-      const raw = res.data;
-      const items = Array.isArray(raw)
-        ? raw
-        : raw?.content
-          ?? raw?.data?.content
-          ?? [];
-
-      setBasicData(mapToListData(items));
+      setBasicData(mapToListData(list));
     } catch (err) {
       console.log('❌ 실종자 불러오기 실패:', err);
     }
@@ -187,7 +177,7 @@ export default function MissingList() {
     try {
       const token = await getAccessToken();
 
-      const res = await axios.get('https://jjm.jojaemin.com/missing/police/missing-persons', {
+      const res = await apiClient.get('/missing/police/missing-persons', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
@@ -206,9 +196,11 @@ export default function MissingList() {
     }
   };
 
-  useEffect(() => {
-    fetchBasicData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchBasicData();
+    }, [])
+  );
 
   useEffect(() => {
     if (source === 'police' && policeData.length === 0) {
@@ -234,7 +226,7 @@ export default function MissingList() {
     const isTop = variant === 'top';
     const isPolice = variant === 'police';
     const buttonText = isTop ? '수정하기' : '자세히 보기';
-    const targetPath = isPolice ? '/police_detail' : '/detail';
+    const targetPath = isPolice ? '/police_detail' : '/missing-persons/[id]';
 
     return (
       <View style={styles.itemRow}>
@@ -248,7 +240,7 @@ export default function MissingList() {
           <Text style={styles.nameText}>
             {item.name}
           </Text>
-          
+
           {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
           <Text style={styles.locationDateText}>
             {item.location}
@@ -263,10 +255,18 @@ export default function MissingList() {
           activeOpacity={0.8}
           style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
           onPress={() => {
-            router.push({
-              pathname: targetPath,
-              params: { ...item },
-            });
+            console.log('[MissingList] 버튼 클릭', { id: item.id, variant });
+            if (isPolice) {
+              router.push({
+                pathname: targetPath,
+                params: { ...item },
+              });
+            } else {
+              router.push({
+                pathname: '/missing-persons/[id]',
+                params: { id: item.id },
+              });
+            }
           }}
         >
           <Text style={styles.pillBtnText}>{buttonText}</Text>
