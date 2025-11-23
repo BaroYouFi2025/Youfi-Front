@@ -492,8 +492,10 @@ export default function HomeScreen() {
                 <PersonText>근처에 실종자가 없습니다.</PersonText>
               </PersonItem>
             ) : (
-              nearbyPersons.map((person, index) => (
-                <PersonItem key={person.id} style={{ borderBottomWidth: index === nearbyPersons.length - 1 ? 0 : 1 }}>
+              nearbyPersons.map((person, index) => {
+                const personKey = person.id ?? person.missingPersonId ?? person.personId ?? person.missing_person_id ?? `nearby-${index}`;
+                return (
+                  <PersonItem key={personKey} style={{ borderBottomWidth: index === nearbyPersons.length - 1 ? 0 : 1 }}>
                   {person.photo_url && <PersonImage source={{ uri: person.photo_url }} />}
                   {!person.photo_url && <PersonImage />}
                   <PersonInfo>
@@ -514,8 +516,9 @@ export default function HomeScreen() {
                   <ReportButton onPress={() => router.push('/missing-report')}>
                     <ReportButtonText>신고하기</ReportButtonText>
                   </ReportButton>
-                </PersonItem>
-              ))
+                  </PersonItem>
+                );
+              })
             )}
           </MissingPersonCard>
         </ContentArea>
