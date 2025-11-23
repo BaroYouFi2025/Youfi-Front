@@ -1,9 +1,9 @@
 import { AxiosError } from 'axios';
 
 import {
-  PhoneVerificationRequest,
-  PhoneVerificationResponse,
-  PhoneVerificationStatusResponse,
+    PhoneVerificationRequest,
+    PhoneVerificationResponse,
+    PhoneVerificationStatusResponse,
 } from '@/types/PhoneVerificationTypes';
 
 import apiClient from './apiClient';
