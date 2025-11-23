@@ -97,9 +97,150 @@ export const ContentArea = styled.View`
 
 export const NotificationBox = styled.View`
   width: 100%;
-  height: 132px;
-  border: 1px solid #000000;
+  min-height: 132px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
   margin-bottom: 20px;
+  padding: 16px;
+  gap: 12px;
+  shadow-color: #000000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.1;
+  shadow-radius: 8px;
+  elevation: 3;
+`;
+
+export const NotificationContent = styled.Text`
+  font-size: 14px;
+  color: #949494;
+  text-align: center;
+  margin-top: 40px;
+  font-family: 'Wanted Sans';
+  font-weight: 400;
+`;
+
+export const NotificationItem = styled.View<{ isUnread?: boolean }>`
+  padding: 12px 0;
+  border-bottom-width: 1px;
+  border-bottom-color: #f2f3f4;
+  background-color: ${(props: { isUnread?: boolean }) => props.isUnread ? '#f9fdfe' : 'transparent'};
+  border-radius: 8px;
+  padding-horizontal: 8px;
+  margin-horizontal: -8px;
+`;
+
+export const NotificationHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+export const NotificationIconContainer = styled.View`
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+`;
+
+export const NotificationIcon = styled.View`
+  width: 40px;
+  height: 40px;
+  background-color: #cef1fc;
+  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+`;
+
+export const NotificationUnreadDot = styled.View`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #25b2e2;
+  border-radius: 4px;
+  border-width: 2px;
+  border-color: #ffffff;
+`;
+
+export const NotificationHeaderText = styled.View`
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const NotificationTitleText = styled.Text`
+  font-size: 14px;
+  font-weight: 700;
+  color: #16171a;
+  flex: 1;
+  font-family: 'Wanted Sans';
+  letter-spacing: -0.14px;
+`;
+
+export const NotificationTime = styled.Text`
+  font-size: 12px;
+  color: #949494;
+  margin-left: 8px;
+  font-family: 'Wanted Sans';
+  font-weight: 400;
+`;
+
+export const NotificationMessage = styled.Text`
+  font-size: 12px;
+  font-weight: 400;
+  color: #16171a;
+  margin-bottom: 8px;
+  line-height: 18px;
+  font-family: 'Wanted Sans';
+  letter-spacing: -0.12px;
+`;
+
+export const NotificationActions = styled.View`
+  flex-direction: row;
+  gap: 8px;
+  align-self: flex-end;
+  margin-top: 4px;
+`;
+
+export const AcceptButton = styled.TouchableOpacity`
+  background-color: #25b2e2;
+  border-radius: 8px;
+  padding: 8px 16px;
+  min-width: 60px;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const RejectButton = styled.TouchableOpacity`
+  background-color: #ffffff;
+  border: 1px solid #ff6f61;
+  border-radius: 8px;
+  padding: 8px 16px;
+  min-width: 60px;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const DetailButton = styled.TouchableOpacity`
+  background-color: #f9fdfe;
+  border: 1px solid #25b2e2;
+  border-radius: 8px;
+  padding: 8px 16px;
+  align-self: flex-end;
+  margin-top: 4px;
+`;
+
+export const ActionButtonText = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Wanted Sans';
+  letter-spacing: -0.12px;
 `;
 
 export const MapContainer = styled.View`
