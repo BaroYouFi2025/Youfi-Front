@@ -1,7 +1,11 @@
-# Suggested Commands
-- Install deps: `npm install`
-- Start dev server (QR / platform selection): `npm run start`
-- Platform runs: `npm run ios` / `npm run android` / `npm run web`
-- Lint: `npm run lint` (eslint-config-expo)
-- Reset caches/project skeleton: `npm run reset-project`
-- Expo entry: `expo-router/entry` (main).
+## Core dev
+- `npm install` – install deps.
+- `npm run start` – start Expo dev server.
+- `npm run ios` / `npm run android` – run platform dev build.
+- `npm run web` – run web target.
+
+## Quality
+- `npm run lint` – lint via eslint-config-expo.
+
+## Maintenance
+- `npm run reset-project` – clear Expo/Metro caches (scripts/reset-project.js).

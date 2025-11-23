@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import { styles } from './list.styles';
 import { getAccessToken } from '@/utils/authStorage';
 
@@ -103,7 +103,7 @@ export default function MissingList() {
   const router = useRouter();
   const [source, setSource] = useState<'basic' | 'police'>('basic');
 
-  // 👉 API에서 불러올 데이터
+  // 👉 API 데이터 상태
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
 
@@ -202,7 +202,7 @@ export default function MissingList() {
   }, [source, policeData.length]);
 
   // ------------------------------------------------
-  // 🔥 2) 기존 코드 유지 — 데이터만 API로 교체
+  // 🔥 2) 기본 / 경찰청 데이터 스위칭
   // ------------------------------------------------
   const data = useMemo(
     () => (source === 'basic' ? basicData : policeData),
