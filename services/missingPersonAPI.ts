@@ -1,8 +1,12 @@
 import {
+  AIAssetType,
+  ApplyAIImageResponse,
+  GenerateAIImageResponse,
   MissingPersonAPIRequest,
   MissingPersonAPIResponse,
   MissingPersonData,
   MissingPersonDetail,
+  MissingPersonDetailResponse,
   MissingPersonSightingRequest,
   MissingPersonSightingResponse,
   NearbyMissingPersonsResponse,
@@ -38,6 +42,71 @@ const toApiDateTime = (value: string): string => {
   if (Number.isNaN(date.getTime())) return value;
   // API는 스웨거 예시처럼 밀리초/타임존 없이 "YYYY-MM-DDTHH:mm:ss"를 기대
   return date.toISOString().slice(0, 19);
+};
+
+const extractList = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === 'object') {
+    const obj = payload as Record<string, unknown>;
+
+    if (Array.isArray(obj.content)) {
+      return obj.content;
+    }
+
+    if (Array.isArray(obj.data)) {
+      return obj.data;
+    }
+
+    const dataField = obj.data as Record<string, unknown> | undefined;
+    if (dataField && Array.isArray(dataField.content)) {
+      return dataField.content;
+    }
+  }
+
+  return [];
+};
+
+export const getMyMissingPersons = async (): Promise<any[]> => {
+  try {
+    const accessToken = await requireAccessToken();
+    console.log('[missingPersonAPI] GET /missing-persons/me 요청 시작');
+    const response = await apiClient.get('/missing-persons/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log('[missingPersonAPI] GET /missing-persons/me 응답', {
+      status: response.status,
+      data: response.data,
+    });
+
+    return extractList(response.data);
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error fetching user missing persons:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const getMissingPersonById = async (id: string | number): Promise<MissingPersonDetailResponse> => {
+  try {
+    const accessToken = await requireAccessToken();
+    console.log('[missingPersonAPI] GET /missing-persons/:id 요청 시작', { id });
+    const response = await apiClient.get(`/missing-persons/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    console.log('[missingPersonAPI] GET /missing-persons/:id 응답', {
+      id,
+      status: response.status,
+      data: response.data,
+    });
+    return response.data as MissingPersonDetailResponse;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error fetching missing person detail:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
 };
 
 export const createMissingPersonReport = async (data: MissingPersonData): Promise<MissingPersonAPIResponse> => {
@@ -79,6 +148,54 @@ export const createMissingPersonReport = async (data: MissingPersonData): Promis
   }
 };
 
+export const updateMissingPerson = async (
+  id: string | number,
+  data: MissingPersonData
+): Promise<MissingPersonAPIResponse> => {
+  try {
+    const accessToken = await requireAccessToken();
+    const requestData: MissingPersonAPIRequest = {
+      name: data.name,
+      birthDate: data.birthDate,
+      gender: data.gender,
+      missingDate: toApiDateTime(data.missingDate),
+      height: Number(data.height),
+      weight: Number(data.weight),
+      body: data.body,
+      bodyEtc: data.bodyEtc,
+      clothesTop: data.clothesTop,
+      clothesBottom: data.clothesBottom,
+      clothesEtc: data.clothesEtc,
+      photoUrl: data.photo,
+      latitude: data.location?.latitude ?? 0,
+      longitude: data.location?.longitude ?? 0,
+    };
+
+    console.log('[missingPersonAPI] PUT /missing-persons/register/:id 요청 시작', { id, requestData });
+    const response = await apiClient.put<MissingPersonAPIResponse>(
+      `/missing-persons/register/${id}`,
+      requestData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    console.log('[missingPersonAPI] PUT /missing-persons/register/:id 응답', {
+      id,
+      status: response.status,
+      data: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error updating missing person:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
 export const uploadPhoto = async (photoUri: string): Promise<string> => {
   try {
     const accessToken = await requireAccessToken();
@@ -115,9 +232,9 @@ export const uploadPhoto = async (photoUri: string): Promise<string> => {
 export const getMissingPersonDetail = async (id: number): Promise<MissingPersonDetail> => {
   try {
     const accessToken = await getAccessToken();
-    
+
     console.log('🔍 실종자 상세 조회 시작:', { id });
-    
+
     const response = await apiClient.get<MissingPersonDetail>(
       `/missing-persons/${id}`,
       {
@@ -127,14 +244,14 @@ export const getMissingPersonDetail = async (id: number): Promise<MissingPersonD
         },
       }
     );
-    
+
     console.log('✅ 실종자 상세 조회 성공:', {
       id: response.data.missingPersonId,
       name: response.data.name,
       latitude: response.data.latitude,
       longitude: response.data.longitude,
     });
-    
+
     return response.data;
   } catch (error) {
     console.error('❌ 실종자 상세 조회 실패:', { id, error });
@@ -156,11 +273,11 @@ export const getNearbyMissingPersons = async (
   try {
     const accessToken = await getAccessToken();
     const startTime = Date.now();
-    
+
     console.log('🗺️ ========== 근처 실종자 조회 시작 ==========');
     console.log('🗺️ 조회 시점:', new Date().toISOString());
     console.log('🗺️ 위치 정보:', { latitude, longitude, radius });
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -180,19 +297,19 @@ export const getNearbyMissingPersons = async (
         headers,
       }
     );
-    
+
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
+
     console.log('🗺️ ========== 근처 실종자 조회 성공 ==========');
     console.log('🗺️ 조회 소요 시간:', `${duration}ms`);
     console.log('🗺️ 총 실종자 수:', response.data.totalElements);
     console.log('🗺️ 현재 페이지 실종자 수:', response.data.content.length);
-    
+
     console.log('🗺️ ========== nearby API 전체 응답 확인 ==========');
     console.log('🗺️ 전체 응답:', JSON.stringify(response.data, null, 2));
     console.log('🗺️ =======================================');
-    
+
     // 각 실종자의 상세 정보를 조회하여 위치 정보 추가
     if (response.data.content.length > 0) {
       console.log('🗺️ ========== nearby API 첫 번째 실종자 확인 ==========');
@@ -206,15 +323,15 @@ export const getNearbyMissingPersons = async (
       });
       console.log('🗺️ 모든 키:', Object.keys(response.data.content[0]));
       console.log('🗺️ ================================================');
-      
+
       console.log('🗺️ ========== 실종자 상세 정보 조회 시작 ==========');
-      
+
       const personsWithDetails = await Promise.all(
         response.data.content.map(async (person) => {
           try {
             // ID 필드명이 다를 수 있으므로 여러 가능성 확인
             const personId = person.id || person.missingPersonId || person.personId || (person as any).missing_person_id;
-            
+
             console.log('🔍 ID 찾기 시도:', {
               'person.id': person.id,
               'person.missingPersonId': person.missingPersonId,
@@ -223,7 +340,7 @@ export const getNearbyMissingPersons = async (
               '최종 personId': personId,
               'person 전체': person,
             });
-            
+
             if (!personId) {
               console.error('❌ 실종자 ID를 찾을 수 없음:', {
                 person,
@@ -231,10 +348,10 @@ export const getNearbyMissingPersons = async (
               });
               return person;
             }
-            
+
             console.log('🔍 실종자 상세 조회 시작:', { personId });
             const detail = await getMissingPersonDetail(personId);
-            
+
             // 상세 정보의 필드명을 NearbyMissingPerson 타입에 맞게 변환
             return {
               ...person,
@@ -262,7 +379,7 @@ export const getNearbyMissingPersons = async (
           }
         })
       );
-      
+
       console.log('🗺️ ========== 실종자 위치 정보 확인 ==========');
       personsWithDetails.forEach((person, index) => {
         console.log(`🗺️ [${index + 1}] ID:`, person.id);
@@ -273,9 +390,9 @@ export const getNearbyMissingPersons = async (
         console.log(`🗺️ [${index + 1}] 거리:`, person.distance ? `${person.distance}m` : 'N/A');
         console.log('🗺️ ----------------------------------------');
       });
-      
+
       console.log('🗺️ ========== 근처 실종자 조회 완료 ==========');
-      
+
       return {
         ...response.data,
         content: personsWithDetails,
@@ -318,6 +435,99 @@ export const reportMissingPersonSighting = async (
   } catch (error) {
     const axiosError = error as AxiosError;
     console.error('Error reporting missing person sighting:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const generateAIImage = async (
+  missingPersonId: number,
+  assetType: AIAssetType = 'AGE_PROGRESSION'
+): Promise<GenerateAIImageResponse> => {
+  try {
+    const accessToken = await requireAccessToken();
+    console.log('[missingPersonAPI] POST /ai/images/generate 요청 시작', { missingPersonId, assetType });
+
+    const response = await apiClient.post<GenerateAIImageResponse>(
+      '/ai/images/generate',
+      { missingPersonId, assetType },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        timeout: 120000, // AI 생성은 시간이 오래 걸릴 수 있으므로 2분으로 설정
+      }
+    );
+
+    console.log('[missingPersonAPI] POST /ai/images/generate 응답', {
+      status: response.status,
+      data: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error generating AI image:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const closeMissingPerson = async (id: string | number): Promise<void> => {
+  try {
+    const accessToken = await requireAccessToken();
+    console.log('[missingPersonAPI] POST /missing-persons/:id/close 요청 시작', { id });
+
+    await apiClient.post(
+      `/missing-persons/${id}/close`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    console.log('[missingPersonAPI] POST /missing-persons/:id/close 완료', { id });
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error closing missing person:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const applyAIImage = async (
+  missingPersonId: number,
+  assetType: AIAssetType,
+  selectedImageUrl: string
+): Promise<ApplyAIImageResponse> => {
+  try {
+    const accessToken = await requireAccessToken();
+    console.log('[missingPersonAPI] POST /ai/images/apply 요청 시작', {
+      missingPersonId,
+      assetType,
+      selectedImageUrl,
+    });
+
+    const response = await apiClient.post<ApplyAIImageResponse>(
+      '/ai/images/apply',
+      { missingPersonId, assetType, selectedImageUrl },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    console.log('[missingPersonAPI] POST /ai/images/apply 응답', {
+      status: response.status,
+      data: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error applying AI image:', axiosError.response?.data ?? axiosError.message);
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
