@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Modal } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { styles } from './police_detail.style';
+import ConfirmReportModal from './ConfirmReportModal';
+import SuccessReportModal from './SuccessReportModal';
 
 const PERSON_IMAGE = require('../../assets/images/people.png');
 
@@ -60,76 +62,20 @@ const PoliceDetailScreen = () => {
     console.log('신고 완료 모달 닫기');
   };
 
-  const renderConfirmModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={isConfirmModalVisible}
-      onRequestClose={handleCancel}
-    >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>정말 신고하시겠습니까?</Text>
-
-          <View style={styles.modalPersonInfoRow}>
-            <Image source={PERSON_IMAGE} style={styles.modalProfileImage} />
-            <View style={styles.modalTextGroup}>
-                <Text style={styles.modalNameText}>{personData.name}(남)</Text>
-                <Text style={styles.modalAgeText}>{personData.ageAtTime}(당시)</Text>
-            </View>
-          </View>
-
-          <Text style={styles.modalDescription}>
-            확인 시 실종자 발견 점수를 위해 182번으로 연결됩니다.
-          </Text>
-
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]} 
-                onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>취소</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmButton]} 
-                onPress={handleConfirm}
-            >
-              <Text style={styles.confirmButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const renderSuccessModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={isSuccessModalVisible}
-      onRequestClose={handleSuccessClose}
-    >
-      <View style={styles.centeredView}>
-        <TouchableOpacity
-          style={{ position: 'absolute', inset: 0 }}
-          activeOpacity={1}
-          onPress={handleSuccessClose}
-        />
-        
-        <View style={styles.successModalView}>
-          <Text style={styles.successMessageTitle}>신고 해주셔서 감사합니다</Text>
-          <Text style={styles.successMessageSubtitle}>빈곳을 클릭해주세요</Text>
-        </View>
-      </View>
-    </Modal>
-  );
-  
-
   return (
     <SafeAreaView style={styles.container}>
-      {renderConfirmModal()}
-      {renderSuccessModal()}
+      <ConfirmReportModal
+        visible={isConfirmModalVisible}
+        onCancel={handleCancel}
+        onConfirm={handleConfirm}
+        name={personData.name}
+        ageAtTime={personData.ageAtTime}
+        avatar={PERSON_IMAGE}
+      />
+      <SuccessReportModal
+        visible={isSuccessModalVisible}
+        onClose={handleSuccessClose}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.imageContainer}>
