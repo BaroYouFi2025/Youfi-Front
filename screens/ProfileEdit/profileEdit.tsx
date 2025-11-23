@@ -12,7 +12,8 @@ import {
   Alert,
   ActivityIndicator, 
 } from 'react-native';
-import axios, { isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
+import apiClient from '@/services/apiClient';
 import { styles } from './profileEdit.style'; 
 import { getAccessToken } from '@/utils/authStorage';
 
@@ -82,7 +83,7 @@ export default function ProfileEdit() {
             return router.replace('/login');
         }
 
-        const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+        const res = await apiClient.get('/users/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -141,7 +142,7 @@ export default function ProfileEdit() {
       console.log("⭐ PATCH 요청 이름 값:", body.name); 
       console.log("⭐ PATCH 요청 칭호 값:", body.title);
 
-      await axios.patch('https://jjm.jojaemin.com/users/me', body, {
+      await apiClient.patch('/users/me', body, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

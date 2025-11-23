@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 
 import {
   PhoneVerificationRequest,
@@ -6,12 +6,7 @@ import {
   PhoneVerificationStatusResponse,
 } from '@/types/PhoneVerificationTypes';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
-
-const phoneVerificationClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-});
+import apiClient from './apiClient';
 
 const resolveErrorMessage = (error: AxiosError): string => {
   if (error.response?.data) {
@@ -30,7 +25,7 @@ export const requestPhoneVerificationToken = async (
   payload: PhoneVerificationRequest,
 ): Promise<PhoneVerificationResponse> => {
   try {
-    const response = await phoneVerificationClient.post<PhoneVerificationResponse>(
+    const response = await apiClient.post<PhoneVerificationResponse>(
       '/auth/phone/verifications',
       payload,
       {
@@ -48,7 +43,7 @@ export const checkPhoneVerificationStatus = async (
   phoneNumber: string,
 ): Promise<PhoneVerificationStatusResponse> => {
   try {
-    const response = await phoneVerificationClient.get<PhoneVerificationStatusResponse>(
+    const response = await apiClient.get<PhoneVerificationStatusResponse>(
       '/auth/phone/verifications',
       {
         params: { phoneNumber },

@@ -1,4 +1,5 @@
-import { getRefreshToken } from '@/utils/authStorage';
+import { refreshTokens } from '@/services/authAPI';
+import { clearStoredTokens, getRefreshToken, setAccessToken, setRefreshToken } from '@/utils/authStorage';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 
@@ -19,8 +20,22 @@ export default function Index() {
       
       const token = await getRefreshToken();
       console.log('🔍 Token from storage:', token ? 'EXISTS' : 'NULL');
-      console.log('🔍 hasToken will be:', Boolean(token));
-      setHasToken(Boolean(token));
+
+      if (!token) {
+        setHasToken(false);
+        return;
+      }
+
+      try {
+        const refreshed = await refreshTokens(token);
+        await Promise.all([setAccessToken(refreshed.accessToken), setRefreshToken(refreshed.refreshToken)]);
+        console.log('✅ Refresh token valid, updated access token');
+        setHasToken(true);
+      } catch (error) {
+        console.warn('⚠️ Refresh token invalid, clearing stored tokens');
+        await clearStoredTokens();
+        setHasToken(false);
+      }
     };
     checkAuth();
   }, [bypassAuth]);
