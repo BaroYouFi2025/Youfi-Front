@@ -127,8 +127,8 @@ export const RelationButton = styled.TouchableOpacity<{ $active?: boolean }>`
   height: 26px;
   padding: 0 12px;
   border-radius: 12px;
-  border: 1.5px solid ${({ $active }) => ($active ? '#25b2e2' : '#4dc0e7')};
-  background-color: ${({ $active }) => ($active ? '#e6f7fd' : '#f9fdfe')};
+  border: 1.5px solid ${({ $active }: { $active?: boolean }) => ($active ? '#25b2e2' : '#4dc0e7')};
+  background-color: ${({ $active }: { $active?: boolean }) => ($active ? '#e6f7fd' : '#f9fdfe')};
   align-items: center;
   justify-content: center;
 `;
@@ -182,8 +182,8 @@ export const RelationChip = styled.TouchableOpacity<{ $active?: boolean }>`
   padding: 6px 16px;
   height: 32px;
   border-radius: 16px;
-  border: 1.5px solid ${({ $active }) => ($active ? '#25b2e2' : '#4dc0e7')};
-  background-color: ${({ $active }) => ($active ? '#25b2e2' : '#f9fdfe')};
+  border: 1.5px solid ${({ $active }: { $active?: boolean }) => ($active ? '#25b2e2' : '#4dc0e7')};
+  background-color: ${({ $active }: { $active?: boolean }) => ($active ? '#25b2e2' : '#f9fdfe')};
   align-items: center;
   justify-content: center;
 `;
@@ -191,13 +191,13 @@ export const RelationChip = styled.TouchableOpacity<{ $active?: boolean }>`
 export const RelationChipText = styled.Text<{ $active?: boolean }>`
   font-size: 17px;
   font-weight: 500;
-  color: ${({ $active }) => ($active ? '#ffffff' : '#000000')};
+  color: ${({ $active }: { $active?: boolean }) => ($active ? '#ffffff' : '#000000')};
 `;
 
 export const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   height: 48px;
   border-radius: 16px;
-  background-color: ${({ disabled }) => (disabled ? '#cdeef9' : '#9fddf2')};
+  background-color: ${({ disabled }: { disabled?: boolean }) => (disabled ? '#cdeef9' : '#9fddf2')};
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;

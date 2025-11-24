@@ -34,26 +34,24 @@ interface KakaoMapProps {
 }
 
 export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLocations = [] }: KakaoMapProps) {
-  const KAKAO_MAP_API_KEY = process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || 'YOUR_KAKAO_MAP_API_KEY';
+  const KAKAO_MAP_API_KEY = process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || '';
 
-  console.log('🗺️ ========== KakaoMap 렌더링 ==========');
-  console.log('🗺️ API Key 존재:', !!KAKAO_MAP_API_KEY && KAKAO_MAP_API_KEY !== 'YOUR_KAKAO_MAP_API_KEY');
-  console.log('🗺️ API Key 미리보기:', KAKAO_MAP_API_KEY.substring(0, 10) + '...');
-  console.log('🗺️ 현재 위치 존재:', !!currentLocation);
-  console.log('🗺️ 현재 위치:', currentLocation);
-  console.log('🗺️ 근처 실종자 수:', nearbyPersons.length);
-  console.log('👥 구성원 수:', memberLocations.length);
+  if (!KAKAO_MAP_API_KEY) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: '#ff6b6b', textAlign: 'center' }}>
+          Kakao Map API 키가 설정되지 않았습니다.{'\n'}
+          EXPO_PUBLIC_KAKAO_MAP_API_KEY 환경 변수를 확인해주세요.
+        </Text>
+      </View>
+    );
+  }
+
 
   if (nearbyPersons.length > 0) {
-    console.log('🗺️ ========== 근처 실종자 위치 확인 ==========');
     nearbyPersons.forEach((person, index) => {
-      console.log(`🗺️ [${index + 1}] 이름:`, person.name);
-      console.log(`🗺️ [${index + 1}] latitude:`, person.latitude, '타입:', typeof person.latitude);
-      console.log(`🗺️ [${index + 1}] longitude:`, person.longitude, '타입:', typeof person.longitude);
-      console.log(`🗺️ [${index + 1}] 위치 유효:`, !!(person.latitude && person.longitude));
     });
   }
-  console.log('🗺️ =========================================');
 
   // 기본 위치 (서울)
   const defaultLat = currentLocation?.latitude || 37.5665;
@@ -77,7 +75,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
         <div id="map"></div>
         <script>
             try {
-                console.log('🗺️ Kakao Maps 초기화 시작');
                 
                 // kakao 객체 확인
                 if (typeof kakao === 'undefined') {
@@ -95,7 +92,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
                     level: 5
                 };
                 var map = new kakao.maps.Map(container, options);
-                console.log('✅ 지도 생성 완료');
 
             // 내 위치 마커 (파란색)
             ${currentLocation ? `
@@ -112,9 +108,7 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
             ` : ''}
 
             // 실종자 위치 마커들 (빨간색)
-            console.log('🗺️ 실종자 마커 생성 시작, 총 ${nearbyPersons.length}명');
             ${nearbyPersons.map((person, index) => `
-                console.log('🗺️ [${index + 1}] 마커 생성: ${person.name}, lat: ${person.latitude}, lng: ${person.longitude}');
                 var position${index} = new kakao.maps.LatLng(${person.latitude}, ${person.longitude});
                 
                 // 실종자 마커 커스텀 오버레이
@@ -137,9 +131,7 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
             `).join('\n')}
 
             // 구성원 위치 마커들 (초록색)
-            console.log('👥 구성원 마커 생성 시작, 총 ${memberLocations.length}명');
             ${memberLocations.map((member, index) => `
-                console.log('👥 [${index + 1}] 마커 생성: ${member.name}, lat: ${member.location.latitude}, lng: ${member.location.longitude}');
                 var memberPosition${index} = new kakao.maps.LatLng(${member.location.latitude}, ${member.location.longitude});
                 
                 // 구성원 마커 커스텀 오버레이 (이름 + 관계)
@@ -180,10 +172,8 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
                 
                 // 지도 범위 재설정
                 map.setBounds(bounds);
-                console.log('✅ 지도 범위 설정 완료 (실종자: ${nearbyPersons.length}, 구성원: ${memberLocations.length})');
             ` : ''}
                 
-                console.log('✅ Kakao Maps 초기화 완료');
                 
                 // React Native로 성공 메시지 전달
                 if (window.ReactNativeWebView) {
@@ -217,7 +207,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
       if (data.type === 'error') {
         console.error('🗺️ WebView 에러:', data.message);
       } else if (data.type === 'success') {
-        console.log('🗺️ WebView 성공:', data.message);
       }
     } catch (error) {
       console.error('🗺️ 메시지 파싱 에러:', error);
@@ -230,7 +219,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
   };
 
   const handleLoadEnd = () => {
-    console.log('🗺️ WebView 로드 완료');
   };
 
   // memberLocations가 변경될 때 WebView를 다시 렌더링하기 위한 키

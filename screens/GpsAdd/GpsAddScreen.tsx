@@ -77,7 +77,6 @@ export default function GpsAddScreen() {
           setSelectedUserId(null);
         }
       } catch (error) {
-        console.warn('사용자 검색 실패:', error);
         Alert.alert('검색에 실패했어요', error instanceof Error ? error.message : '다시 시도해주세요.');
       } finally {
         setLoading(false);
@@ -118,7 +117,7 @@ export default function GpsAddScreen() {
     <Container edges={['top']}>
       <StatusBar style="dark" />
       <MapWrapper>
-        <KakaoMap latitude={37.5665} longitude={126.9780} zoom={3} />
+        <KakaoMap currentLocation={{ latitude: 37.5665, longitude: 126.9780 }} nearbyPersons={[]} />
       </MapWrapper>
 
       <ContentCard>

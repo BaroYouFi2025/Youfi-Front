@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import KakaoMap from '../../components/KakaoMap';
 import YouFiLogo from '../../components/YouFiLogo';
 import { connectMemberLocationStream, disconnectMemberLocationStream } from '../../services/memberLocationAPI';
@@ -35,19 +36,77 @@ export default function GpsTrackingScreen() {
   // 구성원 위치 상태
   const [memberLocations, setMemberLocations] = useState<MemberLocation[]>([]);
 
-  // TODO: 실제 GPS 데이터로 교체 필요
-  const [userLocation, setUserLocation] = useState({
-    latitude: 37.5665,
-    longitude: 126.9780
-  });
+  // 현재 위치 상태 (실제 GPS 데이터)
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+
+  // 위치 정보 가져오기
+  const getCurrentLocation = useCallback(async () => {
+    try {
+      // 1. 위치 서비스 활성화 여부 확인
+      const enabled = await Location.hasServicesEnabledAsync();
+      if (!enabled) {
+        // 위치 서비스가 비활성화된 경우 기본값 사용
+        setUserLocation({ latitude: 37.5665, longitude: 126.9780 });
+        setLocationLoading(false);
+        return null;
+      }
+
+      // 2. 권한 확인
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        const permissionResult = await Location.requestForegroundPermissionsAsync();
+        status = permissionResult.status;
+        if (status !== 'granted') {
+          // 권한이 없으면 기본값 사용
+          setUserLocation({ latitude: 37.5665, longitude: 126.9780 });
+          setLocationLoading(false);
+          return null;
+        }
+      }
+
+      // 3. 마지막으로 알려진 위치 먼저 시도 (빠름)
+      let location = await Location.getLastKnownPositionAsync();
+
+      // 4. 없으면 현재 위치 조회 (정확함, 느림)
+      if (!location) {
+        location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      }
+
+      if (location) {
+        const coords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        setUserLocation(coords);
+        setLocationLoading(false);
+        return coords;
+      }
+
+      // 위치를 가져올 수 없으면 기본값 사용
+      setUserLocation({ latitude: 37.5665, longitude: 126.9780 });
+      setLocationLoading(false);
+      return null;
+    } catch (error) {
+      console.error('❌ 위치 조회 실패:', error);
+      // 에러 발생 시 기본값 사용
+      setUserLocation({ latitude: 37.5665, longitude: 126.9780 });
+      setLocationLoading(false);
+      return null;
+    }
+  }, []);
+
+  // 초기 위치 로드
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
 
   // SSE 연결: 구성원 위치 실시간 수신
   useEffect(() => {
-    console.log('📡 GPS 추적 화면 - 구성원 위치 SSE 연결 시작');
-
     connectMemberLocationStream({
       onUpdate: (members) => {
-        console.log(`👥 구성원 위치 업데이트: ${members.length}명`);
         setMemberLocations(members);
       },
       onError: (error) => {
@@ -60,7 +119,6 @@ export default function GpsTrackingScreen() {
 
     // 컴포넌트 언마운트 시 연결 해제
     return () => {
-      console.log('📡 GPS 추적 화면 - 구성원 위치 SSE 연결 해제');
       disconnectMemberLocationStream();
     };
   }, []);
@@ -69,9 +127,10 @@ export default function GpsTrackingScreen() {
     router.push('/missing-report');
   };
 
-  const handleRefresh = () => {
-    // 위치 데이터 갱신 후 KakaoMap에 반영되도록 상태 업데이트 예정
-    setUserLocation((prev) => ({ ...prev }));
+  const handleRefresh = async () => {
+    // 현재 위치 새로 조회
+    setLocationLoading(true);
+    await getCurrentLocation();
   };
 
   const handleAddPress = () => {

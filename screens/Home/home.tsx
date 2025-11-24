@@ -48,7 +48,6 @@ try {
 const mapImage = require('../../assets/images/react-logo.png');
 
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -102,7 +101,6 @@ export default function HomeScreen() {
     // 시간 기반: 1분 경과
     const timeSinceLastQuery = Date.now() - lastQueryTime;
     if (timeSinceLastQuery >= TIME_INTERVAL) {
-      console.log(`🗺️ 1분 경과`);
       return true;
     }
 
@@ -116,22 +114,12 @@ export default function HomeScreen() {
     return false;
   }, [lastQueryLocation, lastQueryTime, TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
 
-  const handleNavPress = (tab: string) => {
-    setActiveTab(tab);
-
-    if (tab === 'profile') {
-      router.push('/login');
-    }
-    // TODO: Implement other navigation
-  };
-
   // 위치 정보 가져오기
   const getCurrentLocation = useCallback(async () => {
     try {
       // 1. 위치 서비스 활성화 여부 확인
       const enabled = await Location.hasServicesEnabledAsync();
       if (!enabled) {
-        console.warn('⚠️ 위치 서비스가 비활성화되어 있습니다.');
         return null;
       }
 
@@ -141,7 +129,6 @@ export default function HomeScreen() {
         const permissionResult = await Location.requestForegroundPermissionsAsync();
         status = permissionResult.status;
         if (status !== 'granted') {
-          console.warn('⚠️ 위치 권한 거부됨');
           return null;
         }
       }
@@ -216,15 +203,8 @@ export default function HomeScreen() {
       const displayedPersons = response.content.slice(0, 2);
 
       if (displayedPersons.length > 0) {
-        console.log(`🗺️ ========== 홈 화면 실종자 데이터 확인 ==========`);
-        console.log(`🗺️ 발견된 실종자 수: ${displayedPersons.length}`);
         displayedPersons.forEach((person, index) => {
-          console.log(`🗺️ [${index + 1}] ID: ${person.id}, 이름: ${person.name}`);
-          console.log(`🗺️ [${index + 1}] latitude: ${person.latitude} (타입: ${typeof person.latitude})`);
-          console.log(`🗺️ [${index + 1}] longitude: ${person.longitude} (타입: ${typeof person.longitude})`);
-          console.log(`🗺️ [${index + 1}] 위치 유효성: ${!!(person.latitude && person.longitude)}`);
         });
-        console.log(`🗺️ ===========================================`);
       }
 
       setNearbyPersons(displayedPersons);
@@ -257,7 +237,6 @@ export default function HomeScreen() {
 
       const unreadCount = allNotifications.filter(n => !n.isRead).length;
       if (unreadCount > 0) {
-        console.log(`📬 알림 ${unreadCount}개`);
       }
 
       // 최신순으로 정렬하고 최신 3개만 표시
@@ -299,7 +278,6 @@ export default function HomeScreen() {
 
     try {
       await markAsRead(id);
-      console.log('✅ 알림 읽음 처리 완료 (선택):', { notificationId: id });
     } catch (error) {
       console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
     }
@@ -358,7 +336,6 @@ export default function HomeScreen() {
 
     // 포그라운드에서 푸시 알림 수신 시
     const unsubscribe = onMessageFunc(messaging, async (remoteMessage: any) => {
-      console.log('📬 푸시 수신');
       // 알림 목록 새로고침
       loadNotifications();
     });
@@ -395,7 +372,6 @@ export default function HomeScreen() {
 
             // 10m 이상 이동 시 즉시 근처 실종자 조회
             if (distance >= DISTANCE_THRESHOLD) {
-              console.log(`📍 ${Math.round(distance)}m 이동 감지`);
               setCurrentLocation(newCoords);
               // 위치가 업데이트되면 loadNearbyPersons()가 자동으로 거리 체크 후 조회
               loadNearbyPersons();
@@ -440,7 +416,6 @@ export default function HomeScreen() {
             onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
-                console.log('📬 초대 수락 시작:', { id, relation });
                 setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
@@ -450,10 +425,8 @@ export default function HomeScreen() {
                 await acceptInvitationFromNotification(id, {
                   relation: relation,
                 });
-                console.log('📬 초대 수락 성공');
                 // 읽음 처리
                 await markAsRead(id);
-                console.log('📬 읽음 처리 완료');
                 // 알림 목록 새로고침
                 await loadNotifications();
                 Alert.alert('성공', '초대를 수락했습니다.');
@@ -471,7 +444,6 @@ export default function HomeScreen() {
             }}
             onReject={async (id) => {
               try {
-                console.log('📬 초대 거절 시작:', id);
                 setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
@@ -479,10 +451,8 @@ export default function HomeScreen() {
                   )
                 );
                 await rejectInvitationFromNotification(id);
-                console.log('📬 초대 거절 성공');
                 // 읽음 처리
                 await markAsRead(id);
-                console.log('📬 읽음 처리 완료');
                 // 알림 목록 새로고침
                 await loadNotifications();
                 Alert.alert('성공', '초대를 거절했습니다.');
@@ -500,7 +470,6 @@ export default function HomeScreen() {
             }}
             onDetail={async (id) => {
               try {
-                console.log('📬 자세히 보기 클릭:', { notificationId: id });
 
                 // 1. 즉시 로컬 상태 업데이트 (읽음 상태로 변경)
                 setNotifications((prev) =>
@@ -508,14 +477,11 @@ export default function HomeScreen() {
                     notif.id === id ? { ...notif, isRead: true } : notif
                   )
                 );
-                console.log('✅ 알림 읽음 상태 즉시 업데이트 (프론트):', { notificationId: id });
 
                 // 2. 읽음 처리 API 호출 (기다림)
                 await markAsRead(id);
-                console.log('✅ 읽음 처리 API 완료:', { notificationId: id });
 
                 // 3. 발견되었다 페이지로 이동
-                console.log('📬 발견되었다 페이지로 이동');
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
@@ -530,9 +496,7 @@ export default function HomeScreen() {
             }}
             onMarkAsRead={async (id) => {
               try {
-                console.log('📬 알림 읽음 처리 시작 (Home):', { notificationId: id });
                 await markAsRead(id);
-                console.log('✅ 알림 읽음 처리 완료 (Home):', { notificationId: id });
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: true } : notif

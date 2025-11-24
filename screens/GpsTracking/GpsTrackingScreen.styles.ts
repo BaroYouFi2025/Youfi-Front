@@ -143,7 +143,7 @@ export const ActionButton = styled.TouchableOpacity.attrs<{ $variant: 'alert' | 
 }))<{ $variant: 'alert' | 'refresh' }>`
   padding: 13px 16px;
   border-radius: 16px;
-  background-color: ${({ $variant }) => ($variant === 'alert' ? '#ff6f61' : '#25b2e2')};
+  background-color: ${({ $variant }: { $variant: 'alert' | 'refresh' }) => ($variant === 'alert' ? '#ff6f61' : '#25b2e2')};
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
