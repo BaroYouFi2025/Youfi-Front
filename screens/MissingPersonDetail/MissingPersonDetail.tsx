@@ -39,7 +39,7 @@ import {
 
 const DEFAULT_AVATAR = 'https://via.placeholder.com/88';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 
 const convertToInternalUrl = (url?: string): string | undefined => {
   if (!url) return undefined;
