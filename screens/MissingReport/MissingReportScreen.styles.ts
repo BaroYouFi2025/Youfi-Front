@@ -1,5 +1,5 @@
+import { Image, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
-import { TouchableOpacity, Image, View, Text } from 'react-native';
 
 export const Container = styled.View`
   flex: 1;
@@ -75,7 +75,6 @@ export const BackIcon = styled.View`
 `;
 
 export const Title = styled.Text`
-  font-family: 'Wanted Sans';
   font-weight: 700;
   font-size: 20px;
   color: #000000;
@@ -107,7 +106,6 @@ export const PersonInfo = styled.View`
 `;
 
 export const PersonName = styled.Text`
-  font-family: 'Wanted Sans';
   font-weight: 700;
   font-size: 20px;
   color: #16171a;
@@ -121,7 +119,6 @@ export const PersonRelation = styled.Text`
   padding-horizontal: 12px;
   padding-vertical: 3px;
   align-self: flex-start;
-  font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 10px;
   color: #000000;
@@ -140,7 +137,6 @@ export const PersonButton = styled(TouchableOpacity)`
 `;
 
 export const ReportButtonText = styled.Text`
-  font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 10px;
   color: #000000;

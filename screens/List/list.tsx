@@ -163,13 +163,10 @@ export default function MissingList() {
 
   const fetchBasicData = async () => {
     try {
-      console.log('[MissingList] 내 실종자 목록 불러오기 시작: GET /missing-persons/me');
       const list = await getMyMissingPersons();
-      console.log('[MissingList] 내 실종자 목록 API 응답', list);
 
       setBasicData(mapToListData(list));
     } catch (err) {
-      console.log('❌ 실종자 불러오기 실패:', err);
     }
   };
 
@@ -191,7 +188,6 @@ export default function MissingList() {
       const mapped = mapToListData(items);
       setPoliceData(mapped.length ? mapped : mapToListData(POLICE_FALLBACK));
     } catch (err) {
-      console.log('❌ 경찰청 실종자 불러오기 실패:', err);
       setPoliceData(mapToListData(POLICE_FALLBACK));
     }
   };
@@ -255,7 +251,6 @@ export default function MissingList() {
           activeOpacity={0.8}
           style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
           onPress={() => {
-            console.log('[MissingList] 버튼 클릭', { id: item.id, variant });
             if (isPolice) {
               router.push({
                 pathname: '/police_detail' as const,

@@ -33,13 +33,16 @@ export default function MissingReportScreen() {
   };
 
   const handleReport = (personName: string) => {
-    // TODO: Implement report functionality
-    console.log(`Reporting missing person: ${personName}`);
+    // 선택한 구성원의 이름을 전달하여 실종자 등록 화면으로 이동
+    router.push({
+      pathname: '/(tabs)/register',
+      params: { name: personName }
+    });
   };
 
   const handleMainReport = () => {
-    // TODO: Navigate to report form or implement report functionality
-    console.log('Main report button pressed');
+    // 실종자 등록 화면으로 이동
+    router.push('/(tabs)/register');
   };
 
   return (

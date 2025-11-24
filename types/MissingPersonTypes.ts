@@ -1,7 +1,7 @@
 export interface MissingPersonData {
   name: string;
   birthDate: string;
-  gender: '남성' | '여성';
+  gender: 'MALE' | 'FEMALE';
   missingDate: string; // ISO string with time
   height: string;
   weight: string;
@@ -35,7 +35,7 @@ export interface MissingPersonFormErrors {
 export interface MissingPersonAPIRequest {
   name: string;
   birthDate: string;
-  gender: '남성' | '여성';
+  gender: 'MALE' | 'FEMALE';
   missingDate: string;
   height: number;
   weight: number;
@@ -51,6 +51,7 @@ export interface MissingPersonAPIRequest {
 
 export interface MissingPersonAPIResponse {
   id: string;
+  missingPersonId?: number;
   message: string;
   success: boolean;
 }
@@ -141,7 +142,7 @@ export interface MissingPersonDetailResponse {
   missingPersonId: number;
   name: string;
   birthDate: string;
-  gender?: '남성' | '여성';
+  gender?: 'MALE' | 'FEMALE';
   address?: string;
   missingDate: string;
   height: number;

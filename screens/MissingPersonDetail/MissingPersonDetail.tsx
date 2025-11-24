@@ -142,9 +142,7 @@ export default function MissingPersonDetailScreen() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('[MissingPersonDetail] 상세 조회 시작: GET /missing-persons/:id', { id: missingPersonId });
       const response = await getMissingPersonById(missingPersonId);
-      console.log('[MissingPersonDetail] 상세 조회 응답', response);
       setDetail(response);
     } catch (err) {
       const message = err instanceof Error ? err.message : '실종자 정보를 불러오지 못했습니다.';
@@ -165,7 +163,6 @@ export default function MissingPersonDetailScreen() {
     ? { uri: internalPhotoUrl }
     : { uri: DEFAULT_AVATAR };
 
-  console.log('[MissingPersonDetail] photoUrl 변환:', detail?.photoUrl, '->', internalPhotoUrl);
 
   const handleEdit = () => {
     if (!missingPersonId) return;
@@ -258,8 +255,6 @@ export default function MissingPersonDetailScreen() {
         <HeaderRow>
           <Avatar
             source={avatarSource}
-            onLoad={() => console.log('[MissingPersonDetail] Image loaded successfully')}
-            onError={() => console.log('[MissingPersonDetail] Image load error')}
           />
           <NameColumn>
             <NameText>{detail?.name ?? '이름 미확인'}</NameText>

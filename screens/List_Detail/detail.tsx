@@ -99,7 +99,6 @@ const DetailScreen: React.FC = () => {
         appearanceImageUrl: resolvePhotoUrl(data.appearanceImageUrl),
       });
     } catch (err) {
-      console.log('❌ 상세 불러오기 실패:', err);
     } finally {
       setLoading(false);
     }

@@ -21,7 +21,7 @@ import {
 export default function PersonFoundScreen() {
   const params = useLocalSearchParams();
   const notificationId = params.notificationId ? Number(params.notificationId) : null;
-  
+
   const [loading, setLoading] = useState(true);
   const [foundData, setFoundData] = useState<any>(null);
 
@@ -34,21 +34,12 @@ export default function PersonFoundScreen() {
 
   const loadFoundDetail = async () => {
     if (!notificationId) return;
-    
+
     try {
       setLoading(true);
-      console.log('🔍 발견 신고 상세 조회 시작:', { notificationId });
-      
+
       const data = await getSightingDetailFromNotification(notificationId);
-      
-      console.log('✅ 발견 신고 상세 조회 성공:', {
-        sightingId: data.sightingId,
-        missingPersonName: data.missingPersonName,
-        reporterName: data.reporterName,
-        address: data.address,
-        reportedAt: data.reportedAt,
-      });
-      
+
       setFoundData(data);
     } catch (error) {
       console.error('❌ 발견 정보 조회 실패:', error);
@@ -59,11 +50,9 @@ export default function PersonFoundScreen() {
 
   const markNotificationAsRead = async () => {
     if (!notificationId) return;
-    
+
     try {
-      console.log('📬 알림 읽음 처리 시작:', { notificationId });
       await markAsRead(notificationId);
-      console.log('✅ 알림 읽음 처리 완료:', { notificationId });
     } catch (error) {
       console.error('❌ 알림 읽음 처리 실패:', error);
     }
