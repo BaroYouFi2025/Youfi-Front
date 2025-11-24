@@ -1,6 +1,8 @@
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
-import apiClient from './apiClient';
+import { resolveErrorMessage } from '@/utils/apiErrorHandler';
 import { AxiosError } from 'axios';
+
+import apiClient from './apiClient';
 
 export interface NearbyPoliceOfficeParams {
   latitude: number;
@@ -8,15 +10,6 @@ export interface NearbyPoliceOfficeParams {
   radiusMeters?: number;
   limit?: number;
 }
-
-const resolveErrorMessage = (error: AxiosError): string => {
-  if (error.response?.data) {
-    const data = error.response.data as { message?: string; errorMessage?: string };
-    return data.message || data.errorMessage || '근처 경찰청을 찾는 중 오류가 발생했습니다.';
-  }
-
-  return error.message || '근처 경찰청을 찾는 중 오류가 발생했습니다.';
-};
 
 export const getNearbyPoliceOffices = async ({
   latitude,

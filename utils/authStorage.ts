@@ -7,7 +7,6 @@ export const getRefreshToken = async (): Promise<string | null> => {
   try {
     return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to retrieve refresh token from secure storage', error);
     return null;
   }
 };
@@ -16,7 +15,6 @@ export const setRefreshToken = async (token: string): Promise<void> => {
   try {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
   } catch (error) {
-    console.warn('Failed to persist refresh token to secure storage', error);
   }
 };
 
@@ -24,7 +22,6 @@ export const deleteRefreshToken = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to remove refresh token from secure storage', error);
   }
 };
 
@@ -32,7 +29,6 @@ export const getAccessToken = async (): Promise<string | null> => {
   try {
     return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to retrieve access token from secure storage', error);
     return null;
   }
 };
@@ -41,7 +37,6 @@ export const setAccessToken = async (token: string): Promise<void> => {
   try {
     await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
   } catch (error) {
-    console.warn('Failed to persist access token to secure storage', error);
   }
 };
 
@@ -49,7 +44,6 @@ export const deleteAccessToken = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to remove access token from secure storage', error);
   }
 };
 
@@ -70,7 +64,6 @@ export const getStoredFCMToken = async (): Promise<string | null> => {
   try {
     return await SecureStore.getItemAsync(FCM_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to retrieve FCM token from secure storage', error);
     return null;
   }
 };
@@ -79,7 +72,6 @@ export const setStoredFCMToken = async (token: string): Promise<void> => {
   try {
     await SecureStore.setItemAsync(FCM_TOKEN_KEY, token);
   } catch (error) {
-    console.warn('Failed to persist FCM token to secure storage', error);
   }
 };
 
@@ -87,7 +79,6 @@ export const deleteStoredFCMToken = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(FCM_TOKEN_KEY);
   } catch (error) {
-    console.warn('Failed to remove FCM token from secure storage', error);
   }
 };
 
@@ -96,7 +87,6 @@ export const getDeviceUuid = async (): Promise<string | null> => {
   try {
     return await SecureStore.getItemAsync(DEVICE_UUID_KEY);
   } catch (error) {
-    console.warn('Failed to retrieve device UUID from secure storage', error);
     return null;
   }
 };
@@ -105,7 +95,6 @@ export const setDeviceUuid = async (uuid: string): Promise<void> => {
   try {
     await SecureStore.setItemAsync(DEVICE_UUID_KEY, uuid);
   } catch (error) {
-    console.warn('Failed to persist device UUID to secure storage', error);
   }
 };
 
@@ -132,7 +121,6 @@ export const getDeviceId = async (): Promise<number | null> => {
     const id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
     return id ? parseInt(id, 10) : null;
   } catch (error) {
-    console.warn('Failed to retrieve device ID from secure storage', error);
     return null;
   }
 };
@@ -141,7 +129,6 @@ export const setDeviceId = async (id: number): Promise<void> => {
   try {
     await SecureStore.setItemAsync(DEVICE_ID_KEY, id.toString());
   } catch (error) {
-    console.warn('Failed to persist device ID to secure storage', error);
   }
 };
 
@@ -149,6 +136,5 @@ export const deleteDeviceId = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(DEVICE_ID_KEY);
   } catch (error) {
-    console.warn('Failed to remove device ID from secure storage', error);
   }
 };
