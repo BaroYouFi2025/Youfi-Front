@@ -133,9 +133,9 @@ export default function ProfileScreen() {
       <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}> 
         {/* 🌟 배경색이 profile.profileBackgroundColor 값으로 적용됩니다. */}
 
-        {/* 기본 이미지 */}
+        {/* 기본 이미지 + 서버 프로필 이미지 */}
         <Image
-          source={defaultProfile}
+          source={profile?.profileUrl ? { uri: profile.profileUrl } : defaultProfile}
           style={styles.avatar}
         />
 
