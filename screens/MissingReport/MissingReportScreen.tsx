@@ -1,5 +1,5 @@
-import React from 'react';
 import { router } from 'expo-router';
+import React from 'react';
 import {
   BackButton,
   BackIcon,
@@ -10,7 +10,6 @@ import {
   Header,
   HomeIndicator,
   PersonButton,
-  PersonImage,
   PersonInfo,
   PersonItem,
   PersonName,
@@ -19,15 +18,14 @@ import {
   ReportButtonText,
   StatusBarContainer,
   StatusBarTime,
-  StatusBarIcons,
-  StatusIcon,
   Title
 } from './MissingReportScreen.styles';
 
-const imgFrame26 = "http://localhost:3845/assets/3ef005867145012ea76d41793d430543e38d9d4f.png";
-const imgCellularConnection = "http://localhost:3845/assets/2f7af92a290b833d2dc02c2deffbd3cfb362cb8e.svg";
-const imgWifi = "http://localhost:3845/assets/f7362d49a3a3be2994a501c3031ce41d8e27f562.svg";
-const imgBattery = "http://localhost:3845/assets/146ff8f9e983bba6c0eef87deb916af7baef0c43.svg";
+// Temporarily commented out to prevent crashes from localhost images
+// const imgFrame26 = "http://localhost:3845/assets/3ef005867145012ea76d41793d430543e38d9d4f.png";
+// const imgCellularConnection = "http://localhost:3845/assets/2f7af92a290b833d2dc02c2deffbd3cfb362cb8e.svg";
+// const imgWifi = "http://localhost:3845/assets/f7362d49a3a3be2994a501c3031ce41d8e27f562.svg";
+// const imgBattery = "http://localhost:3845/assets/146ff8f9e983bba6c0eef87deb916af7baef0c43.svg";
 
 export default function MissingReportScreen() {
   const handleBack = () => {
@@ -35,13 +33,16 @@ export default function MissingReportScreen() {
   };
 
   const handleReport = (personName: string) => {
-    // TODO: Implement report functionality
-    console.log(`Reporting missing person: ${personName}`);
+    // 선택한 구성원의 이름을 전달하여 실종자 등록 화면으로 이동
+    router.push({
+      pathname: '/(tabs)/register',
+      params: { name: personName }
+    });
   };
 
   const handleMainReport = () => {
-    // TODO: Navigate to report form or implement report functionality
-    console.log('Main report button pressed');
+    // 실종자 등록 화면으로 이동
+    router.push('/(tabs)/register');
   };
 
   return (
@@ -49,11 +50,7 @@ export default function MissingReportScreen() {
       {/* Status Bar */}
       <StatusBarContainer>
         <StatusBarTime>9:41</StatusBarTime>
-        <StatusBarIcons>
-          <StatusIcon source={{ uri: imgCellularConnection }} />
-          <StatusIcon source={{ uri: imgWifi }} />
-          <StatusIcon source={{ uri: imgBattery }} />
-        </StatusBarIcons>
+        {/* StatusBarIcons temporarily removed to prevent crashes */}
       </StatusBarContainer>
 
       {/* Content */}
@@ -69,7 +66,7 @@ export default function MissingReportScreen() {
         {/* Person List */}
         {/* Person 1 - 김철수 */}
         <PersonItem>
-          <PersonImage source={{ uri: imgFrame26 }} />
+          {/* Temporarily removed PersonImage to prevent crashes */}
           <PersonInfo>
             <PersonName>김철수</PersonName>
             <PersonRelation>동생</PersonRelation>
@@ -83,7 +80,7 @@ export default function MissingReportScreen() {
 
         {/* Person 2 - 김영희 */}
         <PersonItem>
-          <PersonImage source={{ uri: imgFrame26 }} />
+          {/* Temporarily removed PersonImage to prevent crashes */}
           <PersonInfo>
             <PersonName>김영희</PersonName>
             <PersonRelation>누나</PersonRelation>

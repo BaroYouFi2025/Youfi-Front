@@ -137,9 +137,6 @@ export default function ProfileEdit() {
       if (imageUri) body.profileUrl = imageUri;
       if (backgroundColor) body.profileBackgroundColor = backgroundColor; 
 
-      console.log("👉 PATCH 요청 데이터:", body);
-      console.log("⭐ PATCH 요청 이름 값:", body.name); 
-      console.log("⭐ PATCH 요청 칭호 값:", body.title);
 
       await apiClient.patch('/users/me', body, {
         headers: {

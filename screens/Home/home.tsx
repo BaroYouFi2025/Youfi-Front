@@ -29,10 +29,16 @@ import {
   ScrollContainer
 } from './home.styles';
 
-// Firebase는 네이티브 빌드에서만 사용 가능 (Expo Go 불가)
-let messaging: any = null;
+// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+let firebaseApp: any = null;
+let getMessagingFunc: any = null;
+let onMessageFunc: any = null;
 try {
-  messaging = require('@react-native-firebase/messaging').default;
+  const app = require('@react-native-firebase/app').default;
+  const messagingModule = require('@react-native-firebase/messaging');
+  firebaseApp = app;
+  getMessagingFunc = messagingModule.getMessaging;
+  onMessageFunc = messagingModule.onMessage;
 } catch (e) {
   // Expo Go에서는 Firebase 사용 불가 (정상 동작)
   // 실제 기기 테스트는 npx expo run:ios 또는 npx expo run:android 사용
@@ -42,7 +48,6 @@ try {
 const mapImage = require('../../assets/images/react-logo.png');
 
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -96,7 +101,6 @@ export default function HomeScreen() {
     // 시간 기반: 1분 경과
     const timeSinceLastQuery = Date.now() - lastQueryTime;
     if (timeSinceLastQuery >= TIME_INTERVAL) {
-      console.log(`🗺️ 1분 경과`);
       return true;
     }
 
@@ -110,42 +114,45 @@ export default function HomeScreen() {
     return false;
   }, [lastQueryLocation, lastQueryTime, TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
 
-  const handleNavPress = (tab: string) => {
-    setActiveTab(tab);
-    
-    if (tab === 'profile') {
-      router.push('/login');
-    }
-    // TODO: Implement other navigation
-  };
-
   // 위치 정보 가져오기
   const getCurrentLocation = useCallback(async () => {
     try {
-      // 먼저 현재 권한 상태 확인
+      // 1. 위치 서비스 활성화 여부 확인
+      const enabled = await Location.hasServicesEnabledAsync();
+      if (!enabled) {
+        return null;
+      }
+
+      // 2. 권한 확인
       let { status } = await Location.getForegroundPermissionsAsync();
-      
-      // 권한이 없으면 요청
       if (status !== 'granted') {
         const permissionResult = await Location.requestForegroundPermissionsAsync();
         status = permissionResult.status;
         if (status !== 'granted') {
-          console.warn('⚠️ 위치 권한 거부됨');
           return null;
         }
       }
-      
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      
-      const coords = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      };
-      
-      setCurrentLocation(coords);
-      return coords;
+
+      // 3. 마지막으로 알려진 위치 먼저 시도 (빠름)
+      let location = await Location.getLastKnownPositionAsync();
+
+      // 4. 없으면 현재 위치 조회 (정확함, 느림)
+      if (!location) {
+        location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      }
+
+      if (location) {
+        const coords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        setCurrentLocation(coords);
+        return coords;
+      }
+
+      return null;
     } catch (error) {
       console.error('❌ 위치 조회 실패:', error);
       return null;
@@ -180,33 +187,26 @@ export default function HomeScreen() {
       }
 
       setLoadingNearby(true);
-      
+
       // 근처 실종자 조회 (반경 1km)
       const response = await getNearbyMissingPersons(
         location.latitude,
         location.longitude,
         1000 // 1km
       );
-      
+
       // 조회 성공 시 마지막 조회 위치/시간 업데이트
       setLastQueryLocation(location);
       setLastQueryTime(Date.now());
-      
+
       // 최대 2명만 표시
       const displayedPersons = response.content.slice(0, 2);
-      
+
       if (displayedPersons.length > 0) {
-        console.log(`🗺️ ========== 홈 화면 실종자 데이터 확인 ==========`);
-        console.log(`🗺️ 발견된 실종자 수: ${displayedPersons.length}`);
         displayedPersons.forEach((person, index) => {
-          console.log(`🗺️ [${index + 1}] ID: ${person.id}, 이름: ${person.name}`);
-          console.log(`🗺️ [${index + 1}] latitude: ${person.latitude} (타입: ${typeof person.latitude})`);
-          console.log(`🗺️ [${index + 1}] longitude: ${person.longitude} (타입: ${typeof person.longitude})`);
-          console.log(`🗺️ [${index + 1}] 위치 유효성: ${!!(person.latitude && person.longitude)}`);
         });
-        console.log(`🗺️ ===========================================`);
       }
-      
+
       setNearbyPersons(displayedPersons);
     } catch (error) {
       console.error('❌ 근처 실종자 로드 실패:', error);
@@ -231,21 +231,20 @@ export default function HomeScreen() {
 
       setLoadingNotifications(true);
       setLastNotificationLoadTime(Date.now());
-      
+
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
-      
+
       const unreadCount = allNotifications.filter(n => !n.isRead).length;
       if (unreadCount > 0) {
-        console.log(`📬 알림 ${unreadCount}개`);
       }
-      
+
       // 최신순으로 정렬하고 최신 3개만 표시
-      const sortedNotifications = allNotifications.sort((a, b) => 
+      const sortedNotifications = allNotifications.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       const displayedNotifications = sortedNotifications.slice(0, 3);
-      
+
       setNotifications(displayedNotifications);
       setSelectedNotificationId((prev) => {
         if (!prev) {
@@ -279,7 +278,6 @@ export default function HomeScreen() {
 
     try {
       await markAsRead(id);
-      console.log('✅ 알림 읽음 처리 완료 (선택):', { notificationId: id });
     } catch (error) {
       console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
     }
@@ -330,13 +328,14 @@ export default function HomeScreen() {
 
   // 푸시 알림 수신 시 알림 목록 새로고침 (권한이 있을 때만)
   useEffect(() => {
-    if (!messaging) {
+    if (!firebaseApp || !getMessagingFunc || !onMessageFunc) {
       return;
     }
 
+    const messaging = getMessagingFunc(firebaseApp);
+
     // 포그라운드에서 푸시 알림 수신 시
-    const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
-      console.log('📬 푸시 수신');
+    const unsubscribe = onMessageFunc(messaging, async (remoteMessage: any) => {
       // 알림 목록 새로고침
       loadNotifications();
     });
@@ -373,7 +372,6 @@ export default function HomeScreen() {
 
             // 10m 이상 이동 시 즉시 근처 실종자 조회
             if (distance >= DISTANCE_THRESHOLD) {
-              console.log(`📍 ${Math.round(distance)}m 이동 감지`);
               setCurrentLocation(newCoords);
               // 위치가 업데이트되면 loadNearbyPersons()가 자동으로 거리 체크 후 조회
               loadNearbyPersons();
@@ -418,7 +416,6 @@ export default function HomeScreen() {
             onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
-                console.log('📬 초대 수락 시작:', { id, relation });
                 setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
@@ -426,14 +423,16 @@ export default function HomeScreen() {
                   )
                 );
                 await acceptInvitationFromNotification(id, {
-                  relation,
+                  relation: relation,
                 });
-                console.log('📬 초대 수락 성공');
+                // 읽음 처리
                 await markAsRead(id);
+                // 알림 목록 새로고침
                 await loadNotifications();
                 Alert.alert('성공', '초대를 수락했습니다.');
               } catch (error) {
                 console.error('❌ 초대 수락 실패:', error);
+                // 실패 시 상태 롤백
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: false } : notif
@@ -445,7 +444,6 @@ export default function HomeScreen() {
             }}
             onReject={async (id) => {
               try {
-                console.log('📬 초대 거절 시작:', id);
                 setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
@@ -453,12 +451,14 @@ export default function HomeScreen() {
                   )
                 );
                 await rejectInvitationFromNotification(id);
-                console.log('📬 초대 거절 성공');
+                // 읽음 처리
                 await markAsRead(id);
+                // 알림 목록 새로고침
                 await loadNotifications();
                 Alert.alert('성공', '초대를 거절했습니다.');
               } catch (error) {
                 console.error('❌ 초대 거절 실패:', error);
+                // 실패 시 상태 롤백
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: false } : notif
@@ -470,8 +470,18 @@ export default function HomeScreen() {
             }}
             onDetail={async (id) => {
               try {
-                console.log('📬 자세히 보기 클릭:', { notificationId: id });
-                await handleSelectNotification(id);
+
+                // 1. 즉시 로컬 상태 업데이트 (읽음 상태로 변경)
+                setNotifications((prev) =>
+                  prev.map((notif) =>
+                    notif.id === id ? { ...notif, isRead: true } : notif
+                  )
+                );
+
+                // 2. 읽음 처리 API 호출 (기다림)
+                await markAsRead(id);
+
+                // 3. 발견되었다 페이지로 이동
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
@@ -486,9 +496,7 @@ export default function HomeScreen() {
             }}
             onMarkAsRead={async (id) => {
               try {
-                console.log('📬 알림 읽음 처리 시작 (Home):', { notificationId: id });
                 await markAsRead(id);
-                console.log('✅ 알림 읽음 처리 완료 (Home):', { notificationId: id });
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: true } : notif
@@ -503,7 +511,7 @@ export default function HomeScreen() {
 
           {/* Map */}
           <MapContainer>
-            <KakaoMap 
+            <KakaoMap
               currentLocation={currentLocation}
               nearbyPersons={kakaoMapPersons}
             />
@@ -512,7 +520,7 @@ export default function HomeScreen() {
           {/* Missing Person Card */}
           <MissingPersonCard>
             <CardTitle>근처 실종자</CardTitle>
-            
+
             {loadingNearby ? (
               <PersonItem>
                 <PersonText>로딩 중...</PersonText>
@@ -526,26 +534,26 @@ export default function HomeScreen() {
                 const personKey = person.id ?? person.missingPersonId ?? person.personId ?? person.missing_person_id ?? `nearby-${index}`;
                 return (
                   <PersonItem key={personKey} style={{ borderBottomWidth: index === nearbyPersons.length - 1 ? 0 : 1 }}>
-                  {person.photo_url && <PersonImage source={{ uri: person.photo_url }} />}
-                  {!person.photo_url && <PersonImage />}
-                  <PersonInfo>
-                    <PersonMainInfo>
-                      <PersonText>{person.name}</PersonText>
-                      <Dot />
-                      <PersonText>{person.address || `${person.latitude.toFixed(4)}, ${person.longitude.toFixed(4)}`}</PersonText>
-                    </PersonMainInfo>
-                    <PersonDescription>
-                      {person.missing_date} • {person.hasDementia ? '치매' : '일반'}
-                      {person.distance && ` • ${person.distance}m`}
-                    </PersonDescription>
-                    <PersonDescription>
-                      {person.top_clothing && `상의: ${person.top_clothing}`}
-                      {person.bottom_clothing && ` / 하의: ${person.bottom_clothing}`}
-                    </PersonDescription>
-                  </PersonInfo>
-                  <ReportButton onPress={() => router.push('/missing-report')}>
-                    <ReportButtonText>신고하기</ReportButtonText>
-                  </ReportButton>
+                    {person.photo_url && <PersonImage source={{ uri: person.photo_url }} />}
+                    {!person.photo_url && <PersonImage />}
+                    <PersonInfo>
+                      <PersonMainInfo>
+                        <PersonText>{person.name}</PersonText>
+                        <Dot />
+                        <PersonText>{person.address || `${person.latitude.toFixed(4)}, ${person.longitude.toFixed(4)}`}</PersonText>
+                      </PersonMainInfo>
+                      <PersonDescription>
+                        {person.missing_date} • {person.hasDementia ? '치매' : '일반'}
+                        {person.distance && ` • ${person.distance}m`}
+                      </PersonDescription>
+                      <PersonDescription>
+                        {person.top_clothing && `상의: ${person.top_clothing}`}
+                        {person.bottom_clothing && ` / 하의: ${person.bottom_clothing}`}
+                      </PersonDescription>
+                    </PersonInfo>
+                    <ReportButton onPress={() => router.push('/missing-report')}>
+                      <ReportButtonText>신고하기</ReportButtonText>
+                    </ReportButton>
                   </PersonItem>
                 );
               })

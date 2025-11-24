@@ -1,6 +1,6 @@
 import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 
 interface Location {
   latitude: number;
@@ -15,31 +15,43 @@ interface MissingPerson {
   photo_url?: string;
 }
 
+interface MemberLocation {
+  userId: number;
+  name: string;
+  relationship: string;
+  batteryLevel: number;
+  distance: number;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 interface KakaoMapProps {
   currentLocation: Location | null;
   nearbyPersons: MissingPerson[];
+  memberLocations?: MemberLocation[];
 }
 
-export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapProps) {
-  const KAKAO_MAP_API_KEY = process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || 'YOUR_KAKAO_MAP_API_KEY';
+export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLocations = [] }: KakaoMapProps) {
+  const KAKAO_MAP_API_KEY = process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || '';
 
-  console.log('🗺️ ========== KakaoMap 렌더링 ==========');
-  console.log('🗺️ API Key 존재:', !!KAKAO_MAP_API_KEY && KAKAO_MAP_API_KEY !== 'YOUR_KAKAO_MAP_API_KEY');
-  console.log('🗺️ API Key 미리보기:', KAKAO_MAP_API_KEY.substring(0, 10) + '...');
-  console.log('🗺️ 현재 위치 존재:', !!currentLocation);
-  console.log('🗺️ 현재 위치:', currentLocation);
-  console.log('🗺️ 근처 실종자 수:', nearbyPersons.length);
-  
+  if (!KAKAO_MAP_API_KEY) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: '#ff6b6b', textAlign: 'center' }}>
+          Kakao Map API 키가 설정되지 않았습니다.{'\n'}
+          EXPO_PUBLIC_KAKAO_MAP_API_KEY 환경 변수를 확인해주세요.
+        </Text>
+      </View>
+    );
+  }
+
+
   if (nearbyPersons.length > 0) {
-    console.log('🗺️ ========== 근처 실종자 위치 확인 ==========');
     nearbyPersons.forEach((person, index) => {
-      console.log(`🗺️ [${index + 1}] 이름:`, person.name);
-      console.log(`🗺️ [${index + 1}] latitude:`, person.latitude, '타입:', typeof person.latitude);
-      console.log(`🗺️ [${index + 1}] longitude:`, person.longitude, '타입:', typeof person.longitude);
-      console.log(`🗺️ [${index + 1}] 위치 유효:`, !!(person.latitude && person.longitude));
     });
   }
-  console.log('🗺️ =========================================');
 
   // 기본 위치 (서울)
   const defaultLat = currentLocation?.latitude || 37.5665;
@@ -63,7 +75,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
         <div id="map"></div>
         <script>
             try {
-                console.log('🗺️ Kakao Maps 초기화 시작');
                 
                 // kakao 객체 확인
                 if (typeof kakao === 'undefined') {
@@ -81,7 +92,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
                     level: 5
                 };
                 var map = new kakao.maps.Map(container, options);
-                console.log('✅ 지도 생성 완료');
 
             // 내 위치 마커 (파란색)
             ${currentLocation ? `
@@ -98,9 +108,7 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
             ` : ''}
 
             // 실종자 위치 마커들 (빨간색)
-            console.log('🗺️ 실종자 마커 생성 시작, 총 ${nearbyPersons.length}명');
             ${nearbyPersons.map((person, index) => `
-                console.log('🗺️ [${index + 1}] 마커 생성: ${person.name}, lat: ${person.latitude}, lng: ${person.longitude}');
                 var position${index} = new kakao.maps.LatLng(${person.latitude}, ${person.longitude});
                 
                 // 실종자 마커 커스텀 오버레이
@@ -122,8 +130,31 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
                 });
             `).join('\n')}
 
+            // 구성원 위치 마커들 (초록색)
+            ${memberLocations.map((member, index) => `
+                var memberPosition${index} = new kakao.maps.LatLng(${member.location.latitude}, ${member.location.longitude});
+                
+                // 구성원 마커 커스텀 오버레이 (이름 + 관계)
+                var memberContent${index} = '<div style="padding: 5px 10px; background-color: #4CAF50; color: white; border-radius: 15px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); white-space: nowrap;">${member.name} (${member.relationship})</div>';
+                var memberOverlay${index} = new kakao.maps.CustomOverlay({
+                    map: map,
+                    position: memberPosition${index},
+                    content: memberContent${index},
+                    yAnchor: 1.5
+                });
+                
+                // 초록 점 마커
+                var memberDotContent${index} = '<div style="width: 12px; height: 12px; border-radius: 50%; background-color: #4CAF50; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>';
+                var memberDotOverlay${index} = new kakao.maps.CustomOverlay({
+                    map: map,
+                    position: memberPosition${index},
+                    content: memberDotContent${index},
+                    yAnchor: 0.5
+                });
+            `).join('\n')}
+
             // 모든 마커가 보이도록 지도 범위 재설정
-            ${nearbyPersons.length > 0 && currentLocation ? `
+            ${(nearbyPersons.length > 0 || memberLocations.length > 0) && currentLocation ? `
                 var bounds = new kakao.maps.LatLngBounds();
                 
                 // 내 위치 추가
@@ -134,12 +165,15 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
                     bounds.extend(new kakao.maps.LatLng(${person.latitude}, ${person.longitude}));
                 `).join('\n')}
                 
+                // 구성원 위치들 추가
+                ${memberLocations.map((member, index) => `
+                    bounds.extend(new kakao.maps.LatLng(${member.location.latitude}, ${member.location.longitude}));
+                `).join('\n')}
+                
                 // 지도 범위 재설정
                 map.setBounds(bounds);
-                console.log('✅ 지도 범위 설정 완료');
             ` : ''}
                 
-                console.log('✅ Kakao Maps 초기화 완료');
                 
                 // React Native로 성공 메시지 전달
                 if (window.ReactNativeWebView) {
@@ -173,7 +207,6 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
       if (data.type === 'error') {
         console.error('🗺️ WebView 에러:', data.message);
       } else if (data.type === 'success') {
-        console.log('🗺️ WebView 성공:', data.message);
       }
     } catch (error) {
       console.error('🗺️ 메시지 파싱 에러:', error);
@@ -186,12 +219,15 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
   };
 
   const handleLoadEnd = () => {
-    console.log('🗺️ WebView 로드 완료');
   };
+
+  // memberLocations가 변경될 때 WebView를 다시 렌더링하기 위한 키
+  const webViewKey = `map-${memberLocations.length}-${JSON.stringify(memberLocations.map(m => m.userId))}`;
 
   return (
     <View style={styles.container}>
       <WebView
+        key={webViewKey}  // memberLocations 변경 시 WebView 재생성
         originWhitelist={['*']}
         source={{ html: htmlContent }}
         style={styles.webview}

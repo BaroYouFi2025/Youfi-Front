@@ -36,8 +36,52 @@ export default function LoginScreen() {
       }
 
       await Promise.all([setAccessToken(accessToken), setRefreshToken(refreshToken)]);
-      
-      // 로그인 성공 후 홈 화면으로 이동 (기기 등록은 회원가입 시에만 수행)
+
+      // 로그인 성공 후 FCM 토큰 발급 및 기기 등록
+      try {
+        // 1. FCM 토큰 발급 (알림 권한이 있는 경우)
+        let fcmToken: string | undefined = undefined;
+
+        // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+        let firebaseApp: any = null;
+        let getMessagingFunc: any = null;
+        let getTokenFunc: any = null;
+        try {
+          const app = require('@react-native-firebase/app').default;
+          const messagingModule = require('@react-native-firebase/messaging');
+          firebaseApp = app;
+          getMessagingFunc = messagingModule.getMessaging;
+          getTokenFunc = messagingModule.getToken;
+        } catch (e) {
+          // Expo Go에서는 Firebase 사용 불가
+        }
+
+        if (firebaseApp && getMessagingFunc) {
+          try {
+            const messaging = getMessagingFunc(firebaseApp);
+            const authStatus = await messaging.requestPermission();
+            const enabled = authStatus === 1 || authStatus === 2;
+
+            if (enabled) {
+              const token = await getTokenFunc(messaging);
+              if (token) {
+                fcmToken = token;
+              }
+            }
+          } catch (error) {
+            console.error('FCM 토큰 발급 실패:', error);
+          }
+        }
+
+        // 2. 기기 등록
+        const { registerDevice } = await import('@/services/deviceAPI');
+        await registerDevice(fcmToken || '', accessToken);
+      } catch (error) {
+        console.error('❌ 로그인 후 기기 등록 실패:', error);
+        // 기기 등록 실패해도 로그인은 성공 처리
+      }
+
+      // 로그인 성공 후 홈 화면으로 이동
       router.replace('/(tabs)');
     } catch (error) {
       const message = error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해주세요.';

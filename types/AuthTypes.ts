@@ -19,12 +19,6 @@ export interface AuthTokensResponse {
 
 export interface AuthTokensWithRefresh extends AuthTokensResponse {}
 
-export interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
 export interface RefreshRequest {
   refreshToken: string;
 }

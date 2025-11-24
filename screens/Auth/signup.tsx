@@ -4,13 +4,22 @@ import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 
 import FormInput from '@/components/FormInput';
 import { signup as signupRequest } from '@/services/authAPI';
-import { registerDeviceWithUuid } from '@/services/deviceAPI';
+import { registerDevice } from '@/services/deviceAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 
-// Firebase는 네이티브 빌드에서만 사용 가능
-let messaging: any = null;
+// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+let firebaseApp: any = null;
+let getMessagingFunc: any = null;
+let requestPermissionFunc: any = null;
+let getTokenFunc: any = null;
+
 try {
-  messaging = require('@react-native-firebase/messaging').default;
+  const app = require('@react-native-firebase/app').default;
+  const messagingModule = require('@react-native-firebase/messaging');
+  firebaseApp = app;
+  getMessagingFunc = messagingModule.getMessaging;
+  requestPermissionFunc = messagingModule.requestPermission;
+  getTokenFunc = messagingModule.getToken;
 } catch (e) {
   // Expo Go에서는 Firebase 사용 불가
 }
@@ -151,21 +160,22 @@ export default function SignupScreen() {
       }
 
       await Promise.all([setAccessToken(response.accessToken), setRefreshToken(response.refreshToken)]);
-      
+
       // 회원가입 성공 후 FCM 토큰 발급 및 기기 등록
       // 1. 먼저 FCM 토큰 발급 시도 (알림 권한이 있는 경우)
       let fcmToken: string | undefined = undefined;
-      
-      if (messaging) {
+
+      if (firebaseApp && getMessagingFunc) {
         try {
+          const messaging = getMessagingFunc(firebaseApp);
           // 알림 권한 확인 및 요청
-          const currentAuthStatus = await messaging().hasPermission();
+          const currentAuthStatus = await messaging.requestPermission();
           let authStatus = currentAuthStatus;
-          
+
           // 권한이 아직 결정되지 않았으면 요청
-          if (currentAuthStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
-            authStatus = await messaging().requestPermission();
-          } else if (currentAuthStatus === messaging.AuthorizationStatus.DENIED) {
+          if (currentAuthStatus === 0) {
+            authStatus = await requestPermissionFunc(messaging);
+          } else if (currentAuthStatus === -1) {
             // 이미 거부된 경우: 설정으로 안내 (비동기로 처리하여 회원가입은 계속 진행)
             setTimeout(() => {
               Alert.alert(
@@ -186,64 +196,38 @@ export default function SignupScreen() {
                 ]
               );
             }, 500);
-            console.log('알림 권한이 거부되어 FCM 토큰 발급을 건너뜁니다.');
           }
 
           // 권한이 허용된 경우에만 토큰 발급
-          const enabled =
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+          const enabled = authStatus === 1 || authStatus === 2;
 
           if (enabled) {
             // 권한이 있을 때만 FCM 토큰 발급
-            const token = await messaging().getToken();
-            console.log('🔑 FCM 토큰 발급 (회원가입 시):', { hasToken: !!token, tokenLength: token?.length || 0 });
+            const token = await getTokenFunc(messaging);
             if (token) {
               fcmToken = token;
             } else {
-              console.log('❌ FCM 토큰 발급 실패: token이 null입니다');
             }
           } else {
-            console.log('알림 권한이 허용되지 않아 FCM 토큰 발급을 건너뜁니다.');
           }
         } catch (error) {
           console.error('FCM 토큰 발급 실패:', error);
           // FCM 토큰 발급 실패해도 기기 등록은 계속 진행
         }
       }
-      
-      // 2. FCM 토큰 발급 후 기기 등록 (회원가입 시 1회만 수행)
-      // 이미 등록된 기기인지 확인 (deviceUuid로 확인)
-      const { getDeviceUuid } = await import('@/utils/authStorage');
-      const existingDeviceUuid = await getDeviceUuid();
-      
-      if (existingDeviceUuid) {
-        console.log('⏭️ 기기 등록 건너뜀: 이미 등록된 기기입니다.', {
-          deviceUuid: existingDeviceUuid,
+
+      // 2. FCM 토큰 발급 후 기기 등록 (항상 수행)
+      try {
+        await registerDevice(fcmToken || '', response.accessToken);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('❌ 회원가입 후 기기 등록 실패:', {
+          error: errorMessage,
+          fullError: error,
         });
-      } else {
-        try {
-          const osType = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Unknown';
-          const osVersion = Platform.Version.toString();
-          console.log('📱 기기 등록 시작 (회원가입 후, 1회만):', {
-            osType,
-            osVersion,
-            platform: Platform.OS,
-            hasFcmToken: !!fcmToken,
-            fcmTokenLength: fcmToken?.length || 0,
-          });
-          await registerDeviceWithUuid(osType, osVersion, fcmToken, response.accessToken);
-          console.log('✅ 회원가입 후 기기 등록 완료 (1회만 수행)');
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error('❌ 회원가입 후 기기 등록 실패:', {
-            error: errorMessage,
-            fullError: error,
-          });
-          // 기기 등록 실패해도 회원가입은 계속 진행
-        }
+        // 기기 등록 실패해도 회원가입은 계속 진행
       }
-      
+
       router.replace('/(tabs)');
     } catch (error) {
       const message = error instanceof Error ? error.message : '회원가입에 실패했습니다. 다시 시도해주세요.';

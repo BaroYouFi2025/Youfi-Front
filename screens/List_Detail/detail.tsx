@@ -7,7 +7,7 @@ import ConfirmReportModal from './ConfirmReportModal';
 import SuccessReportModal from './SuccessReportModal';
 import { getAccessToken } from '@/utils/authStorage';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 
 type MissingPersonDetail = {
@@ -99,7 +99,6 @@ const DetailScreen: React.FC = () => {
         appearanceImageUrl: resolvePhotoUrl(data.appearanceImageUrl),
       });
     } catch (err) {
-      console.log('❌ 상세 불러오기 실패:', err);
     } finally {
       setLoading(false);
     }

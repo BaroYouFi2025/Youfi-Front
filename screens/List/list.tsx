@@ -1,11 +1,12 @@
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
 import apiClient from '@/services/apiClient';
-import { styles } from './list.styles';
+import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getAccessToken } from '@/utils/authStorage';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { styles } from './list.styles';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 const POLICE_FALLBACK = [
   {
@@ -162,24 +163,10 @@ export default function MissingList() {
 
   const fetchBasicData = async () => {
     try {
-      const token = await getAccessToken();
+      const list = await getMyMissingPersons();
 
-      const res = await axios.get(`${API_BASE_URL}/missing-persons/search`, {
-        params: { page: 0, size: 20 },
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-
-      // API 응답이 페이지 객체({ content: [...] }) 형태라 content를 우선 사용
-      const raw = res.data;
-      const items = Array.isArray(raw)
-        ? raw
-        : raw?.content
-          ?? raw?.data?.content
-          ?? [];
-
-      setBasicData(mapToListData(items));
+      setBasicData(mapToListData(list));
     } catch (err) {
-      console.log('❌ 실종자 불러오기 실패:', err);
     }
   };
 
@@ -187,7 +174,7 @@ export default function MissingList() {
     try {
       const token = await getAccessToken();
 
-      const res = await axios.get('https://jjm.jojaemin.com/missing/police/missing-persons', {
+      const res = await apiClient.get('/missing/police/missing-persons', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
@@ -201,14 +188,15 @@ export default function MissingList() {
       const mapped = mapToListData(items);
       setPoliceData(mapped.length ? mapped : mapToListData(POLICE_FALLBACK));
     } catch (err) {
-      console.log('❌ 경찰청 실종자 불러오기 실패:', err);
       setPoliceData(mapToListData(POLICE_FALLBACK));
     }
   };
 
-  useEffect(() => {
-    fetchBasicData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchBasicData();
+    }, [])
+  );
 
   useEffect(() => {
     if (source === 'police' && policeData.length === 0) {
@@ -234,7 +222,7 @@ export default function MissingList() {
     const isTop = variant === 'top';
     const isPolice = variant === 'police';
     const buttonText = isTop ? '수정하기' : '자세히 보기';
-    const targetPath = isPolice ? '/police_detail' : '/detail';
+    const targetPath = isPolice ? '/police_detail' : '/missing-persons/[id]';
 
     return (
       <View style={styles.itemRow}>
@@ -248,7 +236,7 @@ export default function MissingList() {
           <Text style={styles.nameText}>
             {item.name}
           </Text>
-          
+
           {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
           <Text style={styles.locationDateText}>
             {item.location}
@@ -263,10 +251,17 @@ export default function MissingList() {
           activeOpacity={0.8}
           style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
           onPress={() => {
-            router.push({
-              pathname: targetPath,
-              params: { ...item },
-            });
+            if (isPolice) {
+              router.push({
+                pathname: '/police_detail' as const,
+                params: { ...item },
+              });
+            } else {
+              router.push({
+                pathname: '/missing-persons/[id]' as const,
+                params: { id: item.id },
+              });
+            }
           }}
         >
           <Text style={styles.pillBtnText}>{buttonText}</Text>

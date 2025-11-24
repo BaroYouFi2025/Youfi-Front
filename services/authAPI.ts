@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
-import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutRequest, LogoutResponse, RefreshRequest, RefreshResponse, SignupRequest } from '@/types/AuthTypes';
+import { AuthTokensResponse, AuthTokensWithRefresh, LoginRequest, LogoutRequest, LogoutResponse, RefreshRequest, SignupRequest } from '@/types/AuthTypes';
+import { resolveErrorMessage } from '@/utils/apiErrorHandler';
 
 import { API_BASE_URL } from './config';
 
@@ -15,19 +16,6 @@ const toAuthTokensResult = (response: AuthTokensResponse): AuthTokensWithRefresh
   refreshToken: response.refreshToken,
   expiresIn: response.expiresIn,
 });
-
-const resolveErrorMessage = (error: AxiosError): string => {
-  if (error.response?.data) {
-    const data = error.response.data as { message?: string; errorMessage?: string };
-    return data.message || data.errorMessage || '알 수 없는 오류가 발생했습니다.';
-  }
-
-  if (error.message) {
-    return error.message;
-  }
-
-  return '요청에 실패했습니다. 다시 시도해주세요.';
-};
 
 export const login = async (payload: LoginRequest): Promise<AuthTokensWithRefresh> => {
   try {
@@ -56,7 +44,7 @@ export const signup = async (payload: SignupRequest): Promise<AuthTokensWithRefr
 export const refreshTokens = async (refreshToken: string): Promise<AuthTokensWithRefresh> => {
   try {
     const payload: RefreshRequest = { refreshToken };
-    const response = await authClient.post<RefreshResponse>('/auth/refresh', payload, {
+    const response = await authClient.post<AuthTokensResponse>('/auth/refresh', payload, {
       headers: { 'Content-Type': 'application/json' },
     });
     return toAuthTokensResult(response.data);

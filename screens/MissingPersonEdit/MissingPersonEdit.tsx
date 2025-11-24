@@ -1,18 +1,49 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
-import { createMissingPersonReport, uploadPhoto } from '@/services/missingPersonAPI';
+import { getMissingPersonById, updateMissingPerson, uploadPhoto } from '@/services/missingPersonAPI';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
 import { hasFormErrors, validateMissingPersonForm } from '@/utils/validation';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
-import styled from 'styled-components/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  BackButton,
+  BackButtonText,
+  CalendarIcon,
+  Container,
+  DateInput,
+  DateInputContainer,
+  ErrorText,
+  FormContainer,
+  GenderButton,
+  GenderButtonText,
+  GenderContainer,
+  Header,
+  InputField,
+  InputGroup,
+  InputLabel,
+  LoadingWrap,
+  LocationSummary,
+  LocationText,
+  MapContainer,
+  MapPlaceholder,
+  MapPlaceholderText,
+  PhotoPreview,
+  PhotoUploadContainer,
+  PickerActionText,
+  PickerActions,
+  PickerContainer,
+  PickerOverlay,
+  SubmitButton,
+  SubmitButtonText,
+  Title,
+  UploadText,
+} from './MissingPersonEdit.styles';
 
 const INITIAL_REGION: Region = {
   latitude: 37.5665,
@@ -43,248 +74,15 @@ const formatDateTime = (value: string) => {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
-const Container = styled.View`
-  flex: 1;
-  background-color: #ffffff;
-`;
-
-const Header = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  margin-top: 32px;
-`;
-
-const Title = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 27px;
-  color: #16171a;
-  letter-spacing: -0.24px;
-  text-align: center;
-  flex: 1;
-`;
-
-const AIButton = styled.TouchableOpacity`
-  background-color: #25b2e2;
-  border-radius: 16px;
-  padding: 2px 8px;
-`;
-
-const AIButtonText = styled.Text`
-  font-family: 'Material Symbols Rounded';
-  font-weight: 300;
-  font-size: 24px;
-  color: #ffffff;
-  text-align: center;
-`;
-
-const FormContainer = styled.View`
-  padding: 16px;
-  gap: 16px;
-`;
-
-const InputGroup = styled.View`
-  gap: 8px;
-`;
-
-const InputLabel = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 16px;
-  color: #111827;
-  letter-spacing: -0.2px;
-`;
-
-const InputField = styled.TextInput.attrs({
-  placeholderTextColor: '#9ca3af',
-})`
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  height: 44px;
-  padding: 0 12px;
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 12px;
-  color: #111827;
-  letter-spacing: -0.2px;
-`;
-
-const DateInputContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-`;
-
-const DateInput = styled(InputField)`
-  flex: 1;
-`;
-
-const CalendarIcon = styled.Text`
-  font-family: 'Material Symbols Rounded';
-  font-weight: 300;
-  font-size: 24px;
-  color: #bbbcbe;
-  position: absolute;
-  right: 8px;
-`;
-
-const GenderContainer = styled.View`
-  flex-direction: row;
-  gap: 8px;
-`;
-
-const GenderButton = styled.TouchableOpacity<{ selected: boolean }>`
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  height: 40px;
-  width: 120px;
-  justify-content: center;
-  align-items: center;
-  ${(props: { selected: boolean }) => props.selected && `
-    background-color: #25b2e2;
-    border-color: #25b2e2;
-  `}
-`;
-
-const GenderButtonText = styled.Text<{ selected: boolean }>`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 17px;
-  color: ${(props: { selected: boolean }) => props.selected ? '#ffffff' : '#000000'};
-  letter-spacing: -0.3px;
-`;
-
-const PhotoUploadContainer = styled.TouchableOpacity`
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  height: 125px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
-`;
-
-const UploadIcon = styled.Text`
-  font-family: 'Material Symbols Rounded';
-  font-weight: 200;
-  font-size: 32px;
-  color: #949494;
-`;
-
-const UploadText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 16px;
-  color: #949494;
-  letter-spacing: -0.13px;
-`;
-
-const PhotoPreview = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const MapContainer = styled.View`
-  height: 190px;
-  border-radius: 16px;
-  overflow: hidden;
-  background-color: #e5e7eb;
-  border: 1px solid #d1d5db;
-  margin-top: 16px;
-`;
-
-const MapPlaceholder = styled.View`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  justify-content: center;
-  align-items: center;
-`;
-
-const MapPlaceholderText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 14px;
-  color: #6b7280;
-`;
-
-const LocationSummary = styled.View`
-  margin-top: 8px;
-`;
-
-const LocationText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 10px;
-  color: #4b5563;
-`;
-
-const ErrorText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 500;
-  font-size: 10px;
-  color: #ef4444;
-  margin-top: 4px;
-`;
-
-const SubmitButton = styled.TouchableOpacity`
-  background-color: #25b2e2;
-  border-radius: 8px;
-  height: 48px;
-  justify-content: center;
-  align-items: center;
-  margin: 16px;
-`;
-
-const SubmitButtonText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 700;
-  font-size: 16px;
-  color: #ffffff;
-`;
-
-const PickerOverlay = styled.View`
-  flex: 1;
-  background-color: rgba(0, 0, 0, 0.35);
-  justify-content: flex-end;
-`;
-
-const PickerContainer = styled.View`
-  background-color: #ffffff;
-  padding: 12px;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-`;
-
-const PickerActions = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  margin-bottom: 8px;
-`;
-
-const PickerActionText = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 600;
-  font-size: 14px;
-  color: #0f172a;
-`;
-
-export default function RegisterScreen() {
+export default function MissingPersonEditScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ name?: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const missingPersonId = Array.isArray(id) ? id[0] : id;
 
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<MissingPersonData>({
-    name: params.name || '',
+    name: '',
     birthDate: '',
     gender: 'MALE',
     missingDate: '',
@@ -306,9 +104,54 @@ export default function RegisterScreen() {
   const birthDateDisplay = formatDate(formData.birthDate);
   const missingDateDisplay = formatDateTime(formData.missingDate);
 
+  useEffect(() => {
+    const loadDetail = async () => {
+      if (!missingPersonId) {
+        Alert.alert('오류', '실종자 ID가 없습니다.');
+        router.back();
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const detail = await getMissingPersonById(missingPersonId);
+
+        setFormData({
+          name: detail.name || '',
+          birthDate: detail.birthDate || '',
+          gender: detail.gender || 'MALE',
+          missingDate: detail.missingDate || '',
+          height: detail.height?.toString() || '',
+          weight: detail.weight?.toString() || '',
+          body: detail.body || '',
+          bodyEtc: detail.bodyEtc || '',
+          clothesTop: detail.clothesTop || '',
+          clothesBottom: detail.clothesBottom || '',
+          clothesEtc: detail.clothesEtc || '',
+          photo: detail.photoUrl,
+          location: detail.latitude && detail.longitude
+            ? { latitude: detail.latitude, longitude: detail.longitude }
+            : undefined,
+        });
+
+        if (detail.latitude && detail.longitude) {
+          const location = { latitude: detail.latitude, longitude: detail.longitude };
+          setSelectedLocation(location);
+          setMapRegion(prev => ({ ...prev, ...location }));
+        }
+      } catch (error) {
+        Alert.alert('오류', error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.');
+        router.back();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDetail();
+  }, [missingPersonId]);
+
   const handleInputChange = (field: keyof MissingPersonData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field as keyof MissingPersonFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
@@ -406,30 +249,9 @@ export default function RegisterScreen() {
     setActivePicker(null);
   };
 
-  useEffect(() => {
-    const loadCurrentLocation = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          return;
-        }
-        const current = await Location.getCurrentPositionAsync({});
-        const { latitude, longitude } = current.coords;
-        setMapRegion(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
-      } catch (error) {
-        console.error('Failed to fetch current location', error);
-      }
-    };
-
-    loadCurrentLocation();
-  }, []);
-
   const handleSubmit = async () => {
-    // Validate form
+    if (!missingPersonId) return;
+
     const validationErrors = validateMissingPersonForm(formData);
 
     if (hasFormErrors(validationErrors)) {
@@ -441,53 +263,45 @@ export default function RegisterScreen() {
     setIsSubmitting(true);
 
     try {
-      // Upload photo if exists
       let photoUrl = formData.photo;
-      if (formData.photo) {
+      // Only upload if it's a local file URI (not already a URL)
+      if (formData.photo && !formData.photo.startsWith('http')) {
         photoUrl = await uploadPhoto(formData.photo);
       }
 
-      // Submit form data
       const submissionData = { ...formData, photo: photoUrl };
-      const response = await createMissingPersonReport(submissionData);
+      await updateMissingPerson(missingPersonId, submissionData);
 
-      if (response.missingPersonId) {
-        Alert.alert('등록 완료', '실종자 정보가 성공적으로 등록되었습니다.', [
-          { text: '확인', onPress: () => {
-            // Reset form
-            setFormData({
-              name: '',
-              birthDate: '',
-              gender: 'MALE',
-              missingDate: '',
-              height: '',
-              weight: '',
-              body: '',
-              bodyEtc: '',
-              clothesTop: '',
-              clothesBottom: '',
-              clothesEtc: '',
-            });
-            setErrors({});
-            setSelectedLocation(null);
-            setMapRegion(INITIAL_REGION);
-          }}
-        ]);
-      } else {
-        throw new Error('등록 응답이 올바르지 않습니다.');
-      }
+      Alert.alert('수정 완료', '실종자 정보가 성공적으로 수정되었습니다.', [
+        { text: '확인', onPress: () => router.back() }
+      ]);
     } catch (error) {
-      Alert.alert('오류', error instanceof Error ? error.message : '등록 중 오류가 발생했습니다.');
+      Alert.alert('오류', error instanceof Error ? error.message : '수정 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Container>
+        <LoadingWrap>
+          <ActivityIndicator size="large" color="#25b2e2" />
+        </LoadingWrap>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Header>
-        <YouFiLogo />
+        <BackButton onPress={() => router.back()}>
+          <BackButtonText>{'<'}</BackButtonText>
+        </BackButton>
+        <Title>정보 수정</Title>
+        <View style={{ width: 40 }} />
       </Header>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 + insets.bottom }}
@@ -520,7 +334,7 @@ export default function RegisterScreen() {
           </InputGroup>
 
           <InputGroup>
-            <InputLabel>실종자 사진 업로드</InputLabel>
+            <InputLabel>실종자 사진</InputLabel>
             <PhotoUploadContainer onPress={handlePhotoUpload}>
               {formData.photo ? (
                 <PhotoPreview source={{ uri: formData.photo }} resizeMode="cover" />
@@ -592,7 +406,7 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>체형</InputLabel>
             <InputField
-              placeholder="실종자의 체형을 선택하세요"
+              placeholder="실종자의 체형을 입력하세요"
               value={formData.body}
               onChangeText={(value: string) => handleInputChange('body', value)}
             />
@@ -632,7 +446,7 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>기타 인상 착의 특징</InputLabel>
             <InputField
-              placeholder="실종자의 기타 인상 착의 특징이 있다면 입력해주세요"
+              placeholder="기타 인상 착의 특징이 있다면 입력해주세요"
               value={formData.clothesEtc}
               onChangeText={(value: string) => handleInputChange('clothesEtc', value)}
             />
@@ -676,7 +490,7 @@ export default function RegisterScreen() {
           style={{ marginBottom: 48 + insets.bottom }}
         >
           <SubmitButtonText>
-            {isSubmitting ? '등록 중...' : '실종자 등록'}
+            {isSubmitting ? '수정 중...' : '정보 수정'}
           </SubmitButtonText>
         </SubmitButton>
       </ScrollView>

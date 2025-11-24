@@ -51,6 +51,7 @@ export interface MissingPersonAPIRequest {
 
 export interface MissingPersonAPIResponse {
   id: string;
+  missingPersonId?: number;
   message: string;
   success: boolean;
 }
@@ -127,6 +128,7 @@ export interface NearbyMissingPersonsResponse {
   empty: boolean;
 }
 
+
 export interface MissingPersonSightingRequest {
   missingPersonId: number;
   latitude: number;
@@ -135,4 +137,48 @@ export interface MissingPersonSightingRequest {
 
 export interface MissingPersonSightingResponse {
   message: string;
+}
+export interface MissingPersonDetailResponse {
+  missingPersonId: number;
+  name: string;
+  birthDate: string;
+  gender?: 'MALE' | 'FEMALE';
+  address?: string;
+  missingDate: string;
+  height: number;
+  weight: number;
+  body: string;
+  bodyEtc?: string;
+  clothesTop?: string;
+  clothesBottom?: string;
+  clothesEtc?: string;
+  latitude?: number;
+  longitude?: number;
+  photoUrl?: string;
+  predictedFaceUrl?: string;
+  appearanceImageUrl?: string;
+}
+
+export type AIAssetType = 'AGE_PROGRESSION' | 'GENERATED_IMAGE';
+
+export interface GenerateAIImageRequest {
+  missingPersonId: number;
+  assetType: AIAssetType;
+}
+
+export interface GenerateAIImageResponse {
+  assetType: AIAssetType;
+  imageUrls: string[];
+}
+
+export interface ApplyAIImageRequest {
+  missingPersonId: number;
+  assetType: AIAssetType;
+  selectedImageUrl: string;
+}
+
+export interface ApplyAIImageResponse {
+  missingPersonId: number;
+  assetType: AIAssetType;
+  appliedUrl: string;
 }
