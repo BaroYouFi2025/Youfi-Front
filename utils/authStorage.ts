@@ -54,7 +54,12 @@ export const deleteAccessToken = async (): Promise<void> => {
 };
 
 export const clearStoredTokens = async (): Promise<void> => {
-  await Promise.allSettled([deleteAccessToken(), deleteRefreshToken()]);
+  await Promise.allSettled([
+    deleteAccessToken(),
+    deleteRefreshToken(),
+    deleteStoredFCMToken(),
+    deleteDeviceId(), // deviceId도 함께 삭제
+  ]);
 };
 
 // FCM 토큰 저장/조회
@@ -117,4 +122,33 @@ export const generateDeviceUuid = (): string => {
       return segment;
     })
     .join('-');
+};
+
+// Device ID 저장/조회 (Numeric ID from DB)
+export const DEVICE_ID_KEY = 'deviceId';
+
+export const getDeviceId = async (): Promise<number | null> => {
+  try {
+    const id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+    return id ? parseInt(id, 10) : null;
+  } catch (error) {
+    console.warn('Failed to retrieve device ID from secure storage', error);
+    return null;
+  }
+};
+
+export const setDeviceId = async (id: number): Promise<void> => {
+  try {
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, id.toString());
+  } catch (error) {
+    console.warn('Failed to persist device ID to secure storage', error);
+  }
+};
+
+export const deleteDeviceId = async (): Promise<void> => {
+  try {
+    await SecureStore.deleteItemAsync(DEVICE_ID_KEY);
+  } catch (error) {
+    console.warn('Failed to remove device ID from secure storage', error);
+  }
 };

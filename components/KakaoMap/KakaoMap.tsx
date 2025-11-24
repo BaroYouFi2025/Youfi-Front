@@ -1,6 +1,6 @@
 import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 
 interface Location {
   latitude: number;
@@ -20,7 +20,7 @@ interface KakaoMapProps {
   nearbyPersons: MissingPerson[];
 }
 
-export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapProps) {
+export default function KakaoMap({ currentLocation, nearbyPersons = [] }: KakaoMapProps) {
   const KAKAO_MAP_API_KEY = process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || 'YOUR_KAKAO_MAP_API_KEY';
 
   console.log('🗺️ ========== KakaoMap 렌더링 ==========');
@@ -29,7 +29,7 @@ export default function KakaoMap({ currentLocation, nearbyPersons }: KakaoMapPro
   console.log('🗺️ 현재 위치 존재:', !!currentLocation);
   console.log('🗺️ 현재 위치:', currentLocation);
   console.log('🗺️ 근처 실종자 수:', nearbyPersons.length);
-  
+
   if (nearbyPersons.length > 0) {
     console.log('🗺️ ========== 근처 실종자 위치 확인 ==========');
     nearbyPersons.forEach((person, index) => {

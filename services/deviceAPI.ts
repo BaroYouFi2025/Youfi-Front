@@ -1,9 +1,10 @@
 import { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
+import { generateDeviceUuid, getDeviceId, getDeviceUuid, getRefreshToken, setAccessToken, setDeviceId, setDeviceUuid, setRefreshToken, setStoredFCMToken } from '@/utils/authStorage';
 import apiClient from './apiClient';
+import { refreshTokens } from './authAPI';
 import { API_BASE_URL } from './config';
-import { generateDeviceUuid, getDeviceUuid, setDeviceUuid, setStoredFCMToken } from '@/utils/authStorage';
 
 // 레거시 인터페이스 (하위 호환성을 위해 유지)
 interface RegisterDeviceRequest {
@@ -18,7 +19,7 @@ interface DeviceRegisterRequest {
   deviceUuid: string;
   osType?: string;
   osVersion?: string;
-  fcmToken?: string;
+  fcmToken: string;
 }
 
 interface DeviceRegisterResponse {
@@ -37,7 +38,7 @@ const resolveErrorMessage = (error: AxiosError): string => {
   if (error.response) {
     const status = error.response.status;
     const data = error.response.data as { message?: string; errorMessage?: string } | string;
-    
+
     // 상태 코드별 메시지
     if (status === 404) {
       return '요청하신 API 엔드포인트를 찾을 수 없습니다.';
@@ -48,16 +49,16 @@ const resolveErrorMessage = (error: AxiosError): string => {
     if (status === 401) {
       return '인증 토큰이 유효하지 않습니다. 다시 로그인해주세요.';
     }
-    
+
     // 백엔드에서 보낸 에러 메시지
     if (typeof data === 'object' && data !== null) {
-      return data.message || data.errorMessage || `서버 오류 (${status})`;
+      return data.message || data.errorMessage || `서버 오류(${status})`;
     }
     if (typeof data === 'string') {
       return data;
     }
-    
-    return `서버 오류 (${status})`;
+
+    return `서버 오류(${status})`;
   }
 
   if (error.message) {
@@ -98,7 +99,7 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
     };
 
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers['Authorization'] = `Bearer ${accessToken} `;
     }
 
     const requestBody: DeviceRegisterRequest = {
@@ -108,8 +109,11 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       fcmToken,
     };
 
+    // API_BASE_URL의 trailing slash 제거
+    const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
     console.log('🔍 기기 등록 요청 (/devices/register):', {
-      url: `${API_BASE_URL}/devices/register`,
+      url: `${baseURL} /devices/register`,
       deviceUuid,
       osType,
       osVersion,
@@ -125,28 +129,55 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       { headers }
     );
 
-    // 등록 성공 시 FCM 토큰 저장
+    // 등록 성공 시 FCM 토큰 및 deviceId 저장
     await setStoredFCMToken(fcmToken);
+    if (response.data.deviceId) {
+      await setDeviceId(response.data.deviceId);
+    }
+
     console.log('✅ 기기 등록 성공:', {
       status: response.status,
       deviceId: response.data.deviceId,
       deviceUuid: response.data.deviceUuid,
     });
+
+    // 토큰 갱신 시도 (deviceId가 포함된 토큰을 받기 위해)
+    try {
+      const refreshToken = await getRefreshToken();
+      if (refreshToken) {
+        console.log('🔄 기기 등록 후 토큰 갱신 시도...');
+        const newTokens = await refreshTokens(refreshToken);
+        await setAccessToken(newTokens.accessToken);
+        if (newTokens.refreshToken) {
+          await setRefreshToken(newTokens.refreshToken);
+        }
+        console.log('✅ 기기 등록 후 토큰 갱신 성공');
+      } else {
+        console.log('⚠️ Refresh Token 없음, 토큰 갱신 건너뜀');
+      }
+    } catch (refreshError) {
+      console.error('❌ 기기 등록 후 토큰 갱신 실패:', refreshError);
+      // 토큰 갱신 실패는 기기 등록 실패로 처리하지 않음 (선택적)
+    }
+
     return response.data;
   } catch (error) {
     const axiosError = error as AxiosError;
     const status = axiosError.response?.status;
     const statusText = axiosError.response?.statusText;
     const responseData = axiosError.response?.data;
-    
+
+    // API_BASE_URL의 trailing slash 제거
+    const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
     console.error('❌ 기기 등록 실패:', {
       status,
       statusText,
-      url: `${API_BASE_URL}/devices/register`,
+      url: `${baseURL} /devices/register`,
       responseData: JSON.stringify(responseData, null, 2),
       fullError: axiosError.response,
     });
-    
+
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
@@ -158,7 +189,7 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
 export const registerDeviceWithUuid = async (
   osType: string,
   osVersion: string,
-  fcmToken?: string,
+  fcmToken: string,
   accessToken?: string
 ): Promise<DeviceRegisterResponse> => {
   try {
@@ -192,7 +223,7 @@ export const registerDeviceWithUuid = async (
     };
 
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers['Authorization'] = `Bearer ${accessToken} `;
       console.log('🔐 인증 토큰 포함:', {
         tokenPrefix: accessToken.substring(0, 20) + '...',
         tokenLength: accessToken.length,
@@ -205,27 +236,26 @@ export const registerDeviceWithUuid = async (
       deviceUuid,
       osType,
       osVersion,
+      fcmToken,
     };
 
-    if (fcmToken) {
-      requestBody.fcmToken = fcmToken;
-      console.log('📲 FCM 토큰 포함:', {
-        tokenPrefix: fcmToken.substring(0, 30) + '...',
-        tokenLength: fcmToken.length,
-      });
-    } else {
-      console.log('📲 FCM 토큰 없음: FCM 토큰 없이 기기 등록');
-    }
+    console.log('📲 FCM 토큰 포함:', {
+      tokenPrefix: fcmToken.substring(0, 30) + '...',
+      tokenLength: fcmToken.length,
+    });
+
+    // API_BASE_URL의 trailing slash 제거
+    const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
 
     console.log('🔍 기기 등록 요청 상세:', {
       method: 'POST',
-      url: `${API_BASE_URL}/devices/register`,
-      fullURL: `${API_BASE_URL}/devices/register`,
+      url: `${baseURL} /devices/register`,
+      fullURL: `${baseURL} /devices/register`,
       requestBody: {
         deviceUuid,
         osType,
         osVersion,
-        fcmToken: fcmToken ? `${fcmToken.substring(0, 30)}...` : undefined,
+        fcmToken: `${fcmToken.substring(0, 30)}...`,
       },
       headers: {
         'Content-Type': headers['Content-Type'],
@@ -238,6 +268,11 @@ export const registerDeviceWithUuid = async (
       requestBody,
       { headers }
     );
+
+    // deviceId 저장
+    if (response.data.deviceId) {
+      await setDeviceId(response.data.deviceId);
+    }
 
     console.log('✅ 기기 등록 성공:', {
       status: response.status,
@@ -254,7 +289,26 @@ export const registerDeviceWithUuid = async (
       },
       fullResponse: response.data,
     });
-    
+
+    // 토큰 갱신 시도 (deviceId가 포함된 토큰을 받기 위해)
+    try {
+      const refreshToken = await getRefreshToken();
+      if (refreshToken) {
+        console.log('🔄 기기 등록 후 토큰 갱신 시도...');
+        const newTokens = await refreshTokens(refreshToken);
+        await setAccessToken(newTokens.accessToken);
+        if (newTokens.refreshToken) {
+          await setRefreshToken(newTokens.refreshToken);
+        }
+        console.log('✅ 기기 등록 후 토큰 갱신 성공');
+      } else {
+        console.log('⚠️ Refresh Token 없음, 토큰 갱신 건너뜀');
+      }
+    } catch (refreshError) {
+      console.error('❌ 기기 등록 후 토큰 갱신 실패:', refreshError);
+      // 토큰 갱신 실패는 기기 등록 실패로 처리하지 않음 (선택적)
+    }
+
     return response.data;
   } catch (error) {
     const axiosError = error as AxiosError;
@@ -262,20 +316,20 @@ export const registerDeviceWithUuid = async (
     const statusText = axiosError.response?.statusText;
     const responseData = axiosError.response?.data;
     const requestConfig = axiosError.config;
-    
+
     console.error('❌ 기기 등록 실패 상세:', {
       status,
       statusText,
       url: requestConfig?.url,
       baseURL: requestConfig?.baseURL,
-      fullURL: requestConfig ? `${requestConfig.baseURL}${requestConfig.url}` : 'unknown',
+      fullURL: requestConfig ? `${requestConfig.baseURL}${requestConfig.url} ` : 'unknown',
       method: requestConfig?.method?.toUpperCase(),
       requestData: requestConfig?.data,
       responseData: responseData ? JSON.stringify(responseData, null, 2) : undefined,
       responseHeaders: axiosError.response?.headers,
       errorMessage: axiosError.message,
     });
-    
+
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
@@ -304,12 +358,19 @@ export const updateGpsLocation = async (
   accessToken?: string
 ): Promise<GpsUpdateResponse> => {
   try {
+    // deviceId 가져오기
+    const deviceId = await getDeviceId();
+    if (!deviceId) {
+      console.warn('⚠️ GPS 업데이트 건너뜀: deviceId 없음 (기기 등록 필요)');
+      throw new Error('기기 등록이 필요합니다.');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers['Authorization'] = `Bearer ${accessToken} `;
     }
 
     const requestBody: GpsUpdateRequest = {
@@ -318,8 +379,11 @@ export const updateGpsLocation = async (
       batteryLevel,
     };
 
+    // API_BASE_URL의 trailing slash 제거
+    const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
     console.log('📍 GPS 위치 업데이트 요청:', {
-      url: `${API_BASE_URL}/devices/gps`,
+      url: `${baseURL} /devices/gps`,
       latitude,
       longitude,
       batteryLevel,
@@ -345,10 +409,16 @@ export const updateGpsLocation = async (
     const statusText = axiosError.response?.statusText;
     const responseData = axiosError.response?.data;
 
+    // API_BASE_URL의 trailing slash 제거
+    const baseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
+    // deviceId 가져오기 (에러 로깅용)
+    const deviceId = await getDeviceId();
+
     console.error('❌ GPS 위치 업데이트 실패:', {
       status,
       statusText,
-      url: `${API_BASE_URL}/devices/gps`,
+      url: `${baseURL} /devices/gps`,
       responseData: JSON.stringify(responseData, null, 2),
     });
 

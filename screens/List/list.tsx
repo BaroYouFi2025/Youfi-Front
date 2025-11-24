@@ -1,5 +1,5 @@
-import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import apiClient from '@/services/apiClient';
+import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getAccessToken } from '@/utils/authStorage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -258,12 +258,12 @@ export default function MissingList() {
             console.log('[MissingList] 버튼 클릭', { id: item.id, variant });
             if (isPolice) {
               router.push({
-                pathname: targetPath,
+                pathname: '/police_detail' as const,
                 params: { ...item },
               });
             } else {
               router.push({
-                pathname: '/missing-persons/[id]',
+                pathname: '/missing-persons/[id]' as const,
                 params: { id: item.id },
               });
             }

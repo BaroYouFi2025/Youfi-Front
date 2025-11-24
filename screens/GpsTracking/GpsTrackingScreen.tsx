@@ -62,9 +62,8 @@ export default function GpsTrackingScreen() {
 
         <MapCard>
           <KakaoMap
-            latitude={userLocation.latitude}
-            longitude={userLocation.longitude}
-            zoom={3}
+            currentLocation={userLocation}
+            nearbyPersons={[]}
           />
         </MapCard>
 
