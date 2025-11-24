@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 
 import FormInput from '@/components/FormInput';
 import { signup as signupRequest } from '@/services/authAPI';
-import { registerDeviceWithUuid } from '@/services/deviceAPI';
+import { registerDevice } from '@/services/deviceAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 
 // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
@@ -196,7 +196,6 @@ export default function SignupScreen() {
                 ]
               );
             }, 500);
-            console.log('알림 권한이 거부되어 FCM 토큰 발급을 건너뜁니다.');
           }
 
           // 권한이 허용된 경우에만 토큰 발급
@@ -205,14 +204,11 @@ export default function SignupScreen() {
           if (enabled) {
             // 권한이 있을 때만 FCM 토큰 발급
             const token = await getTokenFunc(messaging);
-            console.log('🔑 FCM 토큰 발급 (회원가입 시):', { hasToken: !!token, tokenLength: token?.length || 0 });
             if (token) {
               fcmToken = token;
             } else {
-              console.log('❌ FCM 토큰 발급 실패: token이 null입니다');
             }
           } else {
-            console.log('알림 권한이 허용되지 않아 FCM 토큰 발급을 건너뜁니다.');
           }
         } catch (error) {
           console.error('FCM 토큰 발급 실패:', error);
@@ -222,17 +218,7 @@ export default function SignupScreen() {
 
       // 2. FCM 토큰 발급 후 기기 등록 (항상 수행)
       try {
-        const osType = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Unknown';
-        const osVersion = Platform.Version.toString();
-        console.log('📱 기기 등록 시작 (회원가입 후):', {
-          osType,
-          osVersion,
-          platform: Platform.OS,
-          hasFcmToken: !!fcmToken,
-          fcmTokenLength: fcmToken?.length || 0,
-        });
-        await registerDeviceWithUuid(osType, osVersion, fcmToken || '', response.accessToken);
-        console.log('✅ 회원가입 후 기기 등록 완료');
+        await registerDevice(fcmToken || '', response.accessToken);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('❌ 회원가입 후 기기 등록 실패:', {

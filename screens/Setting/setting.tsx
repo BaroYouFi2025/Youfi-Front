@@ -27,7 +27,6 @@ const SettingScreen: React.FC = () => {
         });
         setProfile(res.data);
       } catch (e) {
-        console.warn('프로필 불러오기 실패:', e);
         setProfile(null);
       } finally {
         setLoading(false);
@@ -53,7 +52,6 @@ const SettingScreen: React.FC = () => {
                 await logoutRequest(refreshToken, accessToken || undefined);
               }
             } catch (e) {
-              console.warn('로그아웃 API 실패:', e);
             } finally {
               await clearStoredTokens();
               router.replace('/login');

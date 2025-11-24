@@ -64,7 +64,6 @@ export default function LoginScreen() {
 
             if (enabled) {
               const token = await getTokenFunc(messaging);
-              console.log('🔑 FCM 토큰 발급 (로그인 시):', { hasToken: !!token, tokenLength: token?.length || 0 });
               if (token) {
                 fcmToken = token;
               }
@@ -75,20 +74,8 @@ export default function LoginScreen() {
         }
 
         // 2. 기기 등록
-        const { registerDeviceWithUuid } = await import('@/services/deviceAPI');
-        const { Platform, Alert, Linking } = await import('react-native');
-
-        const osType = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Unknown';
-        const osVersion = Platform.Version.toString();
-
-        console.log('📱 기기 등록 시작 (로그인 후):', {
-          osType,
-          osVersion,
-          hasFcmToken: !!fcmToken,
-        });
-
-        await registerDeviceWithUuid(osType, osVersion, fcmToken || '', accessToken);
-        console.log('✅ 로그인 후 기기 등록 완료');
+        const { registerDevice } = await import('@/services/deviceAPI');
+        await registerDevice(fcmToken || '', accessToken);
       } catch (error) {
         console.error('❌ 로그인 후 기기 등록 실패:', error);
         // 기기 등록 실패해도 로그인은 성공 처리

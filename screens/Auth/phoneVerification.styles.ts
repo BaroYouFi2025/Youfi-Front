@@ -60,7 +60,7 @@ export const Button = styled.TouchableOpacity<{ disabled?: boolean }>`
   border-radius: 8px;
   justify-content: center;
   align-items: center;
-  background-color: ${({ disabled }) => (disabled ? '#9ca3af' : '#25b2e2')};
+  background-color: ${({ disabled }: { disabled?: boolean }) => (disabled ? '#9ca3af' : '#25b2e2')};
 `;
 
 export const ButtonText = styled.Text`
@@ -103,7 +103,7 @@ export const SecondaryButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   border-radius: 8px;
   justify-content: center;
   align-items: center;
-  background-color: ${({ disabled }) => (disabled ? '#d1d5db' : '#111827')};
+  background-color: ${({ disabled }: { disabled?: boolean }) => (disabled ? '#d1d5db' : '#111827')};
 `;
 
 export const SecondaryButtonText = styled.Text`
