@@ -1,0 +1,6 @@
+- TypeScript everywhere; components PascalCase.tsx, hooks use*.ts, utils camelCase.ts.
+- Indent two spaces, prefer single quotes.
+- Styling via styled-components; keep styled blocks near file end; add concise comments only for complex logic.
+- Path aliases: `@/*`, `@app/*`, `@components/*`, `@screens/*`, `@services/*`, `@utils/*`, etc. (tsconfig baseUrl '.').
+- Expo Router file-based routes; colocate styles/hooks with routes/screens.
+- Linting uses eslint-config-expo (flat); dist/* ignored.

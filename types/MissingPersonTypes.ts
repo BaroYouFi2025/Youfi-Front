@@ -50,5 +50,89 @@ export interface MissingPersonAPIRequest {
 }
 
 export interface MissingPersonAPIResponse {
+  id: string;
+  message: string;
+  success: boolean;
+}
+
+export interface MissingPersonDetail {
   missingPersonId: number;
+  name: string;
+  birthDate: string;
+  address: string;
+  missingDate: string;
+  height: number;
+  weight: number;
+  body: string;
+  bodyEtc: string;
+  clothesTop: string;
+  clothesBottom: string;
+  clothesEtc: string;
+  latitude: number;
+  longitude: number;
+  photoUrl?: string;
+}
+
+export interface NearbyMissingPerson {
+  // API 응답에서 ID 필드명이 상황에 따라 달라 예외적으로 모두 허용
+  id?: number;
+  missingPersonId?: number;
+  personId?: number;
+  missing_person_id?: number;
+  name: string;
+  birth_date: string;
+  gender: 'male' | 'female' | 'private';
+  missing_date: string;
+  height: number;
+  weight: number;
+  body_type: string;
+  physical_features: string;
+  top_clothing: string;
+  bottom_clothing: string;
+  other_features: string;
+  photo_url?: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+  distance?: number; // 거리 (미터)
+  hasDementia?: boolean; // 치매 여부
+}
+
+export interface NearbyMissingPersonsResponse {
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  content: NearbyMissingPerson[];
+  number: number;
+  sort: {
+    empty: boolean;
+    sorted: boolean;
+    unsorted: boolean;
+  };
+  first: boolean;
+  numberOfElements: number;
+  pageable: {
+    offset: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+    paged: boolean;
+    pageNumber: number;
+    pageSize: number;
+    unpaged: boolean;
+  };
+  last: boolean;
+  empty: boolean;
+}
+
+export interface MissingPersonSightingRequest {
+  missingPersonId: number;
+  latitude: number;
+  longitude: number;
+}
+
+export interface MissingPersonSightingResponse {
+  message: string;
 }

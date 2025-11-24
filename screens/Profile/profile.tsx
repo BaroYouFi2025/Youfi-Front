@@ -1,4 +1,5 @@
 import { logout as logoutRequest } from '@/services/authAPI';
+import apiClient from '@/services/apiClient';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
 import axios from 'axios';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -68,7 +69,7 @@ export default function ProfileScreen() {
                 const token = await getAccessToken();
                 if (!token) return router.replace('/login');
 
-                const res = await axios.get('https://jjm.jojaemin.com/users/me', {
+                const res = await apiClient.get('/users/me', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setProfile(res.data);

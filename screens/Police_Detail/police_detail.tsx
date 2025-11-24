@@ -1,95 +1,205 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
-import axios from 'axios';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  Linking,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { styles } from './police_detail.style';
 import ConfirmReportModal from './ConfirmReportModal';
 import SuccessReportModal from './SuccessReportModal';
-import { getAccessToken } from '@/utils/authStorage';
+import { reportMissingPersonSighting } from '@/services/missingPersonAPI';
+import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
+import { PoliceOffice } from '@/types/PoliceOfficeTypes';
+import apiClient from '@/services/apiClient';
+import { API_BASE_URL } from '@/services/config';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
-const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
+const PERSON_IMAGE = require('../../assets/images/people.png');
 
-type PoliceDetail = {
-  id: string;
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+type PoliceDetailResponse = {
+  id?: number;
   name?: string;
-  ageAtTime?: number | string;
-  currentAge?: number | string;
   occurrenceDate?: string;
   dress?: string;
-  category?: string;
+  statusCode?: string;
   gender?: string;
-  location?: string;
-  description?: string;
+  occurrenceAddress?: string;
+  specialFeatures?: string;
+  missingAge?: number;
+  ageNow?: number;
   photoUrl?: string;
 };
+
+const STATUS_MAP: Record<string, string> = {
+  '010': '가출인',
+  '020': '실종아동',
+  '030': '치매환자',
+};
+
+const pickParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
 
 const resolvePhotoUrl = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   const base = API_BASE_URL.replace(/\/+$/, '');
-  const path = url.startsWith('/') ? url : `/${url}`;
-  return `${base}${path}`;
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${normalized}`;
 };
 
 const PoliceDetailScreen = () => {
-  const params = useLocalSearchParams<{ id?: string; name?: string; photoUrl?: string }>();
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    id?: string;
+    policeId?: string;
+    name?: string;
+    photoUrl?: string;
+    location?: string;
+    date?: string;
+    info?: string;
+  }>();
+
+  const paramId = pickParam(params.id);
+  const paramPoliceId = pickParam(params.policeId);
+  const paramName = pickParam(params.name);
+  const paramPhoto = pickParam(params.photoUrl);
+  const paramLocation = pickParam(params.location);
+  const paramDate = pickParam(params.date);
+  const paramInfo = pickParam(params.info);
+  const detailQueryId = paramPoliceId ?? paramId;
+
+  const [detail, setDetail] = useState<PoliceDetailResponse | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [isConfirmModalVisible, setConfirmModalVisible] = useState(false);
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
-  const [detail, setDetail] = useState<PoliceDetail | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
+  const [isFindingPolice, setIsFindingPolice] = useState(false);
+  const [policeOffice, setPoliceOffice] = useState<PoliceOffice | null>(null);
+  const [policeError, setPoliceError] = useState<string | null>(null);
 
-  const personId = params.id;
-
-  const fetchDetail = async () => {
-    if (!personId) return;
-    try {
-      setLoading(true);
-      const token = await getAccessToken();
-      const res = await axios.get(`${API_BASE_URL}/missing/police/missing-persons/${personId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-
-      const data = res.data;
-      setDetail({
-        id: (data.missingPersonPoliceId ?? data.id ?? '').toString(),
-        name: data.name,
-        ageAtTime: data.missingAge,
-        currentAge: data.ageNow,
-        occurrenceDate: data.occurrenceDate,
-        dress: data.dress,
-        category: data.statusCode,
-        gender: data.gender,
-        location: data.occurrenceAddress,
-        description: data.specialFeatures,
-        photoUrl: resolvePhotoUrl(data.photoUrl ?? params.photoUrl),
-      });
-    } catch (err) {
-      console.log('❌ 경찰청 상세 불러오기 실패:', err);
-    } finally {
-      setLoading(false);
+  const fetchDetail = useCallback(async () => {
+    if (!detailQueryId) {
+      return;
     }
-  };
+    try {
+      setLoadingDetail(true);
+      const response = await apiClient.get<PoliceDetailResponse>(`/missing/police/missing-persons/${detailQueryId}`);
+      setDetail({
+        id: response.data.id,
+        name: response.data.name,
+        occurrenceDate: response.data.occurrenceDate,
+        dress: response.data.dress,
+        statusCode: response.data.statusCode,
+        gender: response.data.gender,
+        occurrenceAddress: response.data.occurrenceAddress,
+        specialFeatures: response.data.specialFeatures,
+        missingAge: response.data.missingAge,
+        ageNow: response.data.ageNow,
+        photoUrl: resolvePhotoUrl(response.data.photoUrl ?? paramPhoto),
+      });
+    } catch (error) {
+      console.error('경찰청 상세 조회 실패:', error);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, [detailQueryId, paramPhoto]);
 
   useEffect(() => {
     fetchDetail();
-  }, [personId]);
+  }, [fetchDetail]);
 
   const uiData = useMemo(() => {
-    const d = detail;
+    const fallbackName = paramName || '이름 미상';
+    const fallbackPhoto = resolvePhotoUrl(paramPhoto);
     return {
-      name: d?.name || params.name || '이름 미상',
-      ageAtTime: d?.ageAtTime ?? '-',
-      currentAge: d?.currentAge ?? '-',
-      occurrenceDate: d?.occurrenceDate ?? '-',
-      dress: d?.dress ?? '-',
-      category: d?.category ?? '-',
-      gender: d?.gender ?? '-',
-      location: d?.location ?? '-',
-      description: d?.description ?? '-',
-      photo: d?.photoUrl || resolvePhotoUrl(params.photoUrl),
+      reportId: paramId && !Number.isNaN(Number(paramId)) ? Number(paramId) : undefined,
+      policeId: detail?.id ?? (paramPoliceId ? Number(paramPoliceId) : undefined),
+      name: detail?.name || fallbackName,
+      missingAge: detail?.missingAge,
+      ageNow: detail?.ageNow,
+      occurrenceDate: detail?.occurrenceDate || paramDate,
+      dress: detail?.dress || paramInfo,
+      category: detail?.statusCode ? STATUS_MAP[detail.statusCode] || detail.statusCode : '경찰청 데이터',
+      gender: detail?.gender,
+      occurrenceAddress: detail?.occurrenceAddress || paramLocation,
+      specialFeatures: detail?.specialFeatures || paramInfo,
+      photo: detail?.photoUrl || fallbackPhoto,
     };
-  }, [detail, params.name, params.photoUrl]);
+  }, [detail, paramId, paramPoliceId, paramName, paramPhoto, paramLocation, paramDate, paramInfo]);
+
+  const infoFields = useMemo(
+    () => [
+      { label: '이름', value: uiData.name },
+      { label: '나이(당시)', value: uiData.missingAge !== undefined ? `${uiData.missingAge}세` : '-' },
+      { label: '나이(현재)', value: uiData.ageNow !== undefined ? `${uiData.ageNow}세` : '-' },
+      { label: '발생일시', value: uiData.occurrenceDate || '-' },
+      { label: '착의사항', value: uiData.dress || '-' },
+      { label: '대상구분', value: uiData.category || '-' },
+      { label: '성별구분', value: uiData.gender || '-' },
+      { label: '발생장소', value: uiData.occurrenceAddress || '-' },
+    ],
+    [uiData],
+  );
+
+  const resolveCurrentLocation = useCallback(async (): Promise<Coordinates | null> => {
+    try {
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        const permissionResult = await Location.requestForegroundPermissionsAsync();
+        status = permissionResult.status;
+      }
+
+      if (status !== 'granted') {
+        Alert.alert('위치 권한 필요', '현재 위치를 가져오려면 위치 권한을 허용해주세요.');
+        return null;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setCurrentLocation(coords);
+      return coords;
+    } catch (error) {
+      console.error('위치 조회 실패:', error);
+      Alert.alert('위치 조회 실패', '현재 위치를 가져오지 못했습니다.');
+      return null;
+    }
+  }, []);
+
+  const openKakaoDirections = useCallback(async (from: Coordinates, office: PoliceOffice) => {
+    const fromLabel = encodeURIComponent('내 위치');
+    const toLabel = encodeURIComponent(office.officeName || office.station || '경찰청');
+    const url = `https://map.kakao.com/link/from/${fromLabel},${from.latitude},${from.longitude}/to/${toLabel},${office.latitude},${office.longitude}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert('길안내 실패', '카카오맵을 열 수 없습니다.');
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('카카오맵 길안내 실패:', error);
+      Alert.alert('길안내 실패', '카카오맵을 열 수 없습니다.');
+    }
+  }, []);
 
   const handleReport = () => {
     setConfirmModalVisible(true);
@@ -99,15 +209,77 @@ const PoliceDetailScreen = () => {
     setConfirmModalVisible(false);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!uiData.reportId) {
+      Alert.alert('신고 실패', '신고할 실종자 정보를 확인할 수 없습니다.');
+      return;
+    }
+
+    setIsReporting(true);
+    setLocationError(null);
+    try {
+      const coords = await resolveCurrentLocation();
+      if (!coords) {
+        setLocationError('현재 위치를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
+        return;
+      }
+
+      await reportMissingPersonSighting({
+        missingPersonId: uiData.reportId,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      });
+
     setConfirmModalVisible(false);
-    setSuccessModalVisible(true);
-    console.log('확인 클릭: 182로 연결');
+      setSuccessModalVisible(true);
+      setPoliceError(null);
+    } catch (error) {
+      console.error('신고 실패:', error);
+      Alert.alert('신고 실패', error instanceof Error ? error.message : '신고 중 오류가 발생했습니다.');
+    } finally {
+      setIsReporting(false);
+    }
   };
 
-  const handleSuccessClose = () => {
-    setSuccessModalVisible(false);
-    console.log('신고 완료 모달 닫기');
+  const handleSuccessClose = () => setSuccessModalVisible(false);
+
+  const handleFindPolice = useCallback(async () => {
+    setPoliceError(null);
+    setIsFindingPolice(true);
+    try {
+      const coords = currentLocation || (await resolveCurrentLocation());
+      if (!coords) {
+        setPoliceError('현재 위치를 가져오지 못했습니다.');
+        return;
+      }
+
+      const offices = await getNearbyPoliceOffices({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        radiusMeters: 5000,
+        limit: 5,
+      });
+
+      if (!offices.length) {
+        setPoliceError('근처 경찰청을 찾지 못했습니다.');
+        return;
+      }
+
+      const nearest = offices[0];
+      setPoliceOffice(nearest);
+      await openKakaoDirections(coords, nearest);
+    } catch (error) {
+      console.error('근처 경찰청 조회 실패:', error);
+      setPoliceError(error instanceof Error ? error.message : '가까운 경찰청을 조회하지 못했습니다.');
+    } finally {
+      setIsFindingPolice(false);
+    }
+  }, [currentLocation, openKakaoDirections, resolveCurrentLocation]);
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   return (
@@ -116,41 +288,41 @@ const PoliceDetailScreen = () => {
         visible={isConfirmModalVisible}
         onCancel={handleCancel}
         onConfirm={handleConfirm}
-        name={uiData.name}
-        ageAtTime={typeof uiData.ageAtTime === 'number' ? `${uiData.ageAtTime}세` : uiData.ageAtTime}
-        avatar={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
+        name={uiData.gender ? `${uiData.name} (${uiData.gender})` : uiData.name}
+        ageAtTime={uiData.missingAge !== undefined ? `${uiData.missingAge}세` : undefined}
+        avatar={uiData.photo ? { uri: uiData.photo } : PERSON_IMAGE}
+        isSubmitting={isReporting}
+        errorMessage={locationError}
       />
       <SuccessReportModal
         visible={isSuccessModalVisible}
         onClose={handleSuccessClose}
+        onFindPolice={handleFindPolice}
+        isFindingPolice={isFindingPolice}
+        office={policeOffice}
+        errorMessage={policeError}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loading && (
-          <View style={{ paddingVertical: 20 }}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+            <Text style={styles.backButtonText}>‹</Text>
+          </TouchableOpacity>
+        </View>
+
+        {loadingDetail ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
             <ActivityIndicator />
           </View>
-        )}
+        ) : null}
 
         <View style={styles.imageContainer}>
-          <Image
-            source={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
-            style={styles.profileImage}
-          />
+          <Image source={uiData.photo ? { uri: uiData.photo } : PERSON_IMAGE} style={styles.profileImage} />
         </View>
 
         <View style={styles.infoSection}>
-          {[
-            { label: '이름', value: uiData.name },
-            { label: '나이(당시)', value: typeof uiData.ageAtTime === 'number' ? `${uiData.ageAtTime}세` : uiData.ageAtTime },
-            { label: '나이(현재)', value: typeof uiData.currentAge === 'number' ? `${uiData.currentAge}세` : uiData.currentAge },
-            { label: '발생일시', value: uiData.occurrenceDate },
-            { label: '착의사항', value: uiData.dress },
-            { label: '대상구분', value: uiData.category },
-            { label: '성별구분', value: uiData.gender },
-            { label: '발생장소', value: uiData.location },
-          ].map((item, index) => (
-            <View key={index} style={styles.infoRow}>
+          {infoFields.map((item, index) => (
+            <View key={`${item.label}-${index}`} style={styles.infoRow}>
               <Text style={styles.infoLabel}>{item.label} : </Text>
               <Text style={styles.infoValue}>{item.value}</Text>
             </View>
@@ -159,7 +331,7 @@ const PoliceDetailScreen = () => {
         
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>기타사항 : </Text>
-            <Text style={styles.infoValue}>{uiData.description}</Text>
+          <Text style={styles.infoValue}>{uiData.specialFeatures || '정보 없음'}</Text>
         </View>
 
         <View style={styles.spacer} />

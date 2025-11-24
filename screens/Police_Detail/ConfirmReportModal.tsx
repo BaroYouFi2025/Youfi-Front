@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, Image, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { styles } from './police_detail.style';
 
 type ConfirmReportModalProps = {
@@ -9,6 +9,8 @@ type ConfirmReportModalProps = {
   name?: string;
   ageAtTime?: string;
   avatar?: any;
+  isSubmitting?: boolean;
+  errorMessage?: string | null;
 };
 
 const PERSON_IMAGE = require('../../assets/images/people.png');
@@ -20,6 +22,8 @@ const ConfirmReportModal: React.FC<ConfirmReportModalProps> = ({
   name,
   ageAtTime,
   avatar,
+  isSubmitting,
+  errorMessage,
 }) => (
   <Modal
     animationType="fade"
@@ -43,10 +47,15 @@ const ConfirmReportModal: React.FC<ConfirmReportModalProps> = ({
           확인 시 실종자 발견 점수를 위해 182번으로 연결됩니다.
         </Text>
 
+        {errorMessage ? (
+          <Text style={styles.modalErrorText}>{errorMessage}</Text>
+        ) : null}
+
         <View style={styles.modalButtonContainer}>
           <TouchableOpacity
             style={[styles.modalButton, styles.cancelButton]}
             onPress={onCancel}
+            disabled={isSubmitting}
           >
             <Text style={styles.cancelButtonText}>취소</Text>
           </TouchableOpacity>
@@ -54,8 +63,13 @@ const ConfirmReportModal: React.FC<ConfirmReportModalProps> = ({
           <TouchableOpacity
             style={[styles.modalButton, styles.confirmButton]}
             onPress={onConfirm}
+            disabled={isSubmitting}
           >
-            <Text style={styles.confirmButtonText}>확인</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.confirmButtonText}>확인</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
