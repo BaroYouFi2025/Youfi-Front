@@ -142,6 +142,12 @@ export const styles = StyleSheet.create({
     marginBottom: 25,
     lineHeight: 20,
   },
+  modalErrorText: {
+    fontSize: 13,
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
   modalButtonContainer: {
     flexDirection: 'row',
     width: '100%',
@@ -194,5 +200,72 @@ export const styles = StyleSheet.create({
   successMessageSubtitle: {
     fontSize: 16,
     color: '#555',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  officePlaceholder: {
+    fontSize: 14,
+    color: '#777',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  officeCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+    backgroundColor: '#fdfdfd',
+  },
+  officeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1d1d1f',
+    marginBottom: 4,
+  },
+  officeSubtitle: {
+    fontSize: 13,
+    color: '#FF6347',
+    marginBottom: 8,
+  },
+  officeMeta: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 2,
+  },
+  findPoliceButton: {
+    width: '100%',
+    borderRadius: 10,
+    backgroundColor: '#1E88E5',
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  findPoliceButtonDisabled: {
+    opacity: 0.6,
+  },
+  findPoliceButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalErrorHelper: {
+    fontSize: 13,
+    color: '#d32f2f',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  overlayDismissArea: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  successErrorText: {
+    fontSize: 13,
+    color: '#d32f2f',
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });

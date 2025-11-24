@@ -19,6 +19,7 @@ import {
   NotificationIconContainer,
   NotificationItemContainer,
   NotificationMessage,
+  NotificationSelectableArea,
   NotificationTime,
   NotificationTitleText,
   NotificationUnreadDot,
@@ -39,6 +40,8 @@ interface NotificationItemProps {
   onReject?: (id: number) => Promise<void>;
   onDetail?: (id: number) => Promise<void>;
   onMarkAsRead?: (id: number) => Promise<void>;
+  onSelect?: (id: number) => Promise<void> | void;
+  isSelected?: boolean;
 }
 
 // 관계 옵션 목록
@@ -68,6 +71,8 @@ export default function NotificationItem({
   onReject,
   onDetail,
   onMarkAsRead,
+  onSelect,
+  isSelected = false,
 }: NotificationItemProps) {
   const [relationModalVisible, setRelationModalVisible] = useState(false);
   
@@ -92,100 +97,108 @@ export default function NotificationItem({
     setRelationModalVisible(true);
   };
 
+  const handleSelect = async () => {
+    if (onSelect) {
+      await onSelect(notification.id);
+    }
+  };
+
   // FOUND_REPORT 타입일 때 특별한 디자인 렌더링
   if (notification.type === NotificationType.FOUND_REPORT) {
     return (
-      <FoundReportContainer>
+      <FoundReportContainer isSelected={isSelected}>
         {/* 읽음 상태일 때 상단 그라데이션 */}
         {notification.isRead && <ReadNotificationOverlay />}
-        <FoundReportTitleRow>
-          <FoundReportIconContainer>
-            <FoundReportIconGradient>
-              <LinearGradient
-                key="gradient-1"
-                colors={['#cef1fc', '#2ccbff']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  position: 'absolute',
-                  width: 28.8,
-                  height: 28.8,
-                  borderRadius: 6,
-                  transform: [{ rotate: '314.314deg' }],
+        <NotificationSelectableArea activeOpacity={0.9} onPress={handleSelect}>
+          <FoundReportTitleRow>
+            <FoundReportIconContainer>
+              <FoundReportIconGradient>
+                <LinearGradient
+                  key="gradient-1"
+                  colors={['#cef1fc', '#2ccbff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    width: 28.8,
+                    height: 28.8,
+                    borderRadius: 6,
+                    transform: [{ rotate: '314.314deg' }],
+                  }}
+                />
+                <LinearGradient
+                  key="gradient-2"
+                  colors={['#cef1fc', '#2ccbff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    width: 22.629,
+                    height: 22.628,
+                    borderRadius: 6,
+                    left: 4.42,
+                    top: 6.17,
+                    transform: [{ rotate: '314.314deg' }],
+                  }}
+                />
+                <LinearGradient
+                  key="gradient-3"
+                  colors={['#cef1fc', '#2ccbff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    width: 18.514,
+                    height: 18.514,
+                    borderRadius: 6,
+                    left: 7.36,
+                    top: 10.29,
+                    transform: [{ rotate: '314.314deg' }],
+                  }}
+                />
+                <LinearGradient
+                  key="gradient-4"
+                  colors={['#cef1fc', '#2ccbff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    width: 14.4,
+                    height: 14.4,
+                    borderRadius: 4.8,
+                    left: 10.3,
+                    top: 14.4,
+                    transform: [{ rotate: '314.314deg' }],
+                  }}
+                />
+              </FoundReportIconGradient>
+            </FoundReportIconContainer>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+              <NotificationTitleText style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.2, fontWeight: '700' }}>
+                {notification.title}
+              </NotificationTitleText>
+              <NotificationTime style={{ fontSize: 10, lineHeight: 13, fontWeight: '500' }}>
+                {timeString}
+              </NotificationTime>
+            </View>
+          </FoundReportTitleRow>
+          <FoundReportMessageRow>
+            <NotificationMessage style={{ fontSize: 14, lineHeight: 18, letterSpacing: -0.14, flex: 1, fontWeight: '500' }}>
+              {notification.message}
+            </NotificationMessage>
+            {onDetail && (
+              <TouchableOpacity
+                onPress={async () => {
+                  await onDetail(notification.id);
                 }}
-              />
-              <LinearGradient
-                key="gradient-2"
-                colors={['#cef1fc', '#2ccbff']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  position: 'absolute',
-                  width: 22.629,
-                  height: 22.628,
-                  borderRadius: 6,
-                  left: 4.42,
-                  top: 6.17,
-                  transform: [{ rotate: '314.314deg' }],
-                }}
-              />
-              <LinearGradient
-                key="gradient-3"
-                colors={['#cef1fc', '#2ccbff']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  position: 'absolute',
-                  width: 18.514,
-                  height: 18.514,
-                  borderRadius: 6,
-                  left: 7.36,
-                  top: 10.29,
-                  transform: [{ rotate: '314.314deg' }],
-                }}
-              />
-              <LinearGradient
-                key="gradient-4"
-                colors={['#cef1fc', '#2ccbff']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{
-                  position: 'absolute',
-                  width: 14.4,
-                  height: 14.4,
-                  borderRadius: 4.8,
-                  left: 10.3,
-                  top: 14.4,
-                  transform: [{ rotate: '314.314deg' }],
-                }}
-              />
-            </FoundReportIconGradient>
-          </FoundReportIconContainer>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-            <NotificationTitleText style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.2, fontWeight: '700' }}>
-              {notification.title}
-            </NotificationTitleText>
-            <NotificationTime style={{ fontSize: 10, lineHeight: 13, fontWeight: '500' }}>
-              {timeString}
-            </NotificationTime>
-          </View>
-        </FoundReportTitleRow>
-        <FoundReportMessageRow>
-          <NotificationMessage style={{ fontSize: 14, lineHeight: 18, letterSpacing: -0.14, flex: 1, fontWeight: '500' }}>
-            {notification.message}
-          </NotificationMessage>
-          {onDetail && (
-            <TouchableOpacity
-              onPress={async () => {
-                await onDetail(notification.id);
-              }}
-            >
-              <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
-                자세히 보기
-              </ActionButtonText>
-            </TouchableOpacity>
-          )}
-        </FoundReportMessageRow>
+              >
+                <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
+                  자세히 보기
+                </ActionButtonText>
+              </TouchableOpacity>
+            )}
+          </FoundReportMessageRow>
+        </NotificationSelectableArea>
       </FoundReportContainer>
     );
   }
@@ -219,7 +232,7 @@ export default function NotificationItem({
               <AcceptButton
                 onPress={handleAcceptClick}
               >
-                <ActionButtonText style={{ color: '#ffffff' }}>수락</ActionButtonText>
+                <ActionButtonText style={{ color: '#25b2e2' }}>수락</ActionButtonText>
               </AcceptButton>
             )}
             {onReject && (
@@ -253,20 +266,22 @@ export default function NotificationItem({
 
   return (
     <>
-      <NotificationItemContainer isUnread={!notification.isRead}>
+      <NotificationItemContainer isUnread={!notification.isRead} isSelected={isSelected}>
         {/* 읽음 상태일 때 상단 그라데이션 */}
         {notification.isRead && <ReadNotificationOverlay />}
-        <NotificationHeader>
-          <NotificationIconContainer>
-            <NotificationIcon>{renderIcon()}</NotificationIcon>
-            {!notification.isRead && <NotificationUnreadDot />}
-          </NotificationIconContainer>
-          <NotificationHeaderText>
-            <NotificationTitleText>{notification.title}</NotificationTitleText>
-            <NotificationTime>{timeString}</NotificationTime>
-          </NotificationHeaderText>
-        </NotificationHeader>
-        <NotificationMessage>{notification.message}</NotificationMessage>
+        <NotificationSelectableArea activeOpacity={0.9} onPress={handleSelect}>
+          <NotificationHeader>
+            <NotificationIconContainer>
+              <NotificationIcon>{renderIcon()}</NotificationIcon>
+              {!notification.isRead && <NotificationUnreadDot />}
+            </NotificationIconContainer>
+            <NotificationHeaderText>
+              <NotificationTitleText>{notification.title}</NotificationTitleText>
+              <NotificationTime>{timeString}</NotificationTime>
+            </NotificationHeaderText>
+          </NotificationHeader>
+          <NotificationMessage>{notification.message}</NotificationMessage>
+        </NotificationSelectableArea>
         {renderActions()}
       </NotificationItemContainer>
 

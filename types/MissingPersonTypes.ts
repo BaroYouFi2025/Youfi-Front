@@ -126,3 +126,13 @@ export interface NearbyMissingPersonsResponse {
   last: boolean;
   empty: boolean;
 }
+
+export interface MissingPersonSightingRequest {
+  missingPersonId: number;
+  latitude: number;
+  longitude: number;
+}
+
+export interface MissingPersonSightingResponse {
+  message: string;
+}
