@@ -9,7 +9,6 @@ import { getAccessToken } from '@/utils/authStorage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://jjm.jojaemin.com';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
-const DEFAULT_PHOTO = DEFAULT_AVATAR;
 
 type MissingPersonDetail = {
   id: string;
@@ -116,8 +115,8 @@ const DetailScreen: React.FC = () => {
     const location = d?.address || params.location || '위치 정보 없음';
     const missingDate = d?.missingDate || params.date;
     const photo = d?.photoUrl || resolvePhotoUrl(params.photoUrl);
-    const appearance = d?.appearanceImageUrl || photo;
-    const predicted = d?.predictedFaceUrl || photo;
+    const appearance = d?.appearanceImageUrl || '';
+    const predicted = d?.predictedFaceUrl || '';
 
     return {
       name,
@@ -177,10 +176,12 @@ const DetailScreen: React.FC = () => {
 
         {/* 지도/대표 이미지 영역 */}
         <View style={detailStyles.mapContainer}>
-          <Image
-            source={uiData.appearance ? { uri: uiData.appearance } : DEFAULT_PHOTO}
-            style={detailStyles.mapImage}
-          />
+            {uiData.appearance ? (
+              <Image
+                source={{ uri: uiData.appearance }}
+                style={detailStyles.mapImage}
+              />
+            ) : null}
           <View style={detailStyles.mapAvatarOverlay}>
             <Image
               source={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
@@ -212,10 +213,12 @@ const DetailScreen: React.FC = () => {
         <View style={detailStyles.section}>
           <Text style={detailStyles.sectionTitle}>인상착의</Text>
           <View style={detailStyles.descriptionContent}>
-            <Image
-              source={uiData.appearance ? { uri: uiData.appearance } : DEFAULT_PHOTO}
-              style={detailStyles.descriptionImage}
-            />
+            {uiData.appearance ? (
+              <Image
+                source={{ uri: uiData.appearance }}
+                style={detailStyles.descriptionImage}
+              />
+            ) : null}
             <View style={detailStyles.descriptionDetails}>
               <Text style={detailStyles.detailLine}><Text style={detailStyles.detailLabel}>상의 :</Text> {uiData.clothesTop || '정보 없음'}</Text>
               <Text style={detailStyles.detailLine}><Text style={detailStyles.detailLabel}>하의 :</Text> {uiData.clothesBottom || '정보 없음'}</Text>
@@ -234,10 +237,12 @@ const DetailScreen: React.FC = () => {
         <View style={detailStyles.section}>
           <Text style={detailStyles.sectionTitle}>현재 모습 예측</Text>
           <View style={detailStyles.descriptionContent}>
-            <Image
-              source={uiData.predicted ? { uri: uiData.predicted } : DEFAULT_PHOTO}
-              style={detailStyles.currentLookImage}
-            />
+            {uiData.predicted ? (
+              <Image
+                source={{ uri: uiData.predicted }}
+                style={detailStyles.currentLookImage}
+              />
+            ) : null}
             <View style={detailStyles.currentLookDetails}>
               <Text style={detailStyles.currentLookLine}>
                 <Text style={detailStyles.detailLabel}>나이 :</Text> {uiData.currentAge !== undefined ? `${uiData.currentAge}세` : '정보 없음'}
