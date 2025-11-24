@@ -92,6 +92,7 @@ const POLICE_FALLBACK = [
 
 type MissingPerson = {
   id: string;
+  policeId?: string;
   name: string;
   location: string;
   date?: string;
@@ -118,9 +119,22 @@ export default function MissingList() {
     return `${base}${path}`;
   };
 
+  const normalizeId = (value: any): string | undefined => {
+    if (value === null || value === undefined) return undefined;
+    const str = String(value).trim();
+    return str.length ? str : undefined;
+  };
+
   const mapToListData = (items: any[]): MissingPerson[] => items
     .map((it: any) => {
-      const id = (it.missingPersonId ?? it.missingPersonPoliceId ?? it.id ?? '').toString();
+      const missingPersonId = normalizeId(it.missingPersonId);
+      const fallbackId = normalizeId(it.id);
+      const policeId = normalizeId(it.missingPersonPoliceId ?? it.policeId ?? it.id);
+      const resolvedId = missingPersonId ?? fallbackId ?? policeId;
+
+      if (!resolvedId) {
+        return null;
+      }
 
       const height = it.height ? `${it.height}cm` : '';
       const weight = it.weight ? `${it.weight}kg` : '';
@@ -135,7 +149,8 @@ export default function MissingList() {
       ].filter(Boolean);
 
       return {
-        id,
+        id: resolvedId,
+        policeId,
         name: it.name || '이름 미상',
         location: it.address || '위치 정보 없음',
         info: infoParts.length ? infoParts.join(', ') : '추가 정보 없음',
@@ -143,7 +158,7 @@ export default function MissingList() {
         photoUrl: resolvePhotoUrl(it.photoUrl),
       } as MissingPerson;
     })
-    .filter((it: MissingPerson) => !!it.id);
+    .filter((it: MissingPerson | null): it is MissingPerson => !!it);
 
   const fetchBasicData = async () => {
     try {

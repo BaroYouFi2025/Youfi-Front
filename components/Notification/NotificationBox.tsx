@@ -14,6 +14,8 @@ interface NotificationBoxProps {
   onReject?: (id: number) => Promise<void>;
   onDetail?: (id: number) => Promise<void>;
   onMarkAsRead?: (id: number) => Promise<void>;
+  onSelect?: (id: number) => Promise<void> | void;
+  selectedId?: number | null;
 }
 
 export default function NotificationBox({
@@ -23,6 +25,8 @@ export default function NotificationBox({
   onReject,
   onDetail,
   onMarkAsRead,
+  onSelect,
+  selectedId,
 }: NotificationBoxProps) {
   if (loading) {
     return (
@@ -50,6 +54,8 @@ export default function NotificationBox({
           onReject={onReject}
           onDetail={onDetail}
           onMarkAsRead={onMarkAsRead}
+          onSelect={onSelect}
+          isSelected={selectedId === notification.id}
         />
       ))}
     </NotificationBoxContainer>

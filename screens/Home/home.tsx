@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import KakaoMap from '../../components/KakaoMap/KakaoMap';
 import { NotificationBox } from '../../components/Notification';
@@ -44,6 +44,7 @@ const mapImage = require('../../assets/images/react-logo.png');
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [nearbyPersons, setNearbyPersons] = useState<NearbyMissingPerson[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
@@ -57,6 +58,14 @@ export default function HomeScreen() {
   const DISTANCE_THRESHOLD = 10; // 10미터
   const LOCATION_CHECK_INTERVAL = 10000; // 10초마다 위치 체크
   const MIN_LOAD_INTERVAL = 3000; // 최소 조회 간격: 3초 (중복 호출 방지)
+
+  type KakaoMapPerson = {
+    id: number | string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    photo_url?: string;
+  };
 
   // 두 좌표 간 거리 계산 (미터)
   const calculateDistance = useCallback((
@@ -238,6 +247,13 @@ export default function HomeScreen() {
       const displayedNotifications = sortedNotifications.slice(0, 3);
       
       setNotifications(displayedNotifications);
+      setSelectedNotificationId((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const stillExists = displayedNotifications.some((notification) => notification.id === prev);
+        return stillExists ? prev : null;
+      });
     } catch (error) {
       console.error('❌ 알림 로드 실패:', error instanceof Error ? error.message : String(error));
       // 에러가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
@@ -246,6 +262,49 @@ export default function HomeScreen() {
       setLoadingNotifications(false);
     }
   }, [loadingNotifications, lastNotificationLoadTime, MIN_LOAD_INTERVAL]);
+
+  const handleSelectNotification = useCallback(async (id: number) => {
+    setSelectedNotificationId(id);
+    const target = notifications.find((notif) => notif.id === id);
+
+    setNotifications((prev) =>
+      prev.map((notif) =>
+        notif.id === id ? { ...notif, isRead: true } : notif
+      )
+    );
+
+    if (target?.isRead) {
+      return;
+    }
+
+    try {
+      await markAsRead(id);
+      console.log('✅ 알림 읽음 처리 완료 (선택):', { notificationId: id });
+    } catch (error) {
+      console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
+    }
+  }, [notifications]);
+
+  const kakaoMapPersons: KakaoMapPerson[] = useMemo(
+    () =>
+      nearbyPersons.map((person, index) => ({
+        id: person.id
+          ?? person.missingPersonId
+          ?? person.personId
+          ?? person.missing_person_id
+          ?? `nearby-${index}`,
+        name: person.name,
+        latitude: person.latitude,
+        longitude: person.longitude,
+        photo_url: person.photo_url,
+      })),
+    [nearbyPersons],
+  );
+
+  useEffect(() => {
+    loadNotifications();
+    loadNearbyPersons(true);
+  }, [loadNotifications, loadNearbyPersons]);
 
   // 화면이 포커스될 때마다 알림 및 근처 실종자 새로고침
   useFocusEffect(
@@ -355,28 +414,26 @@ export default function HomeScreen() {
           <NotificationBox
             notifications={notifications}
             loading={loadingNotifications}
+            selectedId={selectedNotificationId}
+            onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
                 console.log('📬 초대 수락 시작:', { id, relation });
-                // 로컬 상태 즉시 업데이트 (버튼 즉시 숨김)
+                setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: true } : notif
                   )
                 );
                 await acceptInvitationFromNotification(id, {
-                  relation: relation,
-                                });
-                                console.log('📬 초대 수락 성공');
-                // 읽음 처리
+                  relation,
+                });
+                console.log('📬 초대 수락 성공');
                 await markAsRead(id);
-                console.log('📬 읽음 처리 완료');
-                // 알림 목록 새로고침
-                                await loadNotifications();
+                await loadNotifications();
                 Alert.alert('성공', '초대를 수락했습니다.');
-                              } catch (error) {
-                                console.error('❌ 초대 수락 실패:', error);
-                // 실패 시 상태 롤백
+              } catch (error) {
+                console.error('❌ 초대 수락 실패:', error);
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: false } : notif
@@ -387,25 +444,21 @@ export default function HomeScreen() {
               }
             }}
             onReject={async (id) => {
-                              try {
+              try {
                 console.log('📬 초대 거절 시작:', id);
-                // 로컬 상태 즉시 업데이트 (버튼 즉시 숨김)
+                setSelectedNotificationId(id);
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: true } : notif
                   )
                 );
                 await rejectInvitationFromNotification(id);
-                                console.log('📬 초대 거절 성공');
-                // 읽음 처리
+                console.log('📬 초대 거절 성공');
                 await markAsRead(id);
-                console.log('📬 읽음 처리 완료');
-                // 알림 목록 새로고침
-                                await loadNotifications();
+                await loadNotifications();
                 Alert.alert('성공', '초대를 거절했습니다.');
-                              } catch (error) {
-                                console.error('❌ 초대 거절 실패:', error);
-                // 실패 시 상태 롤백
+              } catch (error) {
+                console.error('❌ 초대 거절 실패:', error);
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: false } : notif
@@ -418,34 +471,13 @@ export default function HomeScreen() {
             onDetail={async (id) => {
               try {
                 console.log('📬 자세히 보기 클릭:', { notificationId: id });
-                
-                // 1. 즉시 로컬 상태 업데이트 (읽음 상태로 변경)
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
-                console.log('✅ 알림 읽음 상태 즉시 업데이트 (프론트):', { notificationId: id });
-                
-                // 2. 읽음 처리 API 호출 (기다림)
-                await markAsRead(id);
-                console.log('✅ 읽음 처리 API 완료:', { notificationId: id });
-                
-                // 3. 발견되었다 페이지로 이동
-                console.log('📬 발견되었다 페이지로 이동');
+                await handleSelectNotification(id);
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
                 });
               } catch (error) {
                 console.error('❌ 읽음 처리 실패:', error);
-                // 실패 시 상태 롤백
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: false } : notif
-                  )
-                );
-                // 에러가 있어도 페이지는 이동
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
@@ -457,13 +489,11 @@ export default function HomeScreen() {
                 console.log('📬 알림 읽음 처리 시작 (Home):', { notificationId: id });
                 await markAsRead(id);
                 console.log('✅ 알림 읽음 처리 완료 (Home):', { notificationId: id });
-                // 로컬 상태 즉시 업데이트
                 setNotifications((prev) =>
                   prev.map((notif) =>
                     notif.id === id ? { ...notif, isRead: true } : notif
                   )
                 );
-                // 알림 목록 새로고침
                 await loadNotifications();
               } catch (error) {
                 console.error('❌ 읽음 처리 실패:', error);
@@ -475,7 +505,7 @@ export default function HomeScreen() {
           <MapContainer>
             <KakaoMap 
               currentLocation={currentLocation}
-              nearbyPersons={nearbyPersons}
+              nearbyPersons={kakaoMapPersons}
             />
           </MapContainer>
 

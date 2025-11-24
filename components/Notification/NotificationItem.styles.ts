@@ -1,17 +1,30 @@
-import { TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 
-export const NotificationItemContainer = styled.View<{ isUnread?: boolean }>`
-  padding: 12px 0;
-  border-bottom-width: 1px;
-  border-bottom-color: #f2f3f4;
-  background-color: ${(props: { isUnread?: boolean }) => (props.isUnread ? '#f9fdfe' : 'transparent')};
-  border-radius: 8px;
-  padding-horizontal: 8px;
-  margin-horizontal: -8px;
+type NotificationContainerProps = {
+  isUnread?: boolean;
+  isSelected?: boolean;
+};
+
+export const NotificationItemContainer = styled.View<NotificationContainerProps>`
+  padding: 20px;
+  background-color: ${({ isSelected, isUnread }: NotificationContainerProps) => {
+    if (isSelected) return '#f4f4f4';
+    if (isUnread) return '#ffffff';
+    return '#ffffff';
+  }};
+  border-radius: 20px;
   position: relative;
   overflow: hidden;
+  border-width: ${({ isSelected }: NotificationContainerProps) => (isSelected ? 1 : 0)}px;
+  border-color: #25b2e2;
+  shadow-color: #969696;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.25;
+  shadow-radius: 4px;
+  elevation: 3;
+  margin-bottom: 12px;
 `;
 
 export const ReadNotificationOverlay = styled(LinearGradient).attrs({
@@ -42,10 +55,13 @@ export const NotificationIconContainer = styled.View`
   align-items: center;
 `;
 
-export const NotificationIcon = styled.View`
+export const NotificationIcon = styled(LinearGradient).attrs({
+  colors: ['#cef1fc', '#2ccbff'],
+  start: { x: 0, y: 0 },
+  end: { x: 0, y: 1 },
+})`
   width: 40px;
   height: 40px;
-  background-color: #cef1fc;
   border-radius: 8px;
   justify-content: center;
   align-items: center;
@@ -100,28 +116,17 @@ export const NotificationMessage = styled.Text`
 
 export const NotificationActions = styled.View`
   flex-direction: row;
-  gap: 8px;
+  gap: 12px;
   align-self: flex-end;
-  margin-top: 4px;
+  margin-top: 6px;
 `;
 
 export const AcceptButton = styled(TouchableOpacity)`
-  background-color: #25b2e2;
-  border-radius: 8px;
-  padding: 8px 16px;
-  min-width: 60px;
-  align-items: center;
-  justify-content: center;
+  padding-vertical: 4px;
 `;
 
 export const RejectButton = styled(TouchableOpacity)`
-  background-color: #ffffff;
-  border: 1px solid #ff6f61;
-  border-radius: 8px;
-  padding: 8px 16px;
-  min-width: 60px;
-  align-items: center;
-  justify-content: center;
+  padding-vertical: 4px;
 `;
 
 export const DetailButton = styled(TouchableOpacity)`
@@ -141,8 +146,12 @@ export const ActionButtonText = styled.Text`
 `;
 
 // 실종자 발견 알림 전용 스타일
-export const FoundReportContainer = styled.View`
-  background-color: #ffffff;
+type FoundReportProps = {
+  isSelected?: boolean;
+};
+
+export const FoundReportContainer = styled.View<FoundReportProps>`
+  background-color: ${({ isSelected }: FoundReportProps) => (isSelected ? '#f4f4f4' : '#ffffff')};
   border-radius: 20px;
   padding: 16px 21px;
   margin-bottom: 12px;
@@ -153,6 +162,8 @@ export const FoundReportContainer = styled.View`
   shadow-opacity: 0.25;
   shadow-radius: 4px;
   elevation: 3;
+  border-width: ${({ isSelected }: FoundReportProps) => (isSelected ? 1 : 0)}px;
+  border-color: #25b2e2;
 `;
 
 export const FoundReportTitleRow = styled.View`
@@ -240,6 +251,11 @@ export const RelationModalCloseText = styled.Text`
   color: #16171a;
   font-family: 'Wanted Sans';
   font-weight: 600;
+`;
+
+export const NotificationSelectableArea = styled(TouchableOpacity)`
+  width: 100%;
+  padding-vertical: 4px;
 `;
 
 

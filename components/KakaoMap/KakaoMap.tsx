@@ -8,7 +8,7 @@ interface Location {
 }
 
 interface MissingPerson {
-  id: number;
+  id?: number | string;
   name: string;
   latitude: number;
   longitude: number;

@@ -1,4 +1,12 @@
-import { MissingPersonAPIRequest, MissingPersonAPIResponse, MissingPersonData, MissingPersonDetail, NearbyMissingPersonsResponse } from '@/types/MissingPersonTypes';
+import {
+  MissingPersonAPIRequest,
+  MissingPersonAPIResponse,
+  MissingPersonData,
+  MissingPersonDetail,
+  MissingPersonSightingRequest,
+  MissingPersonSightingResponse,
+  NearbyMissingPersonsResponse,
+} from '@/types/MissingPersonTypes';
 import { getAccessToken } from '@/utils/authStorage';
 import { AxiosError, isAxiosError } from 'axios';
 import apiClient from './apiClient';
@@ -288,5 +296,28 @@ export const getNearbyMissingPersons = async (
     }
     console.error('❌ ========================================');
     throw error;
+  }
+};
+
+export const reportMissingPersonSighting = async (
+  payload: MissingPersonSightingRequest
+): Promise<MissingPersonSightingResponse> => {
+  try {
+    const accessToken = await requireAccessToken();
+    const response = await apiClient.post<MissingPersonSightingResponse>(
+      '/missing-persons/sightings',
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error reporting missing person sighting:', axiosError.response?.data ?? axiosError.message);
+    throw new Error(resolveErrorMessage(axiosError));
   }
 };
