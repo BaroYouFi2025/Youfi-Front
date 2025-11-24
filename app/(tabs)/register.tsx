@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
@@ -280,8 +281,10 @@ const PickerActionText = styled.Text`
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ name?: string }>();
+
   const [formData, setFormData] = useState<MissingPersonData>({
-    name: '',
+    name: params.name || '',
     birthDate: '',
     gender: 'MALE',
     missingDate: '',

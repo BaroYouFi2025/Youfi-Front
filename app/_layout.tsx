@@ -53,7 +53,6 @@ export default function RootLayout() {
 
     const requestNotificationPermissionAndGetToken = async () => {
       if (!firebaseApp || !getMessagingFunc) {
-        console.log('⏭️ 알림 권한 요청 건너뜀: Firebase 사용 불가');
         return;
       }
 
@@ -62,26 +61,11 @@ export default function RootLayout() {
       try {
         // 현재 알림 권한 상태 확인
         const currentAuthStatus = await messaging.requestPermission();
-        console.log('🔍 알림 권한 상태:', {
-          status: currentAuthStatus,
-          statusName: currentAuthStatus === 0 ? 'NOT_DETERMINED' :
-            currentAuthStatus === -1 ? 'DENIED' :
-              currentAuthStatus === 1 ? 'AUTHORIZED' :
-                currentAuthStatus === 2 ? 'PROVISIONAL' : 'UNKNOWN'
-        });
-
         let authStatus = currentAuthStatus;
 
         // 권한이 아직 결정되지 않았으면 요청
         if (currentAuthStatus === 0) {
-          console.log('📱 알림 권한 요청 팝업 표시');
           authStatus = await requestPermissionFunc(messaging);
-          console.log('📱 알림 권한 요청 결과:', {
-            status: authStatus,
-            statusName: authStatus === 1 ? 'AUTHORIZED' :
-              authStatus === 2 ? 'PROVISIONAL' :
-                authStatus === -1 ? 'DENIED' : 'UNKNOWN'
-          });
 
           // 권한이 거부되면 설정으로 안내 (반드시 허용 필요)
           if (authStatus === -1) {
@@ -109,7 +93,6 @@ export default function RootLayout() {
           // 설정을 연 지 10초 이내라면 Alert를 표시하지 않음 (설정에서 돌아온 직후)
           const timeSinceSettingsOpen = Date.now() - lastSettingsOpenTime;
           if (timeSinceSettingsOpen < 10000) {
-            console.log('⏭️ 설정에서 돌아온 직후이므로 Alert 표시 생략');
             return;
           }
 
@@ -132,7 +115,6 @@ export default function RootLayout() {
             ],
             { cancelable: false } // 취소 불가능
           );
-          console.log('⏭️ 알림 권한이 거부되어 FCM 토큰 발급을 건너뜁니다.');
           return;
         }
 
@@ -142,16 +124,10 @@ export default function RootLayout() {
         if (enabled) {
           try {
             const token = await getTokenFunc(messaging);
-            console.log('🔑 FCM 토큰 발급 성공:', {
-              hasToken: !!token,
-              tokenLength: token?.length || 0,
-            });
             // FCM 토큰은 발급만 하고, 기기 등록은 회원가입 시에만 수행
           } catch (error) {
             console.error('❌ FCM 토큰 발급 실패:', error);
           }
-        } else {
-          console.log('⏭️ 알림 권한이 허용되지 않아 FCM 토큰 발급을 건너뜁니다.');
         }
       } catch (error) {
         console.error('❌ 알림 권한 확인/요청 실패:', error);
@@ -168,9 +144,6 @@ export default function RootLayout() {
       }
     });
 
-    return () => {
-      appStateSubscription.remove();
-    };
   }, []);
 
   // 백그라운드 GPS 위치 추적 시작 (로그인된 경우)
@@ -179,7 +152,6 @@ export default function RootLayout() {
       try {
         const accessToken = await getAccessToken();
         if (accessToken) {
-          console.log('📍 백그라운드 GPS 위치 추적 초기화');
           const started = await startBackgroundLocationTracking();
 
           // GPS 추적 시작 실패 시 위치 권한 안내
@@ -205,8 +177,6 @@ export default function RootLayout() {
               ]
             );
           }
-        } else {
-          console.log('⏭️ GPS 위치 추적 건너뜀: 로그인하지 않음');
         }
       } catch (error) {
         console.error('❌ GPS 위치 추적 초기화 실패:', error);
@@ -226,21 +196,21 @@ export default function RootLayout() {
 
     // 앱이 포그라운드에 있을 때 푸시 알림 수신
     const unsubscribe = onMessageFunc(messaging, async (remoteMessage: any) => {
-      console.log('포그라운드 푸시 알림 수신:', remoteMessage);
+      // 푸시 알림 수신 처리
     });
 
     // 앱이 종료된 상태에서 알림 클릭으로 앱 실행
     if (getInitialNotificationFunc) {
       getInitialNotificationFunc(messaging).then((remoteMessage: any) => {
         if (remoteMessage) {
-          console.log('알림 클릭으로 앱 실행:', remoteMessage);
+          // 종료 상태에서 알림으로 앱 실행됨
         }
       });
     }
 
     // 백그라운드에서 알림 클릭 시 처리
     const unsubscribeNotificationOpened = onNotificationOpenedAppFunc ? onNotificationOpenedAppFunc(messaging, (remoteMessage: any) => {
-      console.log('백그라운드에서 알림 클릭:', remoteMessage);
+      // 백그라운드에서 알림으로 앱 실행됨
     }) : null;
 
     return () => {
