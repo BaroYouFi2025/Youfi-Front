@@ -12,10 +12,25 @@ import { startBackgroundLocationTracking } from '@/services/locationService';
 import { getAccessToken } from '@/utils/authStorage';
 import { Alert, Linking, Platform } from 'react-native';
 
-// Firebase는 네이티브 빌드에서만 사용 가능
-let messaging: any = null;
+// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+let firebaseApp: any = null;
+let getMessagingFunc: any = null;
+let requestPermissionFunc: any = null;
+let getTokenFunc: any = null;
+let onMessageFunc: any = null;
+let getInitialNotificationFunc: any = null;
+let onNotificationOpenedAppFunc: any = null;
+
 try {
-  messaging = require('@react-native-firebase/messaging').default;
+  const app = require('@react-native-firebase/app').default;
+  const messagingModule = require('@react-native-firebase/messaging');
+  firebaseApp = app;
+  getMessagingFunc = messagingModule.getMessaging;
+  requestPermissionFunc = messagingModule.requestPermission;
+  getTokenFunc = messagingModule.getToken;
+  onMessageFunc = messagingModule.onMessage;
+  getInitialNotificationFunc = messagingModule.getInitialNotification;
+  onNotificationOpenedAppFunc = messagingModule.onNotificationOpenedApp;
 } catch (e) {
   // Expo Go에서는 Firebase 사용 불가
 }
@@ -34,38 +49,42 @@ export default function RootLayout() {
 
   // 알림 권한 확인 및 요청, FCM 토큰 발급 (앱 진입 시 및 포그라운드 복귀 시)
   useEffect(() => {
+    let lastSettingsOpenTime = 0; // 마지막으로 설정을 연 시간
+
     const requestNotificationPermissionAndGetToken = async () => {
-      if (!messaging) {
+      if (!firebaseApp || !getMessagingFunc) {
         console.log('⏭️ 알림 권한 요청 건너뜀: Firebase 사용 불가');
         return;
       }
 
+      const messaging = getMessagingFunc(firebaseApp);
+
       try {
         // 현재 알림 권한 상태 확인
-        const currentAuthStatus = await messaging().hasPermission();
+        const currentAuthStatus = await messaging.requestPermission();
         console.log('🔍 알림 권한 상태:', {
           status: currentAuthStatus,
-          statusName: currentAuthStatus === messaging.AuthorizationStatus.NOT_DETERMINED ? 'NOT_DETERMINED' :
-                     currentAuthStatus === messaging.AuthorizationStatus.DENIED ? 'DENIED' :
-                     currentAuthStatus === messaging.AuthorizationStatus.AUTHORIZED ? 'AUTHORIZED' :
-                     currentAuthStatus === messaging.AuthorizationStatus.PROVISIONAL ? 'PROVISIONAL' : 'UNKNOWN'
+          statusName: currentAuthStatus === 0 ? 'NOT_DETERMINED' :
+            currentAuthStatus === -1 ? 'DENIED' :
+              currentAuthStatus === 1 ? 'AUTHORIZED' :
+                currentAuthStatus === 2 ? 'PROVISIONAL' : 'UNKNOWN'
         });
 
         let authStatus = currentAuthStatus;
 
         // 권한이 아직 결정되지 않았으면 요청
-        if (currentAuthStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
+        if (currentAuthStatus === 0) {
           console.log('📱 알림 권한 요청 팝업 표시');
-          authStatus = await messaging().requestPermission();
+          authStatus = await requestPermissionFunc(messaging);
           console.log('📱 알림 권한 요청 결과:', {
             status: authStatus,
-            statusName: authStatus === messaging.AuthorizationStatus.AUTHORIZED ? 'AUTHORIZED' :
-                       authStatus === messaging.AuthorizationStatus.PROVISIONAL ? 'PROVISIONAL' :
-                       authStatus === messaging.AuthorizationStatus.DENIED ? 'DENIED' : 'UNKNOWN'
+            statusName: authStatus === 1 ? 'AUTHORIZED' :
+              authStatus === 2 ? 'PROVISIONAL' :
+                authStatus === -1 ? 'DENIED' : 'UNKNOWN'
           });
 
           // 권한이 거부되면 설정으로 안내 (반드시 허용 필요)
-          if (authStatus === messaging.AuthorizationStatus.DENIED) {
+          if (authStatus === -1) {
             Alert.alert(
               '알림 권한 필요',
               'YouFi 앱을 사용하려면 알림 권한이 반드시 필요합니다. 설정에서 알림 권한을 허용해주세요.',
@@ -73,6 +92,7 @@ export default function RootLayout() {
                 {
                   text: '설정 열기',
                   onPress: async () => {
+                    lastSettingsOpenTime = Date.now(); // 설정 열기 시간 기록
                     if (Platform.OS === 'ios') {
                       await Linking.openURL('app-settings:');
                     } else {
@@ -85,7 +105,14 @@ export default function RootLayout() {
             );
             return;
           }
-        } else if (currentAuthStatus === messaging.AuthorizationStatus.DENIED) {
+        } else if (currentAuthStatus === -1) {
+          // 설정을 연 지 10초 이내라면 Alert를 표시하지 않음 (설정에서 돌아온 직후)
+          const timeSinceSettingsOpen = Date.now() - lastSettingsOpenTime;
+          if (timeSinceSettingsOpen < 10000) {
+            console.log('⏭️ 설정에서 돌아온 직후이므로 Alert 표시 생략');
+            return;
+          }
+
           // 이미 거부된 경우: 설정으로 안내 (반드시 허용 필요)
           Alert.alert(
             '알림 권한 필요',
@@ -94,6 +121,7 @@ export default function RootLayout() {
               {
                 text: '설정 열기',
                 onPress: async () => {
+                  lastSettingsOpenTime = Date.now(); // 설정 열기 시간 기록
                   if (Platform.OS === 'ios') {
                     await Linking.openURL('app-settings:');
                   } else {
@@ -109,13 +137,11 @@ export default function RootLayout() {
         }
 
         // 권한이 허용된 경우에만 FCM 토큰 발급
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        const enabled = authStatus === 1 || authStatus === 2;
 
         if (enabled) {
           try {
-            const token = await messaging().getToken();
+            const token = await getTokenFunc(messaging);
             console.log('🔑 FCM 토큰 발급 성공:', {
               hasToken: !!token,
               tokenLength: token?.length || 0,
@@ -155,7 +181,7 @@ export default function RootLayout() {
         if (accessToken) {
           console.log('📍 백그라운드 GPS 위치 추적 초기화');
           const started = await startBackgroundLocationTracking();
-          
+
           // GPS 추적 시작 실패 시 위치 권한 안내
           if (!started) {
             Alert.alert(
@@ -192,32 +218,36 @@ export default function RootLayout() {
 
   // 푸시 알림 수신 처리 (기기 등록은 회원가입 시에만 수행)
   useEffect(() => {
-    if (!messaging) {
+    if (!firebaseApp || !getMessagingFunc || !onMessageFunc) {
       return;
     }
 
+    const messaging = getMessagingFunc(firebaseApp);
+
     // 앱이 포그라운드에 있을 때 푸시 알림 수신
-    const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
+    const unsubscribe = onMessageFunc(messaging, async (remoteMessage: any) => {
       console.log('포그라운드 푸시 알림 수신:', remoteMessage);
     });
 
     // 앱이 종료된 상태에서 알림 클릭으로 앱 실행
-    messaging()
-      .getInitialNotification()
-      .then((remoteMessage: any) => {
+    if (getInitialNotificationFunc) {
+      getInitialNotificationFunc(messaging).then((remoteMessage: any) => {
         if (remoteMessage) {
           console.log('알림 클릭으로 앱 실행:', remoteMessage);
         }
       });
+    }
 
     // 백그라운드에서 알림 클릭 시 처리
-    const unsubscribeNotificationOpened = messaging().onNotificationOpenedApp((remoteMessage: any) => {
+    const unsubscribeNotificationOpened = onNotificationOpenedAppFunc ? onNotificationOpenedAppFunc(messaging, (remoteMessage: any) => {
       console.log('백그라운드에서 알림 클릭:', remoteMessage);
-    });
+    }) : null;
 
     return () => {
       unsubscribe();
-      unsubscribeNotificationOpened();
+      if (unsubscribeNotificationOpened) {
+        unsubscribeNotificationOpened();
+      }
     };
   }, []);
 

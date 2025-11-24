@@ -42,23 +42,28 @@ export default function LoginScreen() {
         // 1. FCM 토큰 발급 (알림 권한이 있는 경우)
         let fcmToken: string | undefined = undefined;
 
-        // Firebase는 네이티브 빌드에서만 사용 가능
-        let messaging: any = null;
+        // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+        let firebaseApp: any = null;
+        let getMessagingFunc: any = null;
+        let getTokenFunc: any = null;
         try {
-          messaging = require('@react-native-firebase/messaging').default;
+          const app = require('@react-native-firebase/app').default;
+          const messagingModule = require('@react-native-firebase/messaging');
+          firebaseApp = app;
+          getMessagingFunc = messagingModule.getMessaging;
+          getTokenFunc = messagingModule.getToken;
         } catch (e) {
           // Expo Go에서는 Firebase 사용 불가
         }
 
-        if (messaging) {
+        if (firebaseApp && getMessagingFunc) {
           try {
-            const authStatus = await messaging().hasPermission();
-            const enabled =
-              authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-              authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+            const messaging = getMessagingFunc(firebaseApp);
+            const authStatus = await messaging.requestPermission();
+            const enabled = authStatus === 1 || authStatus === 2;
 
             if (enabled) {
-              const token = await messaging().getToken();
+              const token = await getTokenFunc(messaging);
               console.log('🔑 FCM 토큰 발급 (로그인 시):', { hasToken: !!token, tokenLength: token?.length || 0 });
               if (token) {
                 fcmToken = token;

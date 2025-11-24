@@ -7,10 +7,19 @@ import { signup as signupRequest } from '@/services/authAPI';
 import { registerDeviceWithUuid } from '@/services/deviceAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 
-// Firebase는 네이티브 빌드에서만 사용 가능
-let messaging: any = null;
+// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+let firebaseApp: any = null;
+let getMessagingFunc: any = null;
+let requestPermissionFunc: any = null;
+let getTokenFunc: any = null;
+
 try {
-  messaging = require('@react-native-firebase/messaging').default;
+  const app = require('@react-native-firebase/app').default;
+  const messagingModule = require('@react-native-firebase/messaging');
+  firebaseApp = app;
+  getMessagingFunc = messagingModule.getMessaging;
+  requestPermissionFunc = messagingModule.requestPermission;
+  getTokenFunc = messagingModule.getToken;
 } catch (e) {
   // Expo Go에서는 Firebase 사용 불가
 }
@@ -156,16 +165,17 @@ export default function SignupScreen() {
       // 1. 먼저 FCM 토큰 발급 시도 (알림 권한이 있는 경우)
       let fcmToken: string | undefined = undefined;
 
-      if (messaging) {
+      if (firebaseApp && getMessagingFunc) {
         try {
+          const messaging = getMessagingFunc(firebaseApp);
           // 알림 권한 확인 및 요청
-          const currentAuthStatus = await messaging().hasPermission();
+          const currentAuthStatus = await messaging.requestPermission();
           let authStatus = currentAuthStatus;
 
           // 권한이 아직 결정되지 않았으면 요청
-          if (currentAuthStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
-            authStatus = await messaging().requestPermission();
-          } else if (currentAuthStatus === messaging.AuthorizationStatus.DENIED) {
+          if (currentAuthStatus === 0) {
+            authStatus = await requestPermissionFunc(messaging);
+          } else if (currentAuthStatus === -1) {
             // 이미 거부된 경우: 설정으로 안내 (비동기로 처리하여 회원가입은 계속 진행)
             setTimeout(() => {
               Alert.alert(
@@ -190,13 +200,11 @@ export default function SignupScreen() {
           }
 
           // 권한이 허용된 경우에만 토큰 발급
-          const enabled =
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+          const enabled = authStatus === 1 || authStatus === 2;
 
           if (enabled) {
             // 권한이 있을 때만 FCM 토큰 발급
-            const token = await messaging().getToken();
+            const token = await getTokenFunc(messaging);
             console.log('🔑 FCM 토큰 발급 (회원가입 시):', { hasToken: !!token, tokenLength: token?.length || 0 });
             if (token) {
               fcmToken = token;
