@@ -14,8 +14,8 @@ export interface NearbyPoliceOfficeParams {
 export const getNearbyPoliceOffices = async ({
   latitude,
   longitude,
-  radiusMeters = 5000,
-  limit = 5,
+  radiusMeters = 2000,
+  limit = 1,
 }: NearbyPoliceOfficeParams): Promise<PoliceOffice[]> => {
   try {
     const response = await apiClient.get<PoliceOffice[]>('/police-offices/nearby', {

@@ -1,9 +1,13 @@
 import apiClient from '@/services/apiClient';
 import { getMyMissingPersons } from '@/services/missingPersonAPI';
+import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
+import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import { getAccessToken } from '@/utils/authStorage';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Linking, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
@@ -24,9 +28,14 @@ export default function MissingList() {
   const [source, setSource] = useState<'basic' | 'police'>('basic');
 
   // 👉 API 데이터 상태
-  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
+  const [myMissingPersons, setMyMissingPersons] = useState<MissingPerson[]>([]); // "찾는 중" 섹션용
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
+  
+  // 가까운 경찰청 찾기 상태
+  const [isFindingPolice, setIsFindingPolice] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
@@ -168,6 +177,18 @@ const normalizeId = (value: any): string | undefined => {
     return enriched;
   };
 
+  // "찾는 중" 섹션용: 내가 등록한 실종자 조회
+  const fetchMyMissingPersons = async () => {
+    try {
+      const items = await getMyMissingPersons();
+      const mapped = mapToListData(items);
+      setMyMissingPersons(mapped);
+    } catch (err) {
+      console.log('❌ 내가 등록한 실종자 불러오기 실패:', err);
+      setMyMissingPersons([]); // API 실패 시 빈 배열
+    }
+  };
+
   const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();
@@ -275,6 +296,86 @@ const normalizeId = (value: any): string | undefined => {
     setPage(0);
   }, [source]);
 
+  // 가까운 경찰청 찾기 함수
+  const resolveCurrentLocation = useCallback(async (): Promise<{ latitude: number; longitude: number } | null> => {
+    try {
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        const permissionResult = await Location.requestForegroundPermissionsAsync();
+        status = permissionResult.status;
+      }
+
+      if (status !== 'granted') {
+        Alert.alert('위치 권한 필요', '현재 위치를 가져오려면 위치 권한을 허용해주세요.');
+        return null;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setCurrentLocation(coords);
+      return coords;
+    } catch (error) {
+      console.error('위치 조회 실패:', error);
+      Alert.alert('위치 조회 실패', '현재 위치를 가져오지 못했습니다.');
+      return null;
+    }
+  }, []);
+
+  const openKakaoDirections = useCallback(async (from: { latitude: number; longitude: number }, office: PoliceOffice) => {
+    const fromLabel = encodeURIComponent('내 위치');
+    const toLabel = encodeURIComponent(office.officeName || office.station || '경찰청');
+    const url = `https://map.kakao.com/link/from/${fromLabel},${from.latitude},${from.longitude}/to/${toLabel},${office.latitude},${office.longitude}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert('길안내 실패', '카카오맵을 열 수 없습니다.');
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('카카오맵 길안내 실패:', error);
+      Alert.alert('길안내 실패', '카카오맵을 열 수 없습니다.');
+    }
+  }, []);
+
+  const handleFindPolice = useCallback(async () => {
+    setIsFindingPolice(true);
+    try {
+      const coords = currentLocation || (await resolveCurrentLocation());
+      if (!coords) {
+        Alert.alert('위치 조회 실패', '현재 위치를 가져오지 못했습니다.');
+        return;
+      }
+
+      console.log('🔎 Fetching nearby police offices with coords:', coords);
+      const offices = await getNearbyPoliceOffices({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        radiusMeters: 2000,
+        limit: 1,
+      });
+      console.log('🔎 Nearby police offices response:', offices);
+
+      if (!offices.length) {
+        Alert.alert('알림', '근처 경찰청을 찾지 못했습니다.');
+        return;
+      }
+
+      const nearest = offices[0];
+      await openKakaoDirections(coords, nearest);
+    } catch (error) {
+      console.error('근처 경찰청 조회 실패:', error);
+      Alert.alert('오류', error instanceof Error ? error.message : '가까운 경찰청을 조회하지 못했습니다.');
+    } finally {
+      setIsFindingPolice(false);
+    }
+  }, [currentLocation, openKakaoDirections, resolveCurrentLocation]);
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [page, source]);
@@ -383,7 +484,20 @@ const normalizeId = (value: any): string | undefined => {
         {/* 찾는 중 */}
         <Text style={styles.sectionTitle}>찾는 중</Text>
 
-        {topItem && <Item item={topItem} variant="top" />}
+        {myMissingPersons.length > 0 ? (
+          <>
+            {myMissingPersons.map((item, index) => (
+              <React.Fragment key={item.id}>
+                <Item item={item} variant="top" />
+                {index < myMissingPersons.length - 1 && <View style={styles.separator} />}
+              </React.Fragment>
+            ))}
+          </>
+        ) : basicData.length > 0 ? (
+          <>
+            <Item item={basicData[0]} variant="top" />
+          </>
+        ) : null}
         <View style={styles.separator} />
 
         {/* 실종자 목록 */}
@@ -404,6 +518,22 @@ const normalizeId = (value: any): string | undefined => {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* 가까운 경찰청 찾기 버튼 */}
+        <TouchableOpacity
+          style={[styles.findPoliceButton, isFindingPolice && styles.findPoliceButtonDisabled]}
+          onPress={handleFindPolice}
+          disabled={isFindingPolice}
+        >
+          {isFindingPolice ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Ionicons name="map" size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.findPoliceButtonText}>가까운 경찰청 찾기</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <FlatList
           data={pagedData}

@@ -1,8 +1,8 @@
 import { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
-import { generateDeviceUuid, getDeviceId, getDeviceUuid, getRefreshToken, setAccessToken, setDeviceId, setDeviceUuid, setRefreshToken, setStoredFCMToken } from '@/utils/authStorage';
 import { resolveErrorMessage } from '@/utils/apiErrorHandler';
+import { generateDeviceUuid, getDeviceId, getDeviceUuid, getRefreshToken, setAccessToken, setDeviceId, setDeviceUuid, setRefreshToken, setStoredFCMToken } from '@/utils/authStorage';
 
 import apiClient from './apiClient';
 import { refreshTokens } from './authAPI';
@@ -30,6 +30,8 @@ interface DeviceRegisterResponse {
  * /devices/register 엔드포인트를 사용하여 기기를 등록합니다.
  */
 export const registerDevice = async (fcmToken: string, accessToken?: string): Promise<DeviceRegisterResponse> => {
+  let responseData: DeviceRegisterResponse | null = null;
+
   try {
     // Platform 정보 가져오기
     const osType = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Unknown';
@@ -63,43 +65,73 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       { headers }
     );
 
+    responseData = response.data;
+
     // 등록 성공 시 FCM 토큰 및 deviceId 저장
     await setStoredFCMToken(fcmToken);
     if (response.data.deviceId) {
       await setDeviceId(response.data.deviceId);
     }
-
-    // 토큰 갱신 시도 (deviceId가 포함된 토큰을 받기 위해)
-    try {
-      const refreshToken = await getRefreshToken();
-      if (refreshToken) {
-        const newTokens = await refreshTokens(refreshToken);
-        await setAccessToken(newTokens.accessToken);
-        if (newTokens.refreshToken) {
-          await setRefreshToken(newTokens.refreshToken);
-        }
-      }
-    } catch (refreshError) {
-      console.error('❌ 기기 등록 후 토큰 갱신 실패:', refreshError);
-    }
-
-    return response.data;
   } catch (error) {
     const axiosError = error as AxiosError;
-    const requestConfig = axiosError.config;
+    const status = axiosError.response?.status;
+    const errorData = axiosError.response?.data as any;
 
-    console.error('❌ 기기 등록 실패:', {
-      status: axiosError.response?.status,
-      statusText: axiosError.response?.statusText,
-      url: requestConfig?.url,
-      baseURL: requestConfig?.baseURL,
-      fullURL: requestConfig ? `${requestConfig.baseURL}${requestConfig.url}` : 'unknown',
-      method: requestConfig?.method?.toUpperCase(),
-      responseData: axiosError.response?.data ? JSON.stringify(axiosError.response.data, null, 2) : undefined,
-      errorMessage: axiosError.message,
-    });
+    // 이미 등록된 기기인 경우 (409 Conflict 또는 400 Bad Request)
+    // 백엔드 에러 코드가 DEVICE_ALREADY_REGISTERED 인지 확인
+    const isAlreadyRegistered =
+      status === 409 ||
+      (status === 400 && errorData?.code === 'DEVICE_ALREADY_REGISTERED');
 
-    throw new Error(resolveErrorMessage(axiosError));
+    if (isAlreadyRegistered) {
+      console.log('⚠️ 기기가 이미 등록되어 있습니다. 토큰 갱신을 진행합니다.');
+      // 이미 등록된 경우에도 FCM 토큰은 저장
+      await setStoredFCMToken(fcmToken);
+    } else {
+      const requestConfig = axiosError.config;
+      console.error('❌ 기기 등록 실패:', {
+        status,
+        statusText: axiosError.response?.statusText,
+        url: requestConfig?.url,
+        responseData: JSON.stringify(errorData, null, 2),
+        errorMessage: axiosError.message,
+      });
+
+      throw new Error(resolveErrorMessage(axiosError));
+    }
+  }
+
+  // 토큰 갱신 시도 (deviceId가 포함된 토큰을 받기 위해)
+  // 기기 등록이 성공했거나, 이미 등록된 경우 모두 실행
+  try {
+    const refreshToken = await getRefreshToken();
+    if (refreshToken) {
+      const newTokens = await refreshTokens(refreshToken);
+      await setAccessToken(newTokens.accessToken);
+      if (newTokens.refreshToken) {
+        await setRefreshToken(newTokens.refreshToken);
+      }
+    }
+  } catch (refreshError) {
+    console.error('❌ 기기 등록 후 토큰 갱신 실패:', refreshError);
+  }
+
+  if (responseData) {
+    return responseData;
+  } else {
+    // 이미 등록된 경우, 로컬에 저장된 정보나 기본값을 반환해야 함
+    // 하지만 함수의 반환 타입이 Promise<DeviceRegisterResponse> 이므로
+    // 최소한의 정보를 담은 객체를 반환
+    return {
+      deviceId: (await getDeviceId()) || 0,
+      deviceUuid: (await getDeviceUuid()) || '',
+      batteryLevel: null,
+      osType: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      osVersion: String(Platform.Version),
+      registeredAt: new Date().toISOString(),
+      fcmToken: fcmToken,
+      active: true
+    };
   }
 };
 
@@ -119,26 +151,17 @@ interface GpsUpdateResponse {
 /**
  * GPS 위치 업데이트 (POST /devices/gps)
  * 백그라운드에서 주기적으로 호출하여 기기 위치를 업데이트합니다.
+ * Authorization 헤더는 apiClient 인터셉터가 자동으로 추가합니다.
  */
 export const updateGpsLocation = async (
   latitude: number,
   longitude: number,
-  batteryLevel: number,
-  accessToken?: string
+  batteryLevel: number
 ): Promise<GpsUpdateResponse> => {
   try {
-    // deviceId 가져오기
-    const deviceId = await getDeviceId();
-    if (!deviceId) {
-      throw new Error('기기 등록이 필요합니다.');
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (isNaN(latitude) || isNaN(longitude)) {
+      console.error('❌ GPS 좌표가 유효하지 않습니다 (NaN):', { latitude, longitude });
+      throw new Error('Invalid GPS coordinates (NaN)');
     }
 
     const requestBody: GpsUpdateRequest = {
@@ -149,8 +172,7 @@ export const updateGpsLocation = async (
 
     const response = await apiClient.post<GpsUpdateResponse>(
       '/devices/gps',
-      requestBody,
-      { headers }
+      requestBody
     );
 
     return response.data;
@@ -159,13 +181,6 @@ export const updateGpsLocation = async (
     const status = axiosError.response?.status;
     const statusText = axiosError.response?.statusText;
     const responseData = axiosError.response?.data;
-
-    console.error('❌ GPS 위치 업데이트 실패:', {
-      status,
-      statusText,
-      url: '/devices/gps',
-      responseData: JSON.stringify(responseData, null, 2),
-    });
 
     throw new Error(resolveErrorMessage(axiosError));
   }

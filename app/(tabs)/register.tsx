@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
 import { createMissingPersonReport, uploadPhoto } from '@/services/missingPersonAPI';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
@@ -21,10 +21,18 @@ const INITIAL_REGION: Region = {
   longitudeDelta: 0.05,
 };
 
+const normalizeDateValue = (value?: string) => {
+  if (!value) return null;
+  const normalized = value.includes(' ') && !value.includes('T')
+    ? value.replace(' ', 'T')
+    : value;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatDate = (value: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  const date = normalizeDateValue(value);
+  if (!date) return '';
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
@@ -32,9 +40,8 @@ const formatDate = (value: string) => {
 };
 
 const formatDateTime = (value: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  const date = normalizeDateValue(value);
+  if (!date) return '';
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
@@ -303,6 +310,7 @@ export default function RegisterScreen() {
   const [mapRegion, setMapRegion] = useState<Region>(INITIAL_REGION);
   const [activePicker, setActivePicker] = useState<'birth' | 'missing' | null>(null);
   const [pickerValue, setPickerValue] = useState<Date>(new Date());
+  const [androidTimePickerVisible, setAndroidTimePickerVisible] = useState(false);
   const birthDateDisplay = formatDate(formData.birthDate);
   const missingDateDisplay = formatDateTime(formData.missingDate);
 
@@ -312,6 +320,14 @@ export default function RegisterScreen() {
     if (errors[field as keyof MissingPersonFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const setBirthDateValue = (date: Date) => {
+    handleInputChange('birthDate', date.toISOString().split('T')[0]);
+  };
+
+  const setMissingDateValue = (date: Date) => {
+    handleInputChange('missingDate', date.toISOString());
   };
 
   const handlePhotoUpload = async () => {
@@ -345,15 +361,63 @@ export default function RegisterScreen() {
     }
   };
 
+  const getPickerInitialValue = (type: 'birth' | 'missing') => {
+    const value = type === 'birth' ? formData.birthDate : formData.missingDate;
+    return normalizeDateValue(value) ?? new Date();
+  };
+
+  const openAndroidBirthPicker = (currentValue: Date) => {
+    DateTimePickerAndroid.open({
+      value: currentValue,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, date) => {
+        if (event.type === 'set' && date) {
+          setBirthDateValue(date);
+        }
+      },
+    });
+  };
+
+  const openAndroidMissingPicker = (currentValue: Date) => {
+    DateTimePickerAndroid.open({
+      value: currentValue,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, date) => {
+        if (event.type !== 'set' || !date) return;
+        const pickedDate = new Date(date);
+
+        DateTimePickerAndroid.open({
+          value: pickedDate,
+          mode: 'time',
+          is24Hour: true,
+          onChange: (timeEvent, timeDate) => {
+            if (timeEvent.type !== 'set' || !timeDate) return;
+            const combined = new Date(pickedDate);
+            combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+            setMissingDateValue(combined);
+          },
+        });
+      },
+    });
+  };
+
   const openPicker = (type: 'birth' | 'missing') => {
-    const currentValue =
-      type === 'birth' && formData.birthDate
-        ? new Date(formData.birthDate)
-        : type === 'missing' && formData.missingDate
-          ? new Date(formData.missingDate)
-          : new Date();
+    const currentValue = getPickerInitialValue(type);
+
+    if (Platform.OS === 'android') {
+      if (type === 'birth') {
+        openAndroidBirthPicker(currentValue);
+      } else {
+        openAndroidMissingPicker(currentValue);
+      }
+      return;
+    }
+
     setPickerValue(currentValue);
     setActivePicker(type);
+    setAndroidTimePickerVisible(false);
   };
 
   const handlePickerChange = (event: DateTimePickerEvent, date?: Date) => {
@@ -361,35 +425,60 @@ export default function RegisterScreen() {
       setActivePicker(null);
       return;
     }
-    if (date) {
+    if (date && Platform.OS === 'ios') {
       setPickerValue(date);
     }
   };
 
   const handleAndroidDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (event.type === 'dismissed' || !date) return;
-    setPickerValue(prev => {
-      const next = new Date(prev);
-      next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-      return next;
-    });
+    if (event.type === 'dismissed') {
+      setActivePicker(null);
+      setAndroidTimePickerVisible(false);
+      return;
+    }
+    if (event.type === 'set' && date) {
+      // 안드로이드 시스템 다이얼로그에서 확인을 눌렀을 때만 처리
+      if (activePicker === 'birth') {
+        handleInputChange('birthDate', date.toISOString().split('T')[0]);
+        setActivePicker(null);
+      } else if (activePicker === 'missing') {
+        // 실종일자는 날짜 선택 후 시간 선택기 표시
+        const currentTime = pickerValue;
+        const newDate = new Date(date);
+        newDate.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        setPickerValue(newDate);
+        setAndroidTimePickerVisible(true);
+      }
+    }
   };
 
   const handleAndroidTimeChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (event.type === 'dismissed' || !date) return;
-    setPickerValue(prev => {
-      const next = new Date(prev);
-      next.setHours(date.getHours(), date.getMinutes(), 0, 0);
-      return next;
-    });
+    if (event.type === 'dismissed') {
+      setActivePicker(null);
+      setAndroidTimePickerVisible(false);
+      return;
+    }
+    if (event.type === 'set' && date) {
+      // 안드로이드 시스템 다이얼로그에서 확인을 눌렀을 때만 처리
+      if (activePicker === 'missing') {
+        const currentDate = pickerValue;
+        const newDateTime = new Date(currentDate);
+        newDateTime.setHours(date.getHours(), date.getMinutes(), 0, 0);
+        setPickerValue(newDateTime);
+        // 시간 선택 후 바로 저장
+        handleInputChange('missingDate', newDateTime.toISOString());
+        setActivePicker(null);
+        setAndroidTimePickerVisible(false);
+      }
+    }
   };
 
   const handlePickerConfirm = () => {
     if (!activePicker) return;
     if (activePicker === 'birth') {
-      handleInputChange('birthDate', pickerValue.toISOString().split('T')[0]);
+      setBirthDateValue(pickerValue);
     } else if (activePicker === 'missing') {
-      handleInputChange('missingDate', pickerValue.toISOString());
+      setMissingDateValue(pickerValue);
     }
     setActivePicker(null);
   };
@@ -673,7 +762,8 @@ export default function RegisterScreen() {
         </SubmitButton>
       </ScrollView>
 
-      {activePicker && (
+      {/* iOS는 모달 내에서 스피너 사용 */}
+      {activePicker && Platform.OS === 'ios' && (
         <Modal transparent animationType="fade" visible>
           <PickerOverlay>
             <PickerContainer>
@@ -688,40 +778,50 @@ export default function RegisterScreen() {
                   display="spinner"
                   onChange={handlePickerChange}
                   themeVariant="light"
-                  textColor={Platform.OS === 'ios' ? '#0f172a' : undefined}
+                  textColor="#0f172a"
                   style={{ backgroundColor: '#ffffff', height: 220 }}
                 />
               )}
-              {activePicker === 'missing' && Platform.OS === 'ios' && (
+              {activePicker === 'missing' && (
                 <DateTimePicker
                   value={pickerValue}
                   mode="datetime"
                   display="spinner"
                   onChange={handlePickerChange}
                   themeVariant="light"
-                  textColor={Platform.OS === 'ios' ? '#0f172a' : undefined}
+                  textColor="#0f172a"
                   style={{ backgroundColor: '#ffffff', height: 220 }}
                 />
-              )}
-              {activePicker === 'missing' && Platform.OS === 'android' && (
-                <>
-                  <DateTimePicker
-                    value={pickerValue}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleAndroidDateChange}
-                  />
-                  <DateTimePicker
-                    value={pickerValue}
-                    mode="time"
-                    display="spinner"
-                    onChange={handleAndroidTimeChange}
-                  />
-                </>
               )}
             </PickerContainer>
           </PickerOverlay>
         </Modal>
+      )}
+      
+      {/* Android는 시스템 다이얼로그 사용 (모달 없이) */}
+      {activePicker && Platform.OS === 'android' && activePicker === 'birth' && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          onChange={handleAndroidDateChange}
+        />
+      )}
+      {activePicker && Platform.OS === 'android' && activePicker === 'missing' && !androidTimePickerVisible && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          onChange={handleAndroidDateChange}
+        />
+      )}
+      {activePicker && Platform.OS === 'android' && activePicker === 'missing' && androidTimePickerVisible && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="time"
+          display="default"
+          onChange={handleAndroidTimeChange}
+        />
       )}
     </Container>
   );

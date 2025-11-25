@@ -66,19 +66,24 @@ export const styles = StyleSheet.create({
   spacer: {
     height: 30,
   },
-  // --- Report Button Style ---
-  reportButton: {
+  // --- Find Police Button Style (Bottom) ---
+  findPoliceButtonBottom: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FF6347',
+    backgroundColor: '#25b2e2',
     paddingVertical: 18,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  reportButtonText: {
+  findPoliceButtonDisabled: {
+    opacity: 0.6,
+  },
+  findPoliceButtonText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   

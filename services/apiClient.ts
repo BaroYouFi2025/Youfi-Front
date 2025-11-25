@@ -22,6 +22,22 @@ apiClient.interceptors.request.use(async (config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
+
+  // GPS 요청 디버깅
+  if (config.url?.includes('/devices/gps')) {
+    console.log('🔍 [apiClient] GPS 요청 인터셉터:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
+      headers: {
+        Authorization: config.headers.Authorization ? 'set' : 'missing',
+        ContentType: config.headers['Content-Type'],
+      },
+      data: config.data,
+    });
+  }
+
   return config;
 });
 
@@ -30,6 +46,18 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error.response?.status;
     const originalRequest = error.config as RetriableRequestConfig | undefined;
+
+    // GPS 요청 에러 디버깅
+    if (originalRequest?.url?.includes('/devices/gps')) {
+      console.error('🔍 [apiClient] GPS 요청 실패:', {
+        status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestUrl: originalRequest.url,
+        requestMethod: originalRequest.method,
+        requestData: originalRequest.data,
+      });
+    }
 
     if (status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;

@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import KakaoMap from '../../components/KakaoMap/KakaoMap';
 import { NotificationBox } from '../../components/Notification';
@@ -49,14 +49,19 @@ const mapImage = require('../../assets/images/react-logo.png');
 
 export default function HomeScreen() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [readNotifications, setReadNotifications] = useState<NotificationResponse[]>([]);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [nearbyPersons, setNearbyPersons] = useState<NearbyMissingPerson[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [lastQueryLocation, setLastQueryLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
-  const [lastNotificationLoadTime, setLastNotificationLoadTime] = useState<number | null>(null);
+
+  // Refs for non-rendering state to prevent re-renders
+  const lastQueryLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const lastQueryTimeRef = useRef<number | null>(null);
+  const lastNotificationLoadTimeRef = useRef<number | null>(null);
+  const loadingNotificationsRef = useRef(false);
+  const loadingNearbyRef = useRef(false);
 
   // 설정값
   const TIME_INTERVAL = 60000; // 1분
@@ -94,25 +99,25 @@ export default function HomeScreen() {
   // 조회 필요 여부 판단
   const shouldFetchNearbyPersons = useCallback((currentLoc: { latitude: number; longitude: number }): boolean => {
     // 초기 로딩 (한 번도 조회 안 함)
-    if (!lastQueryLocation || !lastQueryTime) {
+    if (!lastQueryLocationRef.current || !lastQueryTimeRef.current) {
       return true;
     }
 
     // 시간 기반: 1분 경과
-    const timeSinceLastQuery = Date.now() - lastQueryTime;
+    const timeSinceLastQuery = Date.now() - lastQueryTimeRef.current;
     if (timeSinceLastQuery >= TIME_INTERVAL) {
       return true;
     }
 
     // 거리 기반: 10m 이상 이동
-    const distance = calculateDistance(lastQueryLocation, currentLoc);
+    const distance = calculateDistance(lastQueryLocationRef.current, currentLoc);
     if (distance >= DISTANCE_THRESHOLD) {
       return true; // 거리 로그는 위치 체크에서 이미 출력됨
     }
 
     // 조회 불필요
     return false;
-  }, [lastQueryLocation, lastQueryTime, TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
+  }, [TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
 
   // 위치 정보 가져오기
   const getCurrentLocation = useCallback(async () => {
@@ -163,12 +168,12 @@ export default function HomeScreen() {
   const loadNearbyPersons = useCallback(async (force: boolean = false) => {
     try {
       // 로딩 중이면 중복 호출 방지
-      if (loadingNearby) {
+      if (loadingNearbyRef.current) {
         return;
       }
 
       // 최소 간격 체크 (3초 이내 재호출 방지) - force일 때도 적용
-      if (lastQueryTime && Date.now() - lastQueryTime < MIN_LOAD_INTERVAL) {
+      if (lastQueryTimeRef.current && Date.now() - lastQueryTimeRef.current < MIN_LOAD_INTERVAL) {
         return;
       }
 
@@ -187,6 +192,7 @@ export default function HomeScreen() {
       }
 
       setLoadingNearby(true);
+      loadingNearbyRef.current = true;
 
       // 근처 실종자 조회 (반경 1km)
       const response = await getNearbyMissingPersons(
@@ -196,8 +202,8 @@ export default function HomeScreen() {
       );
 
       // 조회 성공 시 마지막 조회 위치/시간 업데이트
-      setLastQueryLocation(location);
-      setLastQueryTime(Date.now());
+      lastQueryLocationRef.current = location;
+      lastQueryTimeRef.current = Date.now();
 
       // 최대 2명만 표시
       const displayedPersons = response.content.slice(0, 2);
@@ -214,43 +220,51 @@ export default function HomeScreen() {
       setNearbyPersons([]);
     } finally {
       setLoadingNearby(false);
+      loadingNearbyRef.current = false;
     }
-  }, [currentLocation, getCurrentLocation, shouldFetchNearbyPersons, loadingNearby, lastQueryTime, MIN_LOAD_INTERVAL]);
+  }, [currentLocation, getCurrentLocation, shouldFetchNearbyPersons, MIN_LOAD_INTERVAL]);
 
   const loadNotifications = useCallback(async () => {
     try {
       // 로딩 중이면 중복 호출 방지
-      if (loadingNotifications) {
+      if (loadingNotificationsRef.current) {
         return;
       }
 
       // 최소 간격 체크 (3초 이내 재호출 방지)
-      if (lastNotificationLoadTime && Date.now() - lastNotificationLoadTime < MIN_LOAD_INTERVAL) {
+      if (lastNotificationLoadTimeRef.current && Date.now() - lastNotificationLoadTimeRef.current < MIN_LOAD_INTERVAL) {
         return;
       }
 
       setLoadingNotifications(true);
-      setLastNotificationLoadTime(Date.now());
+      loadingNotificationsRef.current = true;
+      lastNotificationLoadTimeRef.current = Date.now();
 
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
 
-      const unreadCount = allNotifications.filter(n => !n.isRead).length;
-      if (unreadCount > 0) {
-      }
+      // 읽지 않은 알림과 읽은 알림 분리
+      const unreadNotifications = allNotifications.filter(n => !n.isRead);
+      const readNotifications = allNotifications.filter(n => n.isRead);
 
-      // 최신순으로 정렬하고 최신 3개만 표시
-      const sortedNotifications = allNotifications.sort((a, b) =>
+      // 읽지 않은 알림은 최신순으로 정렬
+      const sortedUnread = unreadNotifications.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      const displayedNotifications = sortedNotifications.slice(0, 3);
 
-      setNotifications(displayedNotifications);
+      // 읽은 알림도 최신순으로 정렬
+      const sortedRead = readNotifications.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      // 읽지 않은 알림과 읽은 알림을 분리해서 상태 업데이트
+      setNotifications(sortedUnread);
+      setReadNotifications(sortedRead);
       setSelectedNotificationId((prev) => {
         if (!prev) {
           return prev;
         }
-        const stillExists = displayedNotifications.some((notification) => notification.id === prev);
+        const stillExists = [...sortedUnread, ...sortedRead].some((notification) => notification.id === prev);
         return stillExists ? prev : null;
       });
     } catch (error) {
@@ -259,29 +273,33 @@ export default function HomeScreen() {
       setNotifications([]);
     } finally {
       setLoadingNotifications(false);
+      loadingNotificationsRef.current = false;
     }
-  }, [loadingNotifications, lastNotificationLoadTime, MIN_LOAD_INTERVAL]);
+  }, [MIN_LOAD_INTERVAL]);
 
   const handleSelectNotification = useCallback(async (id: number) => {
     setSelectedNotificationId(id);
-    const target = notifications.find((notif) => notif.id === id);
+    const target = notifications.find((notif) => notif.id === id) || readNotifications.find((notif) => notif.id === id);
 
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === id ? { ...notif, isRead: true } : notif
-      )
-    );
-
+    // 이미 읽은 알림이면 처리하지 않음
     if (target?.isRead) {
       return;
     }
 
+    // 읽지 않은 알림을 읽은 알림으로 이동
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+    if (target) {
+      setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+    }
+
     try {
       await markAsRead(id);
+      // 알림 목록 새로고침
+      await loadNotifications();
     } catch (error) {
       console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
     }
-  }, [notifications]);
+  }, [notifications, readNotifications, loadNotifications]);
 
   const kakaoMapPersons: KakaoMapPerson[] = useMemo(
     () =>
@@ -408,20 +426,23 @@ export default function HomeScreen() {
 
         {/* Content Area */}
         <ContentArea>
-          {/* Notification Box */}
+          {/* 알림 박스 (읽지 않은 알림 + 읽은 알림 스택 형태) */}
           <NotificationBox
-            notifications={notifications}
+            notifications={[...notifications, ...readNotifications]}
             loading={loadingNotifications}
             selectedId={selectedNotificationId}
             onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
                 setSelectedNotificationId(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await acceptInvitationFromNotification(id, {
                   relation: relation,
                 });
@@ -433,11 +454,11 @@ export default function HomeScreen() {
               } catch (error) {
                 console.error('❌ 초대 수락 실패:', error);
                 // 실패 시 상태 롤백
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: false } : notif
-                  )
-                );
+                const target = readNotifications.find((notif) => notif.id === id);
+                if (target) {
+                  setReadNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setNotifications((prev) => [{ ...target, isRead: false }, ...prev]);
+                }
                 const errorMessage = error instanceof Error ? error.message : '초대 수락에 실패했습니다.';
                 Alert.alert('실패', errorMessage);
               }
@@ -445,11 +466,14 @@ export default function HomeScreen() {
             onReject={async (id) => {
               try {
                 setSelectedNotificationId(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await rejectInvitationFromNotification(id);
                 // 읽음 처리
                 await markAsRead(id);
@@ -459,29 +483,29 @@ export default function HomeScreen() {
               } catch (error) {
                 console.error('❌ 초대 거절 실패:', error);
                 // 실패 시 상태 롤백
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: false } : notif
-                  )
-                );
+                const target = readNotifications.find((notif) => notif.id === id);
+                if (target) {
+                  setReadNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setNotifications((prev) => [{ ...target, isRead: false }, ...prev]);
+                }
                 const errorMessage = error instanceof Error ? error.message : '초대 거절에 실패했습니다.';
                 Alert.alert('실패', errorMessage);
               }
             }}
             onDetail={async (id) => {
               try {
+                const target = notifications.find((notif) => notif.id === id) || readNotifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target && !target.isRead) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
 
-                // 1. 즉시 로컬 상태 업데이트 (읽음 상태로 변경)
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
-
-                // 2. 읽음 처리 API 호출 (기다림)
+                // 읽음 처리 API 호출
                 await markAsRead(id);
 
-                // 3. 발견되었다 페이지로 이동
+                // 발견되었다 페이지로 이동
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
@@ -496,12 +520,15 @@ export default function HomeScreen() {
             }}
             onMarkAsRead={async (id) => {
               try {
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await markAsRead(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
                 await loadNotifications();
               } catch (error) {
                 console.error('❌ 읽음 처리 실패:', error);
