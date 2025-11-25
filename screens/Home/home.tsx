@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import KakaoMap from '../../components/KakaoMap/KakaoMap';
 import { NotificationBox } from '../../components/Notification';
@@ -55,9 +55,13 @@ export default function HomeScreen() {
   const [nearbyPersons, setNearbyPersons] = useState<NearbyMissingPerson[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [lastQueryLocation, setLastQueryLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
-  const [lastNotificationLoadTime, setLastNotificationLoadTime] = useState<number | null>(null);
+
+  // Refs for non-rendering state to prevent re-renders
+  const lastQueryLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const lastQueryTimeRef = useRef<number | null>(null);
+  const lastNotificationLoadTimeRef = useRef<number | null>(null);
+  const loadingNotificationsRef = useRef(false);
+  const loadingNearbyRef = useRef(false);
 
   // 설정값
   const TIME_INTERVAL = 60000; // 1분
@@ -95,25 +99,25 @@ export default function HomeScreen() {
   // 조회 필요 여부 판단
   const shouldFetchNearbyPersons = useCallback((currentLoc: { latitude: number; longitude: number }): boolean => {
     // 초기 로딩 (한 번도 조회 안 함)
-    if (!lastQueryLocation || !lastQueryTime) {
+    if (!lastQueryLocationRef.current || !lastQueryTimeRef.current) {
       return true;
     }
 
     // 시간 기반: 1분 경과
-    const timeSinceLastQuery = Date.now() - lastQueryTime;
+    const timeSinceLastQuery = Date.now() - lastQueryTimeRef.current;
     if (timeSinceLastQuery >= TIME_INTERVAL) {
       return true;
     }
 
     // 거리 기반: 10m 이상 이동
-    const distance = calculateDistance(lastQueryLocation, currentLoc);
+    const distance = calculateDistance(lastQueryLocationRef.current, currentLoc);
     if (distance >= DISTANCE_THRESHOLD) {
       return true; // 거리 로그는 위치 체크에서 이미 출력됨
     }
 
     // 조회 불필요
     return false;
-  }, [lastQueryLocation, lastQueryTime, TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
+  }, [TIME_INTERVAL, DISTANCE_THRESHOLD, calculateDistance]);
 
   // 위치 정보 가져오기
   const getCurrentLocation = useCallback(async () => {
@@ -164,12 +168,12 @@ export default function HomeScreen() {
   const loadNearbyPersons = useCallback(async (force: boolean = false) => {
     try {
       // 로딩 중이면 중복 호출 방지
-      if (loadingNearby) {
+      if (loadingNearbyRef.current) {
         return;
       }
 
       // 최소 간격 체크 (3초 이내 재호출 방지) - force일 때도 적용
-      if (lastQueryTime && Date.now() - lastQueryTime < MIN_LOAD_INTERVAL) {
+      if (lastQueryTimeRef.current && Date.now() - lastQueryTimeRef.current < MIN_LOAD_INTERVAL) {
         return;
       }
 
@@ -188,6 +192,7 @@ export default function HomeScreen() {
       }
 
       setLoadingNearby(true);
+      loadingNearbyRef.current = true;
 
       // 근처 실종자 조회 (반경 1km)
       const response = await getNearbyMissingPersons(
@@ -197,8 +202,8 @@ export default function HomeScreen() {
       );
 
       // 조회 성공 시 마지막 조회 위치/시간 업데이트
-      setLastQueryLocation(location);
-      setLastQueryTime(Date.now());
+      lastQueryLocationRef.current = location;
+      lastQueryTimeRef.current = Date.now();
 
       // 최대 2명만 표시
       const displayedPersons = response.content.slice(0, 2);
@@ -215,23 +220,25 @@ export default function HomeScreen() {
       setNearbyPersons([]);
     } finally {
       setLoadingNearby(false);
+      loadingNearbyRef.current = false;
     }
-  }, [currentLocation, getCurrentLocation, shouldFetchNearbyPersons, loadingNearby, lastQueryTime, MIN_LOAD_INTERVAL]);
+  }, [currentLocation, getCurrentLocation, shouldFetchNearbyPersons, MIN_LOAD_INTERVAL]);
 
   const loadNotifications = useCallback(async () => {
     try {
       // 로딩 중이면 중복 호출 방지
-      if (loadingNotifications) {
+      if (loadingNotificationsRef.current) {
         return;
       }
 
       // 최소 간격 체크 (3초 이내 재호출 방지)
-      if (lastNotificationLoadTime && Date.now() - lastNotificationLoadTime < MIN_LOAD_INTERVAL) {
+      if (lastNotificationLoadTimeRef.current && Date.now() - lastNotificationLoadTimeRef.current < MIN_LOAD_INTERVAL) {
         return;
       }
 
       setLoadingNotifications(true);
-      setLastNotificationLoadTime(Date.now());
+      loadingNotificationsRef.current = true;
+      lastNotificationLoadTimeRef.current = Date.now();
 
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
@@ -266,8 +273,9 @@ export default function HomeScreen() {
       setNotifications([]);
     } finally {
       setLoadingNotifications(false);
+      loadingNotificationsRef.current = false;
     }
-  }, [loadingNotifications, lastNotificationLoadTime, MIN_LOAD_INTERVAL]);
+  }, [MIN_LOAD_INTERVAL]);
 
   const handleSelectNotification = useCallback(async (id: number) => {
     setSelectedNotificationId(id);

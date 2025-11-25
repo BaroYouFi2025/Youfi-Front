@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -67,14 +68,56 @@ const formatDate = (value?: string) => {
   return value;
 };
 
+const formatDateWithWeekday = (value?: string) => {
+  if (!value) return '-';
+  const normalized = value.replace(/\s+/g, ' ');
+  const parsed = new Date(normalized);
+
+  // 숫자 8자리만 오는 경우 대비
+  if (Number.isNaN(parsed.getTime())) {
+    const digitsOnly = normalized.replace(/[^0-9]/g, '');
+    if (digitsOnly.length === 8) {
+      const y = digitsOnly.slice(0, 4);
+      const m = digitsOnly.slice(4, 6);
+      const d = digitsOnly.slice(6, 8);
+      const dateObj = new Date(`${y}-${m}-${d}T00:00:00`);
+      if (!Number.isNaN(dateObj.getTime())) {
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return `${y}-${m}-${d} (${weekdays[dateObj.getDay()]})`;
+      }
+      return `${y}-${m}-${d}`;
+    }
+    return value;
+  }
+
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const y = parsed.getFullYear();
+  const m = `${parsed.getMonth() + 1}`.padStart(2, '0');
+  const d = `${parsed.getDate()}`.padStart(2, '0');
+  const hh = `${parsed.getHours()}`.padStart(2, '0');
+  const mm = `${parsed.getMinutes()}`.padStart(2, '0');
+  const hasTime = /[T ]\d{1,2}:\d{1,2}/.test(normalized) || !(parsed.getHours() === 0 && parsed.getMinutes() === 0);
+  const weekday = weekdays[parsed.getDay()];
+  return hasTime ? `${y}-${m}-${d} (${weekday}) ${hh}:${mm}` : `${y}-${m}-${d} (${weekday})`;
+};
+
 const pickParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
+
+const normalizeHostForDevice = (url: string) => {
+  if (Platform.OS === 'android') {
+    return url
+      .replace('://localhost', '://10.0.2.2')
+      .replace('://127.0.0.1', '://10.0.2.2');
+  }
+  return url.replace('://127.0.0.1', '://localhost');
+};
 
 const resolvePhotoUrl = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   const base = API_BASE_URL.replace(/\/+$/, '');
   const normalized = url.startsWith('/') ? url : `/${url}`;
-  return `${base}${normalized}`;
+  return normalizeHostForDevice(`${base}${normalized}`);
 };
 
 const PoliceDetailScreen = () => {
@@ -178,7 +221,7 @@ const PoliceDetailScreen = () => {
       { label: '이름', value: uiData.name },
       { label: '나이(당시)', value: uiData.missingAge !== undefined ? `${uiData.missingAge}세` : '-' },
       { label: '나이(현재)', value: uiData.ageNow !== undefined ? `${uiData.ageNow}세` : '-' },
-      { label: '발생일시', value: uiData.occurrenceDate || '-' },
+      { label: '발생일시', value: formatDateWithWeekday(uiData.occurrenceDate) },
       { label: '인상착의', value: uiData.dress || '-' },
       { label: '대상구분', value: uiData.category || '-' },
       { label: '성별구분', value: uiData.gender || '-' },

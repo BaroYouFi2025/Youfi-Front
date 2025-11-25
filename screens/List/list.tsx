@@ -5,7 +5,7 @@ import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import { getAccessToken } from '@/utils/authStorage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Linking } from 'react-native';
+import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './list.styles';
@@ -189,23 +189,52 @@ export default function MissingList() {
   // 가까운 경찰청 찾기 상태
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
+  const [basicData, setBasicData] = useState<MissingPerson[]>([]);
+  const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
+  const [basicTotalPages, setBasicTotalPages] = useState(1);
 
   // ------------------------------------------------
   // 🔥 1) API 연동
   // ------------------------------------------------
-  const resolvePhotoUrl = (url?: string) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    const base = API_BASE_URL.replace(/\/+$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
-  };
+const normalizeHostForDevice = (url: string) => {
+  if (Platform.OS === 'android') {
+    return url
+      .replace('://localhost', '://10.0.2.2')
+      .replace('://127.0.0.1', '://10.0.2.2');
+  }
+  return url.replace('://127.0.0.1', '://localhost');
+};
 
-  const normalizeId = (value: any): string | undefined => {
-    if (value === null || value === undefined) return undefined;
-    const str = String(value).trim();
-    return str.length ? str : undefined;
-  };
+const resolvePhotoUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const base = API_BASE_URL.replace(/\/+$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return normalizeHostForDevice(`${base}${path}`);
+};
+
+const formatDateWithWeekday = (value?: string) => {
+  if (!value) return '';
+  const normalized = value.replace(/\s+/g, ' ');
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value;
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  const hh = `${date.getHours()}`.padStart(2, '0');
+  const mm = `${date.getMinutes()}`.padStart(2, '0');
+  return `${y}-${m}-${d} (${weekdays[date.getDay()]}) ${hh}:${mm}`;
+};
+
+const normalizeId = (value: any): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  const str = String(value).trim();
+  return str.length ? str : undefined;
+};
 
 const mapToListData = (items: any[]): MissingPerson[] => items
   .map((it: any) => {
@@ -265,10 +294,12 @@ const mapToListData = (items: any[]): MissingPerson[] => items
   };
 
   const fetchBasicData = async () => {
+  const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();
       const res = await apiClient.get('/missing-persons', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        params: { page: pageIndex, size: PAGE_SIZE },
       });
 
       const raw = res.data;
@@ -278,11 +309,24 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           ?? raw?.data?.content
           ?? [];
 
+      const total = raw?.totalPages ?? raw?.data?.totalPages ?? raw?.total_pages ?? 1;
+
       const mapped = mapToListData(items);
       setBasicData(mergeWithFallback(mapped));
+      setBasicTotalPages(Math.max(1, Number(total) || 1));
     } catch (err) {
       console.log('❌ 실종자 불러오기 실패:', err);
       setBasicData(mapToListData(BASIC_FALLBACK));
+      setBasicTotalPages(1);
+    }
+  };
+
+  const fetchMyData = async () => {
+    try {
+      const list = await getMyMissingPersons();
+      setMyBasicData(mapToListData(list));
+    } catch (err) {
+      setMyBasicData([]);
     }
   };
 
@@ -313,6 +357,8 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     useCallback(() => {
       fetchMyMissingPersons(); // "찾는 중" 섹션용
       fetchBasicData();
+      fetchMyData();
+      setPage(0);
     }, [])
   );
 
@@ -320,6 +366,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     if (source === 'police' && policeData.length === 0) {
       fetchPoliceData();
     }
+    setPage(0);
   }, [source, policeData.length]);
 
   // 가까운 경찰청 찾기 함수
@@ -400,6 +447,11 @@ const mapToListData = (items: any[]): MissingPerson[] => items
       setIsFindingPolice(false);
     }
   }, [currentLocation, openKakaoDirections, resolveCurrentLocation]);
+  useEffect(() => {
+    if (source === 'basic') {
+      fetchBasicData(page);
+    }
+  }, [page, source]);
 
   // ------------------------------------------------
   // 🔥 2) 기본 / 경찰청 데이터 스위칭
@@ -408,6 +460,24 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     () => (source === 'basic' ? basicData : policeData),
     [source, basicData, policeData]
   );
+
+  const pagedData = useMemo(() => {
+    if (source === 'basic') {
+      return basicData;
+    }
+    const start = page * PAGE_SIZE;
+    return data.slice(start, start + PAGE_SIZE);
+  }, [data, page, PAGE_SIZE, source, basicData]);
+
+  const totalPages = useMemo(() => {
+    if (source === 'basic') {
+      return basicTotalPages;
+    }
+    return Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  }, [source, basicTotalPages, data.length, PAGE_SIZE]);
+
+  // 상단 "찾는 중" 카드에는 항상 내가 등록한 실종자 중 첫 번째 데이터를 사용
+  const topItem = myBasicData[0];
 
   // ------------------------------------------------
   // 🔥 3) Item UI 수정: 텍스트를 두 줄로 분리
@@ -460,11 +530,11 @@ const mapToListData = (items: any[]): MissingPerson[] => items
             {item.name}
           </Text>
 
-          {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
-          <Text style={styles.locationDateText}>
-            {item.location}
-            {item.date ? ` • ${item.date}` : ''}
-          </Text>
+      {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
+      <Text style={styles.locationDateText}>
+        {item.location}
+        {item.date ? ` • ${formatDateWithWeekday(item.date)}` : ''}
+      </Text>
 
           {/* 3. 인상착의 정보 (가장 작게) */}
           <Text style={styles.itemSub}>{item.info}</Text>
@@ -540,7 +610,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
         </TouchableOpacity>
 
         <FlatList
-          data={data}
+          data={pagedData}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
             <>
@@ -554,9 +624,29 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           scrollEnabled={false}
         />
 
-        <TouchableOpacity activeOpacity={0.9} style={styles.ctaBtn}>
-          <Text style={styles.ctaBtnText}>인근 실종자 목록 지도로 보기</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            style={[styles.pillBtnBlue, { opacity: page === 0 ? 0.4 : 1 }]}
+          >
+            <Text style={styles.pillBtnText}>이전</Text>
+          </TouchableOpacity>
+
+          <Text style={{ color: '#111', fontWeight: '700' }}>
+            {page + 1} / {totalPages}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            style={[styles.pillBtnBlue, { opacity: page >= totalPages - 1 ? 0.4 : 1 }]}
+          >
+            <Text style={styles.pillBtnText}>다음</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
