@@ -6,6 +6,7 @@ import { detailStyles } from './detail.styles';
 import ConfirmReportModal from './ConfirmReportModal';
 import SuccessReportModal from './SuccessReportModal';
 import { getAccessToken } from '@/utils/authStorage';
+import KakaoMap from '@/components/KakaoMap';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
@@ -134,6 +135,8 @@ const DetailScreen: React.FC = () => {
       photo,
       appearance,
       predicted,
+      latitude: d?.latitude,
+      longitude: d?.longitude,
     };
   }, [detail, params.name, params.location, params.date, params.photoUrl]);
 
@@ -175,18 +178,31 @@ const DetailScreen: React.FC = () => {
 
         {/* 지도/대표 이미지 영역 */}
         <View style={detailStyles.mapContainer}>
-            {uiData.appearance ? (
-              <Image
-                source={{ uri: uiData.appearance }}
-                style={detailStyles.mapImage}
+          {uiData.latitude && uiData.longitude ? (
+            <>
+              <KakaoMap
+                currentLocation={{ latitude: uiData.latitude, longitude: uiData.longitude }}
+                nearbyPersons={[
+                  {
+                    id: detail?.id ?? params.id ?? 'missing-person',
+                    name: uiData.name,
+                    latitude: uiData.latitude,
+                    longitude: uiData.longitude,
+                    photo_url: uiData.photo,
+                  },
+                ]}
               />
-            ) : null}
-          <View style={detailStyles.mapAvatarOverlay}>
-            <Image
-              source={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
-              style={detailStyles.mapAvatar}
-            />
-          </View>
+            </>
+          ) : (
+            <>
+              {uiData.appearance ? (
+                <Image
+                  source={{ uri: uiData.appearance }}
+                  style={detailStyles.mapImage}
+                />
+              ) : null}
+            </>
+          )}
         </View>
 
         <View style={detailStyles.infoSection}>
