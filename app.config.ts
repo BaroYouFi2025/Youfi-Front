@@ -1,6 +1,9 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
+const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
+  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+  return {
   ...config,
   name: 'YouFi',
   slug: 'YouFi',
@@ -13,6 +16,9 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: 'baro.youfi',
     supportsTablet: true,
+    config: {
+      googleMapsApiKey,
+    },
   },
   android: {
     package: 'baro.youfi',
@@ -23,6 +29,11 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    config: {
+      googleMaps: {
+        apiKey: googleMapsApiKey,
+      },
+    },
   },
   web: {
     output: 'static',
@@ -62,8 +73,9 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     ...config.extra,
+    googleMapsApiKey,
   },
-});
+  };
+};
 
 export default defineConfig;
-
