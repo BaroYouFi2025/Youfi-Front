@@ -33,7 +33,7 @@ export default function MissingList() {
   const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
-  
+
   // 가까운 경찰청 찾기 상태
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -320,6 +320,7 @@ const normalizeId = (value: any): string | undefined => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchMyMissingPersons();
       fetchMyData();
       if (source === 'basic') {
         fetchBasicData(page);
