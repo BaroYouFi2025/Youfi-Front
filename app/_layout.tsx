@@ -242,6 +242,12 @@ export default function RootLayout() {
           <Stack.Screen name="missing-report" options={{ headerShown: false }} />
           <Stack.Screen name="gps-add" options={{ headerShown: false }} />
           <Stack.Screen name="person-found" options={{ headerShown: false }} />
+          <Stack.Screen name="detail" options={{ headerShown: false }} />
+          <Stack.Screen name="police_detail" options={{ headerShown: false }} />
+          <Stack.Screen name="profileEdit" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="missing-persons/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="missing-persons/edit/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

@@ -38,7 +38,7 @@ export default function MissingList() {
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
   const [basicHasMore, setBasicHasMore] = useState(true);
   const [policeTotalPages, setPoliceTotalPages] = useState(1);
@@ -539,9 +539,9 @@ const normalizeId = (value: any): string | undefined => {
               </React.Fragment>
             ))}
           </>
-        ) : basicData.length > 0 ? (
+        ) : myBasicData.length > 0 ? (
           <>
-            <Item item={basicData[0]} variant="top" />
+            <Item item={myBasicData[0]} variant="top" />
           </>
         ) : null}
         <View style={styles.separator} />

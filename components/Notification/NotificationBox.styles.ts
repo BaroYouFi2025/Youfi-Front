@@ -25,7 +25,7 @@ export const NotificationContent = styledComponents.Text`
   font-weight: 400;
 `;
 
-export const MoreButton = styled.TouchableOpacity`
+export const MoreButton = styledComponents.TouchableOpacity`
   width: 100%;
   padding: 12px;
   background-color: #f9fdfe;
@@ -36,7 +36,7 @@ export const MoreButton = styled.TouchableOpacity`
   margin-top: 8px;
 `;
 
-export const MoreButtonText = styled.Text`
+export const MoreButtonText = styledComponents.Text`
   font-size: 14px;
   font-weight: 600;
   color: #25b2e2;
