@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, ScrollView, View, Text, Image, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { styles, colors } from './setting.style';
 import { logout as logoutRequest } from '@/services/authAPI';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
 import axios from 'axios';
+import { deleteMe } from '@/services/userAPI';
 
 const defaultProfile = require('../../assets/images/default_profile.png');
 
@@ -13,6 +14,9 @@ const SettingScreen: React.FC = () => {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [withdrawVisible, setWithdrawVisible] = useState(false);
+  const [withdrawPassword, setWithdrawPassword] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -127,10 +131,71 @@ const SettingScreen: React.FC = () => {
           <Text style={styles.logoutText}>로그아웃</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.withdrawBtn} onPress={() => {}} activeOpacity={0.9}>
+        <TouchableOpacity style={styles.withdrawBtn} onPress={() => setWithdrawVisible(true)} activeOpacity={0.9}>
           <Text style={styles.withdrawText}>회원 탈퇴</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={withdrawVisible} transparent animationType="fade" onRequestClose={() => setWithdrawVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', width: '85%', borderRadius: 12, padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>회원 탈퇴</Text>
+            <Text style={{ fontSize: 14, color: '#555', marginBottom: 12 }}>
+              계정을 삭제하려면 비밀번호를 입력하세요.
+            </Text>
+            <TextInput
+              value={withdrawPassword}
+              onChangeText={setWithdrawPassword}
+              placeholder="비밀번호"
+              secureTextEntry
+              style={{
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                marginBottom: 16,
+              }}
+            />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (withdrawing) return;
+                  setWithdrawVisible(false);
+                  setWithdrawPassword('');
+                }}
+                style={[styles.miniButton, { backgroundColor: '#e5e7eb' }]}
+              >
+                <Text style={[styles.miniButtonText, { color: '#111' }]}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!withdrawPassword || withdrawing) return;
+                  setWithdrawing(true);
+                  try {
+                    await deleteMe(withdrawPassword);
+                    await clearStoredTokens();
+                    Alert.alert('탈퇴 완료', '회원 탈퇴가 완료되었습니다.', [
+                      { text: '확인', onPress: () => router.replace('/login') },
+                    ]);
+                  } catch (error) {
+                    Alert.alert('탈퇴 실패', error instanceof Error ? error.message : '다시 시도해주세요.');
+                  } finally {
+                    setWithdrawing(false);
+                    setWithdrawVisible(false);
+                    setWithdrawPassword('');
+                  }
+                }}
+                style={[styles.miniButton, { backgroundColor: '#ff5252' }]}
+                disabled={withdrawing || !withdrawPassword}
+              >
+                <Text style={styles.miniButtonText}>{withdrawing ? '처리 중...' : '탈퇴'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
