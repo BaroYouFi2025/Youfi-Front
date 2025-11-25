@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
 import { createMissingPersonReport, uploadPhoto } from '@/services/missingPersonAPI';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
@@ -21,10 +21,18 @@ const INITIAL_REGION: Region = {
   longitudeDelta: 0.05,
 };
 
+const normalizeDateValue = (value?: string) => {
+  if (!value) return null;
+  const normalized = value.includes(' ') && !value.includes('T')
+    ? value.replace(' ', 'T')
+    : value;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatDate = (value: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  const date = normalizeDateValue(value);
+  if (!date) return '';
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
@@ -32,9 +40,8 @@ const formatDate = (value: string) => {
 };
 
 const formatDateTime = (value: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  const date = normalizeDateValue(value);
+  if (!date) return '';
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
@@ -314,6 +321,14 @@ export default function RegisterScreen() {
     }
   };
 
+  const setBirthDateValue = (date: Date) => {
+    handleInputChange('birthDate', date.toISOString().split('T')[0]);
+  };
+
+  const setMissingDateValue = (date: Date) => {
+    handleInputChange('missingDate', date.toISOString());
+  };
+
   const handlePhotoUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -345,13 +360,60 @@ export default function RegisterScreen() {
     }
   };
 
+  const getPickerInitialValue = (type: 'birth' | 'missing') => {
+    const value = type === 'birth' ? formData.birthDate : formData.missingDate;
+    return normalizeDateValue(value) ?? new Date();
+  };
+
+  const openAndroidBirthPicker = (currentValue: Date) => {
+    DateTimePickerAndroid.open({
+      value: currentValue,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, date) => {
+        if (event.type === 'set' && date) {
+          setBirthDateValue(date);
+        }
+      },
+    });
+  };
+
+  const openAndroidMissingPicker = (currentValue: Date) => {
+    DateTimePickerAndroid.open({
+      value: currentValue,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, date) => {
+        if (event.type !== 'set' || !date) return;
+        const pickedDate = new Date(date);
+
+        DateTimePickerAndroid.open({
+          value: pickedDate,
+          mode: 'time',
+          is24Hour: true,
+          onChange: (timeEvent, timeDate) => {
+            if (timeEvent.type !== 'set' || !timeDate) return;
+            const combined = new Date(pickedDate);
+            combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+            setMissingDateValue(combined);
+          },
+        });
+      },
+    });
+  };
+
   const openPicker = (type: 'birth' | 'missing') => {
-    const currentValue =
-      type === 'birth' && formData.birthDate
-        ? new Date(formData.birthDate)
-        : type === 'missing' && formData.missingDate
-          ? new Date(formData.missingDate)
-          : new Date();
+    const currentValue = getPickerInitialValue(type);
+
+    if (Platform.OS === 'android') {
+      if (type === 'birth') {
+        openAndroidBirthPicker(currentValue);
+      } else {
+        openAndroidMissingPicker(currentValue);
+      }
+      return;
+    }
+
     setPickerValue(currentValue);
     setActivePicker(type);
   };
@@ -363,14 +425,6 @@ export default function RegisterScreen() {
     }
     if (date) {
       setPickerValue(date);
-      if (Platform.OS !== 'ios') {
-        if (activePicker === 'birth') {
-          handleInputChange('birthDate', date.toISOString().split('T')[0]);
-        } else if (activePicker === 'missing') {
-          handleInputChange('missingDate', date.toISOString());
-        }
-        setActivePicker(null);
-      }
     }
   };
 
@@ -395,9 +449,9 @@ export default function RegisterScreen() {
   const handlePickerConfirm = () => {
     if (!activePicker) return;
     if (activePicker === 'birth') {
-      handleInputChange('birthDate', pickerValue.toISOString().split('T')[0]);
+      setBirthDateValue(pickerValue);
     } else if (activePicker === 'missing') {
-      handleInputChange('missingDate', pickerValue.toISOString());
+      setMissingDateValue(pickerValue);
     }
     setActivePicker(null);
   };
