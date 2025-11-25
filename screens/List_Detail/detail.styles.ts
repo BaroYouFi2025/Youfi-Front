@@ -54,6 +54,34 @@ export const detailStyles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
   },
+  // --- Image trio row ---
+  imageRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  imageCard: {
+    flex: 1,
+    marginHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 10,
+    backgroundColor: '#fafafa',
+    padding: 8,
+    alignItems: 'center',
+  },
+  imageCardImage: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    marginBottom: 8,
+  },
+  imageCardLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#444',
+  },
 
   // --- Basic Info Section ---
   infoSection: {

@@ -16,6 +16,7 @@ import { isAxiosError } from 'axios';
 import apiClient from '@/services/apiClient';
 import { styles } from './profileEdit.style'; 
 import { getAccessToken } from '@/utils/authStorage';
+import { uploadImage } from '@/services/imageAPI';
 
 // 기본 프로필 이미지
 const defaultProfile = require('../../assets/images/default_profile.png');
@@ -134,7 +135,17 @@ export default function ProfileEdit() {
 
       if (name.trim() !== '') body.name = name.trim();
       if (title.trim() !== '') body.title = title.trim();
-      if (imageUri) body.profileUrl = imageUri;
+      if (imageUri) {
+        const isRemoteUrl = /^https?:\/\//i.test(imageUri);
+        try {
+          const uploadedUrl = isRemoteUrl ? imageUri : await uploadImage(imageUri, 'profile.jpg');
+          body.profileUrl = uploadedUrl;
+        } catch (uploadError) {
+          console.error('❌ 프로필 이미지 업로드 실패:', uploadError);
+          Alert.alert('저장 실패', '프로필 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.');
+          return;
+        }
+      }
       if (backgroundColor) body.profileBackgroundColor = backgroundColor; 
 
 

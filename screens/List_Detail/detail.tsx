@@ -65,6 +65,8 @@ const resolvePhotoUrl = (url?: string) => {
   return normalizeHostForDevice(`${base}${path}`);
 };
 
+const fallbackImage = DEFAULT_AVATAR;
+
 const DetailScreen: React.FC = () => {
   const params = useLocalSearchParams<{
     id?: string;
@@ -368,6 +370,23 @@ const DetailScreen: React.FC = () => {
               ) : null}
             </>
           )}
+        </View>
+
+        {/* 이미지 3종 (실종 당시 / 착의·특징 / 현재 예상) */}
+        <View style={detailStyles.imageRow}>
+          {[
+            { key: 'origin', label: '실종 당시', uri: uiData.photo },
+            { key: 'appearance', label: '착의·특징', uri: uiData.appearance },
+            { key: 'predicted', label: '현재 예상', uri: uiData.predicted },
+          ].map((item) => (
+            <View key={item.key} style={detailStyles.imageCard}>
+              <Image
+                source={item.uri ? { uri: item.uri } : fallbackImage}
+                style={detailStyles.imageCardImage}
+              />
+              <Text style={detailStyles.imageCardLabel}>{item.label}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={detailStyles.infoSection}>
