@@ -70,17 +70,22 @@ export const getMyNotifications = async (): Promise<NotificationResponse[]> => {
 
     const headers = await getAuthHeaders();
 
-    const response = await notificationClient.get<NotificationResponse[]>('/notifications/me', {
+    const response = await notificationClient.get<any[]>('/notifications/me', {
       headers,
     });
 
     const duration = Date.now() - startTime;
 
-    if (Array.isArray(response.data) && response.data.length > 0) {
+    // 서버에서 read로 반환되는 것을 isRead로 매핑
+    const mappedNotifications: NotificationResponse[] = (response.data || []).map((item: any) => ({
+      ...item,
+      isRead: item.read !== undefined ? item.read : item.isRead !== undefined ? item.isRead : false,
+    }));
+
+    if (Array.isArray(mappedNotifications) && mappedNotifications.length > 0) {
     }
 
-
-    return response.data;
+    return mappedNotifications;
   } catch (error) {
     const duration = Date.now() - startTime;
     const axiosError = error as AxiosError;

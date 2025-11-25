@@ -3,8 +3,10 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 import KakaoMap from '../../components/KakaoMap';
 import YouFiLogo from '../../components/YouFiLogo';
+import { getMemberLocations } from '../../services/memberAPI';
 import { connectMemberLocationStream, disconnectMemberLocationStream } from '../../services/memberLocationAPI';
 import { MemberLocation } from '../../types/MemberLocationTypes';
 import {
@@ -36,6 +38,7 @@ export default function GpsTrackingScreen() {
   // 구성원 위치 상태
   const [memberLocations, setMemberLocations] = useState<MemberLocation[]>([]);
   const [isSSEConnected, setIsSSEConnected] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   // 현재 위치 상태 (실제 GPS 데이터)
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -104,6 +107,20 @@ export default function GpsTrackingScreen() {
     getCurrentLocation();
   }, [getCurrentLocation]);
 
+  // 구성원 목록 불러오기
+  const loadMemberLocations = useCallback(async () => {
+    try {
+      setLoadingMembers(true);
+      const members = await getMemberLocations();
+      setMemberLocations(members);
+    } catch (error) {
+      console.error('❌ 구성원 목록 불러오기 실패:', error);
+      // 에러 발생 시에도 기존 상태 유지
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []);
+
   // SSE 연결: 구성원 위치 실시간 수신
   useEffect(() => {
     let mounted = true;
@@ -119,6 +136,8 @@ export default function GpsTrackingScreen() {
         console.error('❌ SSE 오류:', error.message);
         if (mounted) {
           setIsSSEConnected(false);
+          // SSE 연결 실패 시 API로 구성원 목록 불러오기
+          loadMemberLocations();
         }
       },
       onHeartbeat: () => {
@@ -134,7 +153,14 @@ export default function GpsTrackingScreen() {
       mounted = false;
       disconnectMemberLocationStream();
     };
-  }, []);
+  }, [loadMemberLocations]);
+
+  // 구성원이 없을 때 초기 로드
+  useEffect(() => {
+    if (memberLocations.length === 0 && !loadingMembers && !isSSEConnected) {
+      loadMemberLocations();
+    }
+  }, [memberLocations.length, loadingMembers, isSSEConnected, loadMemberLocations]);
 
   const handleReportPress = () => {
     router.push('/missing-report');
@@ -172,7 +198,16 @@ export default function GpsTrackingScreen() {
         <Divider />
 
         <PersonSection>
-          {memberLocations.length === 0 ? (
+          {loadingMembers ? (
+            <PersonRow>
+              <PersonContent>
+                <NameRow>
+                  <ActivityIndicator size="small" color="#25b2e2" style={{ marginRight: 8 }} />
+                  <PersonName>구성원 목록을 불러오는 중...</PersonName>
+                </NameRow>
+              </PersonContent>
+            </PersonRow>
+          ) : memberLocations.length === 0 ? (
             <PersonRow>
               <PersonContent>
                 <NameRow>

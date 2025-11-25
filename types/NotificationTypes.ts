@@ -7,13 +7,14 @@ export enum NotificationType {
   NEARBY_ALERT = 'NEARBY_ALERT', // 근처 알림
 }
 
-// 알림 응답 DTO
+// 알림 응답 DTO (서버에서 read로 반환되지만 클라이언트에서는 isRead로 사용)
 export interface NotificationResponse {
   id: number;
   type: NotificationType;
   title: string;
   message: string;
-  isRead: boolean;
+  isRead: boolean; // 클라이언트에서 사용하는 필드명
+  read?: boolean; // 서버에서 반환하는 필드명 (매핑용)
   createdAt: string; // ISO 8601 형식
   readAt: string | null; // ISO 8601 형식
   relatedEntityId: number | null; // 실종자 ID, 초대 ID, 발견신고 ID 등

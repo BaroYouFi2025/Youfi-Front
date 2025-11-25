@@ -243,23 +243,68 @@ export default function HomeScreen() {
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
 
-      // 읽지 않은 알림과 읽은 알림 분리
-      const unreadNotifications = allNotifications.filter(n => !n.isRead);
-      const readNotifications = allNotifications.filter(n => n.isRead);
+      // 로컬에서 읽음 처리된 알림 ID 목록 저장 (서버 동기화 전에 로컬 상태 보존)
+      const currentUnread = notifications;
+      const currentRead = readNotifications;
+      const currentNotificationIds = new Set([...currentUnread.map(n => n.id), ...currentRead.map(n => n.id)]);
+      
+      const locallyMarkedAsRead = new Set([
+        ...currentUnread.filter(n => !allNotifications.find(server => server.id === n.id && !server.isRead)).map(n => n.id),
+        ...currentRead.map(n => n.id)
+      ]);
 
-      // 읽지 않은 알림은 최신순으로 정렬
-      const sortedUnread = unreadNotifications.sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      // 서버 데이터와 로컬 읽음 상태 병합
+      const mergedNotifications = allNotifications.map(serverNotif => {
+        if (locallyMarkedAsRead.has(serverNotif.id) && !serverNotif.isRead) {
+          // 로컬에서 읽음 처리했지만 서버는 아직 반영 안 된 경우
+          return { ...serverNotif, isRead: true };
+        }
+        return serverNotif;
+      });
 
-      // 읽은 알림도 최신순으로 정렬
-      const sortedRead = readNotifications.sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      // 새로운 알림만 필터링 (기존에 없던 알림)
+      const newNotifications = mergedNotifications.filter(n => !currentNotificationIds.has(n.id));
+      
+      // 새로운 알림이 있을 때만 상태 업데이트 (최적화)
+      if (newNotifications.length > 0) {
+        // 읽지 않은 알림과 읽은 알림 분리
+        const unreadNotifications = mergedNotifications.filter(n => !n.isRead);
+        const readNotificationsList = mergedNotifications.filter(n => n.isRead);
 
-      // 읽지 않은 알림과 읽은 알림을 분리해서 상태 업데이트
-      setNotifications(sortedUnread);
-      setReadNotifications(sortedRead);
+        // 읽지 않은 알림은 최신순으로 정렬
+        const sortedUnread = unreadNotifications.sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        // 읽은 알림도 최신순으로 정렬
+        const sortedRead = readNotificationsList.sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        // 읽지 않은 알림과 읽은 알림을 분리해서 상태 업데이트
+        setNotifications(sortedUnread);
+        setReadNotifications(sortedRead);
+      } else {
+        // 새로운 알림이 없으면 기존 알림의 읽음 상태만 업데이트 (서버 동기화)
+        const updatedUnread = currentUnread.map(n => {
+          const serverNotif = mergedNotifications.find(s => s.id === n.id);
+          return serverNotif ? { ...n, isRead: serverNotif.isRead } : n;
+        }).filter(n => !n.isRead);
+        
+        const updatedRead = [
+          ...currentRead.map(n => {
+            const serverNotif = mergedNotifications.find(s => s.id === n.id);
+            return serverNotif ? { ...n, isRead: serverNotif.isRead } : n;
+          }),
+          ...currentUnread.filter(n => {
+            const serverNotif = mergedNotifications.find(s => s.id === n.id);
+            return serverNotif && serverNotif.isRead;
+          }).map(n => ({ ...n, isRead: true }))
+        ].filter((n, index, self) => self.findIndex(s => s.id === n.id) === index);
+        
+        setNotifications(updatedUnread);
+        setReadNotifications(updatedRead);
+      }
       setSelectedNotificationId((prev) => {
         if (!prev) {
           return prev;
@@ -279,27 +324,26 @@ export default function HomeScreen() {
 
   const handleSelectNotification = useCallback(async (id: number) => {
     setSelectedNotificationId(id);
+    
+    // 알림 클릭 시 읽음 처리
     const target = notifications.find((notif) => notif.id === id) || readNotifications.find((notif) => notif.id === id);
-
-    // 이미 읽은 알림이면 처리하지 않음
-    if (target?.isRead) {
-      return;
-    }
-
-    // 읽지 않은 알림을 읽은 알림으로 이동
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
-    if (target) {
+    
+    if (target && !target.isRead) {
+      // 즉시 로컬 상태 업데이트 (UI 반응성 향상)
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
       setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+      
+      // 백그라운드에서 API 호출 (실패해도 로컬 상태는 유지)
+      try {
+        await markAsRead(id);
+        // API 성공 시에만 새로고침 (선택적)
+        // await loadNotifications();
+      } catch (error) {
+        console.error('❌ 알림 읽음 처리 실패:', error);
+        // 실패해도 로컬 상태는 유지됨
+      }
     }
-
-    try {
-      await markAsRead(id);
-      // 알림 목록 새로고침
-      await loadNotifications();
-    } catch (error) {
-      console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
-    }
-  }, [notifications, readNotifications, loadNotifications]);
+  }, [notifications, readNotifications, markAsRead]);
 
   const kakaoMapPersons: KakaoMapPerson[] = useMemo(
     () =>
@@ -519,19 +563,22 @@ export default function HomeScreen() {
               }
             }}
             onMarkAsRead={async (id) => {
+              const target = notifications.find((notif) => notif.id === id);
+              
+              // 즉시 로컬 상태 업데이트 (UI 반응성 향상)
+              if (target) {
+                setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+              }
+              
+              // 백그라운드에서 API 호출 (실패해도 로컬 상태는 유지)
               try {
-                const target = notifications.find((notif) => notif.id === id);
-                
-                // 읽지 않은 알림을 읽은 알림으로 이동
-                if (target) {
-                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
-                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
-                }
-                
                 await markAsRead(id);
-                await loadNotifications();
+                // API 성공 시에만 새로고침 (선택적)
+                // await loadNotifications();
               } catch (error) {
                 console.error('❌ 읽음 처리 실패:', error);
+                // 실패해도 로컬 상태는 유지됨
               }
             }}
           />
@@ -578,8 +625,25 @@ export default function HomeScreen() {
                         {person.bottom_clothing && ` / 하의: ${person.bottom_clothing}`}
                       </PersonDescription>
                     </PersonInfo>
-                    <ReportButton onPress={() => router.push('/missing-report')}>
-                      <ReportButtonText>신고하기</ReportButtonText>
+                    <ReportButton 
+                      onPress={() => {
+                        const personId = person.id ?? person.missingPersonId ?? person.personId ?? person.missing_person_id;
+                        if (personId) {
+                          router.push({
+                            pathname: '/detail',
+                            params: {
+                              id: personId.toString(),
+                              name: person.name,
+                              photoUrl: person.photo_url,
+                              location: person.address || `${person.latitude.toFixed(4)}, ${person.longitude.toFixed(4)}`,
+                              date: person.missing_date,
+                              info: `${person.top_clothing || ''} ${person.bottom_clothing || ''} ${person.physical_features || ''}`.trim(),
+                            },
+                          });
+                        }
+                      }}
+                    >
+                      <ReportButtonText>자세히 보기</ReportButtonText>
                     </ReportButton>
                   </PersonItem>
                 );

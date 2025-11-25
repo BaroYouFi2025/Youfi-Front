@@ -2,20 +2,18 @@ import { getSightingDetailFromNotification, markAsRead } from '@/services/notifi
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import YouFiLogo from '@/components/YouFiLogo/YouFiLogo';
 import {
   BackButton,
   Container,
   ContentContainer,
-  DescriptionText,
-  FoundBadge,
-  FoundBadgeText,
+  FoundLocationText,
+  FoundPersonText,
+  FoundTitleText,
   Header,
-  InfoCard,
-  NameText,
-  Section,
-  SectionTitle,
-  Title
+  PersonImage,
+  PersonImageContainer
 } from './PersonFoundScreen.styles';
 
 export default function PersonFoundScreen() {
@@ -100,55 +98,56 @@ export default function PersonFoundScreen() {
       {/* Header */}
       <Header>
         <BackButton onPress={handleBack}>
-          <Ionicons name="chevron-back" size={24} color="#16171a" />
+          <Ionicons name="chevron-back" size={24} color="#848587" />
         </BackButton>
-        <Title>발견</Title>
       </Header>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingBottom: 100 }}
+      >
         <ContentContainer>
-          {/* 발견 배지 */}
-          <FoundBadge>
-            <Ionicons name="checkmark-circle" size={32} color="#24c879" />
-            <FoundBadgeText>발견되었습니다</FoundBadgeText>
-          </FoundBadge>
-
-          {/* 실종자 이름 */}
-          <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 16 }}>
-            <NameText>{personInfo.name}</NameText>
-          </View>
-
-          {/* 정보 카드 */}
-          <InfoCard>
-            <Section>
-              <SectionTitle>신고자</SectionTitle>
-              <DescriptionText>{personInfo.reporterName}</DescriptionText>
-            </Section>
-
-            <Section style={{ marginTop: 20 }}>
-              <SectionTitle>발견 위치</SectionTitle>
-              <DescriptionText>{personInfo.address}</DescriptionText>
-              {personInfo.latitude && personInfo.longitude && (
-                <DescriptionText style={{ marginTop: 4, fontSize: 12, color: '#949494' }}>
-                  위도: {personInfo.latitude.toFixed(6)}, 경도: {personInfo.longitude.toFixed(6)}
-                </DescriptionText>
-              )}
-            </Section>
-
-            {personInfo.reportedAt && (
-              <Section style={{ marginTop: 20 }}>
-                <SectionTitle>신고 일시</SectionTitle>
-                <DescriptionText>{new Date(personInfo.reportedAt).toLocaleString('ko-KR')}</DescriptionText>
-              </Section>
+          {/* 실종자 사진 */}
+          <PersonImageContainer>
+            {foundData.missingPersonPhotoUrl || foundData.photoUrl ? (
+              <PersonImage
+                source={{ uri: foundData.missingPersonPhotoUrl || foundData.photoUrl }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{ 
+                width: '100%', 
+                height: '100%', 
+                backgroundColor: '#e5e7eb', 
+                justifyContent: 'center', 
+                alignItems: 'center' 
+              }}>
+                <Ionicons name="person" size={80} color="#949494" />
+              </View>
             )}
+          </PersonImageContainer>
 
-            <Section style={{ marginTop: 20 }}>
-              <SectionTitle>신고 ID</SectionTitle>
-              <DescriptionText>#{personInfo.sightingId}</DescriptionText>
-            </Section>
-          </InfoCard>
+          {/* 발견 메시지 */}
+          <FoundTitleText>
+            실종자 {personInfo.name}님이{'\n'}발견되었습니다
+          </FoundTitleText>
+
+          {/* 찾은 분 */}
+          <FoundPersonText>
+            찾은 분: {personInfo.reporterName} 님
+          </FoundPersonText>
+
+          {/* 발견 위치 */}
+          <FoundLocationText>
+            발견 위치: {personInfo.address}
+          </FoundLocationText>
         </ContentContainer>
       </ScrollView>
+
+      {/* 하단 YouFi 로고 */}
+      <View style={{ position: 'absolute', bottom: 40, left: 0, right: 0, alignItems: 'center' }}>
+        <YouFiLogo />
+      </View>
     </Container>
   );
 }

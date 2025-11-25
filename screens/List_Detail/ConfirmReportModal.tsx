@@ -23,7 +23,7 @@ const ConfirmReportModal: React.FC<ConfirmReportModalProps> = ({
         <Text style={detailStyles.modalTitle}>정말 신고하시겠습니까?</Text>
 
         <Text style={detailStyles.modalDesc}>
-          확인 시 실종자 발견 점수를 위해 182번으로 연결됩니다.
+          확인 시 실종 신고자에게 발견 알람이 발송됩니다.
         </Text>
 
         {errorMessage ? (
