@@ -1,8 +1,9 @@
 import apiClient from '@/services/apiClient';
+import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getAccessToken } from '@/utils/authStorage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
@@ -177,25 +178,49 @@ export default function MissingList() {
   const [source, setSource] = useState<'basic' | 'police'>('basic');
 
   // 👉 API 데이터 상태
+  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
 
   // ------------------------------------------------
   // 🔥 1) API 연동
   // ------------------------------------------------
-  const resolvePhotoUrl = (url?: string) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    const base = API_BASE_URL.replace(/\/+$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
-  };
+const normalizeHostForDevice = (url: string) => {
+  if (Platform.OS === 'android') {
+    return url
+      .replace('://localhost', '://10.0.2.2')
+      .replace('://127.0.0.1', '://10.0.2.2');
+  }
+  return url.replace('://127.0.0.1', '://localhost');
+};
 
-  const normalizeId = (value: any): string | undefined => {
-    if (value === null || value === undefined) return undefined;
-    const str = String(value).trim();
-    return str.length ? str : undefined;
-  };
+const resolvePhotoUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const base = API_BASE_URL.replace(/\/+$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return normalizeHostForDevice(`${base}${path}`);
+};
+
+const formatDateWithWeekday = (value?: string) => {
+  if (!value) return '';
+  const normalized = value.replace(/\s+/g, ' ');
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value;
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  const hh = `${date.getHours()}`.padStart(2, '0');
+  const mm = `${date.getMinutes()}`.padStart(2, '0');
+  return `${y}-${m}-${d} (${weekdays[date.getDay()]}) ${hh}:${mm}`;
+};
+
+const normalizeId = (value: any): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  const str = String(value).trim();
+  return str.length ? str : undefined;
+};
 
 const mapToListData = (items: any[]): MissingPerson[] => items
   .map((it: any) => {
@@ -263,6 +288,15 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     }
   };
 
+  const fetchMyData = async () => {
+    try {
+      const list = await getMyMissingPersons();
+      setMyBasicData(mapToListData(list));
+    } catch (err) {
+      setMyBasicData([]);
+    }
+  };
+
   const fetchPoliceData = async () => {
     try {
       const token = await getAccessToken();
@@ -288,6 +322,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
   useFocusEffect(
     useCallback(() => {
       fetchBasicData();
+      fetchMyData();
     }, [])
   );
 
@@ -306,7 +341,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
   );
 
   // 상단 "찾는 중" 카드에는 항상 내가 등록한 실종자 중 첫 번째 데이터를 사용
-  const topItem = basicData[0];
+  const topItem = myBasicData[0];
 
   // ------------------------------------------------
   // 🔥 3) Item UI 수정: 텍스트를 두 줄로 분리
@@ -359,11 +394,11 @@ const mapToListData = (items: any[]): MissingPerson[] => items
             {item.name}
           </Text>
 
-          {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
-          <Text style={styles.locationDateText}>
-            {item.location}
-            {item.date ? ` • ${item.date}` : ''}
-          </Text>
+      {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
+      <Text style={styles.locationDateText}>
+        {item.location}
+        {item.date ? ` • ${formatDateWithWeekday(item.date)}` : ''}
+      </Text>
 
           {/* 3. 인상착의 정보 (가장 작게) */}
           <Text style={styles.itemSub}>{item.info}</Text>

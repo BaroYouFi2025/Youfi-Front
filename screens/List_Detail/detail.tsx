@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import axios from 'axios';
 import { useLocalSearchParams } from 'expo-router';
 import { detailStyles } from './detail.styles';
@@ -44,12 +44,21 @@ const formatAge = (birthDate?: string, at?: string) => {
   return age;
 };
 
+const normalizeHostForDevice = (url: string) => {
+  if (Platform.OS === 'android') {
+    return url
+      .replace('://localhost', '://10.0.2.2')
+      .replace('://127.0.0.1', '://10.0.2.2');
+  }
+  return url.replace('://127.0.0.1', '://localhost');
+};
+
 const resolvePhotoUrl = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   const base = API_BASE_URL.replace(/\/+$/, '');
   const path = url.startsWith('/') ? url : `/${url}`;
-  return `${base}${path}`;
+  return normalizeHostForDevice(`${base}${path}`);
 };
 
 const DetailScreen: React.FC = () => {

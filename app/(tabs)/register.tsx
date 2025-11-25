@@ -363,14 +363,6 @@ export default function RegisterScreen() {
     }
     if (date) {
       setPickerValue(date);
-      if (Platform.OS !== 'ios') {
-        if (activePicker === 'birth') {
-          handleInputChange('birthDate', date.toISOString().split('T')[0]);
-        } else if (activePicker === 'missing') {
-          handleInputChange('missingDate', date.toISOString());
-        }
-        setActivePicker(null);
-      }
     }
   };
 
