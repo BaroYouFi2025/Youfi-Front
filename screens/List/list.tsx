@@ -12,6 +12,7 @@ import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2'];
 
 type MissingPerson = {
   id: string;
@@ -56,11 +57,34 @@ const normalizeHostForDevice = (url: string) => {
   return url.replace('://127.0.0.1', '://localhost');
 };
 
+const API_BASE_FOR_DEVICE = normalizeHostForDevice(API_BASE_URL.replace(/\/+$/, ''));
+const API_HOST = (() => {
+  try {
+    return new URL(API_BASE_FOR_DEVICE).host;
+  } catch {
+    return null;
+  }
+})();
+
 const resolvePhotoUrl = (url?: string) => {
   if (!url) return '';
   const normalizedInput = normalizeHostForDevice(url);
-  if (normalizedInput.startsWith('http')) return normalizedInput;
-  const base = API_BASE_URL.replace(/\/+$/, '');
+  const base = API_BASE_FOR_DEVICE;
+
+  try {
+    const parsed = new URL(normalizedInput);
+    const host = parsed.hostname;
+    const shouldUseApiHost = (API_HOST && host === API_HOST) || LOCAL_HOSTS.includes(host);
+
+    if (shouldUseApiHost) {
+      return `${base}${parsed.pathname}${parsed.search ?? ''}`;
+    }
+
+    return parsed.toString();
+  } catch {
+    // If parsing fails, treat as relative and attach to API base
+  }
+
   const path = url.startsWith('/') ? url : `/${url}`;
   return normalizeHostForDevice(`${base}${path}`);
 };
@@ -134,7 +158,10 @@ const normalizeId = (value: any): string | undefined => {
     })
     .filter((it: MissingPerson | null): it is MissingPerson => !!it);
 
-  const enrichWithDetailPhotos = async (items: MissingPerson[]) => {
+  const enrichWithDetailPhotos = async (
+    items: MissingPerson[],
+    options?: { police?: boolean }
+  ) => {
     const token = await getAccessToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -151,9 +178,23 @@ const normalizeId = (value: any): string | undefined => {
       items.map(async (item) => {
         if (item.photoUrl) return item;
 
-        // 1) 대시 경로 우선
-        const detailDash = await fetchDetail(item.id, `/missing-persons/${item.id}`);
-        const detail = detailDash || await fetchDetail(item.id, `/missing_persons/${item.id}`);
+        const detailId = item.policeId ?? item.id;
+        const paths = options?.police
+          ? [
+              `/missing/police/missing-persons/${detailId}`,
+              `/missing/police/missing_persons/${detailId}`,
+              `/missing/police/${detailId}`,
+            ]
+          : [
+              `/missing-persons/${detailId}`,
+              `/missing_persons/${detailId}`,
+            ];
+
+        let detail = null;
+        for (const path of paths) {
+          detail = await fetchDetail(detailId, path);
+          if (detail) break;
+        }
 
         if (detail) {
           const detailPhoto =
@@ -182,7 +223,8 @@ const normalizeId = (value: any): string | undefined => {
     try {
       const items = await getMyMissingPersons();
       const mapped = mapToListData(items);
-      setMyMissingPersons(mapped);
+      const enriched = await enrichWithDetailPhotos(mapped);
+      setMyMissingPersons(enriched);
     } catch (err) {
       console.log('❌ 내가 등록한 실종자 불러오기 실패:', err);
       setMyMissingPersons([]); // API 실패 시 빈 배열
@@ -230,7 +272,9 @@ const normalizeId = (value: any): string | undefined => {
   const fetchMyData = async () => {
     try {
       const list = await getMyMissingPersons();
-      setMyBasicData(mapToListData(list));
+      const mapped = mapToListData(list);
+      const enriched = await enrichWithDetailPhotos(mapped);
+      setMyBasicData(enriched);
     } catch (err) {
       setMyBasicData([]);
     }
@@ -259,7 +303,8 @@ const normalizeId = (value: any): string | undefined => {
         ?? (typeof totalElements === 'number' ? Math.ceil(totalElements / PAGE_SIZE) : 1);
 
       const mapped = mapToListData(items);
-      setPoliceData(mapped);
+      const enriched = await enrichWithDetailPhotos(mapped, { police: true });
+      setPoliceData(enriched);
       const nextTotalPages = Math.max(1, Number(total) || 1);
       setPoliceTotalPages(nextTotalPages);
       const hasMoreByTotal = Number.isFinite(nextTotalPages) ? page + 1 < nextTotalPages : false;
