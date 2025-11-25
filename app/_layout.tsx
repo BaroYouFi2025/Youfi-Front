@@ -3,14 +3,13 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { Alert, AppState, Linking, Platform } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { startBackgroundLocationTracking } from '@/services/locationService';
 import { getAccessToken } from '@/utils/authStorage';
-import { Alert, Linking, Platform } from 'react-native';
 
 // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
 let firebaseApp: any = null;
@@ -22,7 +21,9 @@ let getInitialNotificationFunc: any = null;
 let onNotificationOpenedAppFunc: any = null;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const app = require('@react-native-firebase/app').default;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const messagingModule = require('@react-native-firebase/messaging');
   firebaseApp = app;
   getMessagingFunc = messagingModule.getMessaging;
@@ -31,7 +32,7 @@ try {
   onMessageFunc = messagingModule.onMessage;
   getInitialNotificationFunc = messagingModule.getInitialNotification;
   onNotificationOpenedAppFunc = messagingModule.onNotificationOpenedApp;
-} catch (e) {
+} catch {
   // Expo Go에서는 Firebase 사용 불가
 }
 
@@ -123,14 +124,14 @@ export default function RootLayout() {
 
         if (enabled) {
           try {
-            const token = await getTokenFunc(messaging);
+            await getTokenFunc(messaging);
             // FCM 토큰은 발급만 하고, 기기 등록은 회원가입 시에만 수행
-          } catch (error) {
-            console.error('❌ FCM 토큰 발급 실패:', error);
+          } catch {
+            Alert.alert('알림 초기화 실패', '푸시 토큰을 발급하지 못했습니다. 잠시 후 다시 시도해주세요.');
           }
         }
-      } catch (error) {
-        console.error('❌ 알림 권한 확인/요청 실패:', error);
+      } catch {
+        Alert.alert('알림 권한 오류', '알림 권한을 확인하는 중 문제가 발생했습니다.');
       }
     };
 
@@ -144,6 +145,9 @@ export default function RootLayout() {
       }
     });
 
+    return () => {
+      appStateSubscription.remove();
+    };
   }, []);
 
   // 백그라운드 GPS 위치 추적 시작 (로그인된 경우)
@@ -178,8 +182,8 @@ export default function RootLayout() {
             );
           }
         }
-      } catch (error) {
-        console.error('❌ GPS 위치 추적 초기화 실패:', error);
+      } catch {
+        Alert.alert('위치 추적 오류', '백그라운드 위치 추적을 시작하지 못했습니다.');
       }
     };
 

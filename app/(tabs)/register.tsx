@@ -12,7 +12,7 @@ import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPerso
 import { hasFormErrors, validateMissingPersonForm } from '@/utils/validation';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
-import styled from 'styled-components/native';
+import styledComponents from 'styled-components/native';
 
 const INITIAL_REGION: Region = {
   latitude: 37.5665,
@@ -50,12 +50,12 @@ const formatDateTime = (value: string) => {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
-const Container = styled.View`
+const Container = styledComponents.View`
   flex: 1;
   background-color: #ffffff;
 `;
 
-const Header = styled.View`
+const Header = styledComponents.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -63,41 +63,16 @@ const Header = styled.View`
   margin-top: 32px;
 `;
 
-const Title = styled.Text`
-  font-family: 'Wanted Sans';
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 27px;
-  color: #16171a;
-  letter-spacing: -0.24px;
-  text-align: center;
-  flex: 1;
-`;
-
-const AIButton = styled.TouchableOpacity`
-  background-color: #25b2e2;
-  border-radius: 16px;
-  padding: 2px 8px;
-`;
-
-const AIButtonText = styled.Text`
-  font-family: 'Material Symbols Rounded';
-  font-weight: 300;
-  font-size: 24px;
-  color: #ffffff;
-  text-align: center;
-`;
-
-const FormContainer = styled.View`
+const FormContainer = styledComponents.View`
   padding: 16px;
   gap: 16px;
 `;
 
-const InputGroup = styled.View`
+const InputGroup = styledComponents.View`
   gap: 8px;
 `;
 
-const InputLabel = styled.Text`
+const InputLabel = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 12px;
@@ -106,7 +81,7 @@ const InputLabel = styled.Text`
   letter-spacing: -0.2px;
 `;
 
-const InputField = styled.TextInput.attrs({
+const InputField = styledComponents.TextInput.attrs({
   placeholderTextColor: '#9ca3af',
 })`
   background-color: #ffffff;
@@ -121,16 +96,16 @@ const InputField = styled.TextInput.attrs({
   letter-spacing: -0.2px;
 `;
 
-const DateInputContainer = styled.View`
+const DateInputContainer = styledComponents.View`
   flex-direction: row;
   align-items: center;
 `;
 
-const DateInput = styled(InputField)`
+const DateInput = styledComponents(InputField)`
   flex: 1;
 `;
 
-const CalendarIcon = styled.Text`
+const CalendarIcon = styledComponents.Text`
   font-family: 'Material Symbols Rounded';
   font-weight: 300;
   font-size: 24px;
@@ -139,12 +114,12 @@ const CalendarIcon = styled.Text`
   right: 8px;
 `;
 
-const GenderContainer = styled.View`
+const GenderContainer = styledComponents.View`
   flex-direction: row;
   gap: 8px;
 `;
 
-const GenderButton = styled.TouchableOpacity<{ selected: boolean }>`
+const GenderButton = styledComponents.TouchableOpacity<{ selected: boolean }>`
   background-color: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -158,7 +133,7 @@ const GenderButton = styled.TouchableOpacity<{ selected: boolean }>`
   `}
 `;
 
-const GenderButtonText = styled.Text<{ selected: boolean }>`
+const GenderButtonText = styledComponents.Text<{ selected: boolean }>`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 15px;
@@ -167,7 +142,7 @@ const GenderButtonText = styled.Text<{ selected: boolean }>`
   letter-spacing: -0.3px;
 `;
 
-const PhotoUploadContainer = styled.TouchableOpacity`
+const PhotoUploadContainer = styledComponents.TouchableOpacity`
   background-color: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -178,14 +153,7 @@ const PhotoUploadContainer = styled.TouchableOpacity`
   overflow: hidden;
 `;
 
-const UploadIcon = styled.Text`
-  font-family: 'Material Symbols Rounded';
-  font-weight: 200;
-  font-size: 32px;
-  color: #949494;
-`;
-
-const UploadText = styled.Text`
+const UploadText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 13px;
@@ -194,12 +162,12 @@ const UploadText = styled.Text`
   letter-spacing: -0.13px;
 `;
 
-const PhotoPreview = styled.Image`
+const PhotoPreview = styledComponents.Image`
   width: 100%;
   height: 100%;
 `;
 
-const MapContainer = styled.View`
+const MapContainer = styledComponents.View`
   height: 190px;
   border-radius: 16px;
   overflow: hidden;
@@ -208,7 +176,7 @@ const MapContainer = styled.View`
   margin-top: 16px;
 `;
 
-const MapPlaceholder = styled.View`
+const MapPlaceholder = styledComponents.View`
   position: absolute;
   top: 0;
   left: 0;
@@ -218,25 +186,25 @@ const MapPlaceholder = styled.View`
   align-items: center;
 `;
 
-const MapPlaceholderText = styled.Text`
+const MapPlaceholderText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 14px;
   color: #6b7280;
 `;
 
-const LocationSummary = styled.View`
+const LocationSummary = styledComponents.View`
   margin-top: 8px;
 `;
 
-const LocationText = styled.Text`
+const LocationText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 10px;
   color: #4b5563;
 `;
 
-const ErrorText = styled.Text`
+const ErrorText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 10px;
@@ -244,7 +212,7 @@ const ErrorText = styled.Text`
   margin-top: 4px;
 `;
 
-const SubmitButton = styled.TouchableOpacity`
+const SubmitButton = styledComponents.TouchableOpacity`
   background-color: #25b2e2;
   border-radius: 8px;
   height: 48px;
@@ -253,33 +221,33 @@ const SubmitButton = styled.TouchableOpacity`
   margin: 16px;
 `;
 
-const SubmitButtonText = styled.Text`
+const SubmitButtonText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 700;
   font-size: 16px;
   color: #ffffff;
 `;
 
-const PickerOverlay = styled.View`
+const PickerOverlay = styledComponents.View`
   flex: 1;
   background-color: rgba(0, 0, 0, 0.35);
   justify-content: flex-end;
 `;
 
-const PickerContainer = styled.View`
+const PickerContainer = styledComponents.View`
   background-color: #ffffff;
   padding: 12px;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
 `;
 
-const PickerActions = styled.View`
+const PickerActions = styledComponents.View`
   flex-direction: row;
   justify-content: space-between;
   margin-bottom: 8px;
 `;
 
-const PickerActionText = styled.Text`
+const PickerActionText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 600;
   font-size: 14px;
@@ -501,8 +469,8 @@ export default function RegisterScreen() {
           latitude,
           longitude,
         }));
-      } catch (error) {
-        console.error('Failed to fetch current location', error);
+      } catch {
+        Alert.alert('위치 불러오기 실패', '현재 위치를 확인할 수 없습니다.');
       }
     };
 

@@ -84,20 +84,11 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       (status === 400 && errorData?.code === 'DEVICE_ALREADY_REGISTERED');
 
     if (isAlreadyRegistered) {
-      console.log('⚠️ 기기가 이미 등록되어 있습니다. 토큰 갱신을 진행합니다.');
       // 이미 등록된 경우에도 FCM 토큰은 저장
       await setStoredFCMToken(fcmToken);
     } else {
-      const requestConfig = axiosError.config;
-      console.error('❌ 기기 등록 실패:', {
-        status,
-        statusText: axiosError.response?.statusText,
-        url: requestConfig?.url,
-        responseData: JSON.stringify(errorData, null, 2),
-        errorMessage: axiosError.message,
-      });
-
-      throw new Error(resolveErrorMessage(axiosError));
+      // 기기 등록 실패 시 조용히 실패 처리 (throw 하지 않음)
+      // 로그인 플로우는 계속 진행되어야 함
     }
   }
 
@@ -132,6 +123,24 @@ export const registerDevice = async (fcmToken: string, accessToken?: string): Pr
       fcmToken: fcmToken,
       active: true
     };
+  }
+};
+
+/**
+ * FCM 토큰 업데이트 (POST /devices/fcm-token)
+ * 로그인 시 FCM 토큰을 서버에 업데이트합니다.
+ */
+export const updateFcmToken = async (fcmToken: string): Promise<void> => {
+  try {
+    await apiClient.post('/devices/fcm-token', {
+      fcmToken,
+    });
+
+    // 업데이트 성공 시 로컬에 저장
+    await setStoredFCMToken(fcmToken);
+  } catch (error) {
+    // FCM 토큰 업데이트 실패해도 로그인은 계속 진행
+    // 조용히 실패 처리
   }
 };
 

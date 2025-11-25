@@ -52,8 +52,6 @@ const RelationshipSelectionScreen: React.FC = () => {
         relation: selectedRelationship,
       });
 
-      console.log('✅ 멤버 초대 성공:', response);
-
       // 성공 메시지 표시
       Alert.alert(
         '초대 완료',

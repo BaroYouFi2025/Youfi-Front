@@ -59,11 +59,6 @@ const AddMemberScreen: React.FC = () => {
   };
 
   const handleSelectUser = (user: UserSummary) => {
-    console.log('🔍 선택된 사용자 전체 데이터:', JSON.stringify(user, null, 2));
-    console.log('🔍 user.id:', user.id);
-    console.log('🔍 user.userId:', user.userId);
-    console.log('🔍 user.uid:', user.uid);
-    console.log('🔍 user.name:', user.name);
     setSelectedUser(user);
     setIsModalVisible(true);
   };
@@ -88,8 +83,6 @@ const AddMemberScreen: React.FC = () => {
         inviteeUserId: inviteeUserId,
         relation: relationship,
       });
-
-      console.log('✅ 멤버 초대 성공:', response);
 
       // 모달 닫기
       setIsModalVisible(false);

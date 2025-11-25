@@ -39,6 +39,40 @@ export default function LoginScreen() {
 
       await Promise.all([setAccessToken(accessToken), setRefreshToken(refreshToken)]);
 
+      // 로그인 성공 후 FCM 토큰 업데이트
+      try {
+        const { getStoredFCMToken } = await import('@/utils/authStorage');
+        const { updateFcmToken } = await import('@/services/deviceAPI');
+
+        // 저장된 FCM 토큰 확인
+        let fcmToken = await getStoredFCMToken();
+
+        // 저장된 토큰이 없으면 새로 발급 시도
+        if (!fcmToken) {
+          try {
+            const app = require('@react-native-firebase/app').default;
+            const messagingModule = require('@react-native-firebase/messaging');
+            const messaging = messagingModule.getMessaging(app);
+            const authStatus = await messaging.requestPermission();
+            const enabled = authStatus === 1 || authStatus === 2;
+
+            if (enabled) {
+              const token = await messagingModule.getToken(messaging);
+              if (token) {
+                fcmToken = token;
+              }
+            }
+          } catch (error) {
+            // Firebase 사용 불가능한 환경 (Expo Go 등)
+          }
+        }
+
+        // FCM 토큰 업데이트 (빈 문자열이어도 전송)
+        await updateFcmToken(fcmToken || '');
+      } catch (error) {
+        // FCM 토큰 업데이트 실패해도 로그인은 계속 진행
+      }
+
       // 로그인 성공 후 홈 화면으로 이동
       router.replace('/(tabs)');
     } catch (error) {
