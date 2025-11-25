@@ -123,6 +123,26 @@ export const styles = StyleSheet.create({
     fontSize: 12, 
   },
 
+  // 가까운 경찰청 찾기 버튼
+  findPoliceButton: {
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: '#25b2e2',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  findPoliceButtonDisabled: {
+    opacity: 0.6,
+  },
+  findPoliceButtonText: {
+    color: COLORS.pillText,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
   // 하단 CTA 버튼
   ctaBtn: {
     marginTop: 24, 

@@ -49,6 +49,7 @@ const mapImage = require('../../assets/images/react-logo.png');
 
 export default function HomeScreen() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [readNotifications, setReadNotifications] = useState<NotificationResponse[]>([]);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [nearbyPersons, setNearbyPersons] = useState<NearbyMissingPerson[]>([]);
@@ -235,22 +236,28 @@ export default function HomeScreen() {
       // 모든 알림 조회 (최신순)
       const allNotifications = await getMyNotifications();
 
-      const unreadCount = allNotifications.filter(n => !n.isRead).length;
-      if (unreadCount > 0) {
-      }
+      // 읽지 않은 알림과 읽은 알림 분리
+      const unreadNotifications = allNotifications.filter(n => !n.isRead);
+      const readNotifications = allNotifications.filter(n => n.isRead);
 
-      // 최신순으로 정렬하고 최신 3개만 표시
-      const sortedNotifications = allNotifications.sort((a, b) =>
+      // 읽지 않은 알림은 최신순으로 정렬
+      const sortedUnread = unreadNotifications.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      const displayedNotifications = sortedNotifications.slice(0, 3);
 
-      setNotifications(displayedNotifications);
+      // 읽은 알림도 최신순으로 정렬
+      const sortedRead = readNotifications.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      // 읽지 않은 알림과 읽은 알림을 분리해서 상태 업데이트
+      setNotifications(sortedUnread);
+      setReadNotifications(sortedRead);
       setSelectedNotificationId((prev) => {
         if (!prev) {
           return prev;
         }
-        const stillExists = displayedNotifications.some((notification) => notification.id === prev);
+        const stillExists = [...sortedUnread, ...sortedRead].some((notification) => notification.id === prev);
         return stillExists ? prev : null;
       });
     } catch (error) {
@@ -264,24 +271,27 @@ export default function HomeScreen() {
 
   const handleSelectNotification = useCallback(async (id: number) => {
     setSelectedNotificationId(id);
-    const target = notifications.find((notif) => notif.id === id);
+    const target = notifications.find((notif) => notif.id === id) || readNotifications.find((notif) => notif.id === id);
 
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === id ? { ...notif, isRead: true } : notif
-      )
-    );
-
+    // 이미 읽은 알림이면 처리하지 않음
     if (target?.isRead) {
       return;
     }
 
+    // 읽지 않은 알림을 읽은 알림으로 이동
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+    if (target) {
+      setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+    }
+
     try {
       await markAsRead(id);
+      // 알림 목록 새로고침
+      await loadNotifications();
     } catch (error) {
       console.error('❌ 알림 읽음 처리 실패 (선택 이벤트):', error);
     }
-  }, [notifications]);
+  }, [notifications, readNotifications, loadNotifications]);
 
   const kakaoMapPersons: KakaoMapPerson[] = useMemo(
     () =>
@@ -408,20 +418,23 @@ export default function HomeScreen() {
 
         {/* Content Area */}
         <ContentArea>
-          {/* Notification Box */}
+          {/* 알림 박스 (읽지 않은 알림 + 읽은 알림 스택 형태) */}
           <NotificationBox
-            notifications={notifications}
+            notifications={[...notifications, ...readNotifications]}
             loading={loadingNotifications}
             selectedId={selectedNotificationId}
             onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
                 setSelectedNotificationId(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await acceptInvitationFromNotification(id, {
                   relation: relation,
                 });
@@ -433,11 +446,11 @@ export default function HomeScreen() {
               } catch (error) {
                 console.error('❌ 초대 수락 실패:', error);
                 // 실패 시 상태 롤백
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: false } : notif
-                  )
-                );
+                const target = readNotifications.find((notif) => notif.id === id);
+                if (target) {
+                  setReadNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setNotifications((prev) => [{ ...target, isRead: false }, ...prev]);
+                }
                 const errorMessage = error instanceof Error ? error.message : '초대 수락에 실패했습니다.';
                 Alert.alert('실패', errorMessage);
               }
@@ -445,11 +458,14 @@ export default function HomeScreen() {
             onReject={async (id) => {
               try {
                 setSelectedNotificationId(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await rejectInvitationFromNotification(id);
                 // 읽음 처리
                 await markAsRead(id);
@@ -459,29 +475,29 @@ export default function HomeScreen() {
               } catch (error) {
                 console.error('❌ 초대 거절 실패:', error);
                 // 실패 시 상태 롤백
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: false } : notif
-                  )
-                );
+                const target = readNotifications.find((notif) => notif.id === id);
+                if (target) {
+                  setReadNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setNotifications((prev) => [{ ...target, isRead: false }, ...prev]);
+                }
                 const errorMessage = error instanceof Error ? error.message : '초대 거절에 실패했습니다.';
                 Alert.alert('실패', errorMessage);
               }
             }}
             onDetail={async (id) => {
               try {
+                const target = notifications.find((notif) => notif.id === id) || readNotifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target && !target.isRead) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
 
-                // 1. 즉시 로컬 상태 업데이트 (읽음 상태로 변경)
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
-
-                // 2. 읽음 처리 API 호출 (기다림)
+                // 읽음 처리 API 호출
                 await markAsRead(id);
 
-                // 3. 발견되었다 페이지로 이동
+                // 발견되었다 페이지로 이동
                 router.push({
                   pathname: '/person-found',
                   params: { notificationId: id.toString() },
@@ -496,12 +512,15 @@ export default function HomeScreen() {
             }}
             onMarkAsRead={async (id) => {
               try {
+                const target = notifications.find((notif) => notif.id === id);
+                
+                // 읽지 않은 알림을 읽은 알림으로 이동
+                if (target) {
+                  setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+                  setReadNotifications((prev) => [{ ...target, isRead: true }, ...prev]);
+                }
+                
                 await markAsRead(id);
-                setNotifications((prev) =>
-                  prev.map((notif) =>
-                    notif.id === id ? { ...notif, isRead: true } : notif
-                  )
-                );
                 await loadNotifications();
               } catch (error) {
                 console.error('❌ 읽음 처리 실패:', error);

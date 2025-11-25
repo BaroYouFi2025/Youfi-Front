@@ -35,6 +35,7 @@ import {
 export default function GpsTrackingScreen() {
   // 구성원 위치 상태
   const [memberLocations, setMemberLocations] = useState<MemberLocation[]>([]);
+  const [isSSEConnected, setIsSSEConnected] = useState(false);
 
   // 현재 위치 상태 (실제 GPS 데이터)
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -105,20 +106,32 @@ export default function GpsTrackingScreen() {
 
   // SSE 연결: 구성원 위치 실시간 수신
   useEffect(() => {
+    let mounted = true;
+
     connectMemberLocationStream({
       onUpdate: (members) => {
-        setMemberLocations(members);
+        if (mounted) {
+          setMemberLocations(members);
+          setIsSSEConnected(true);
+        }
       },
       onError: (error) => {
         console.error('❌ SSE 오류:', error.message);
+        if (mounted) {
+          setIsSSEConnected(false);
+        }
       },
       onHeartbeat: () => {
         // Heartbeat 로그는 너무 빈번하므로 생략 가능
+        if (mounted) {
+          setIsSSEConnected(true);
+        }
       },
     });
 
     // 컴포넌트 언마운트 시 연결 해제
     return () => {
+      mounted = false;
       disconnectMemberLocationStream();
     };
   }, []);

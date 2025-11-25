@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import { styles } from './police_detail.style';
 import ConfirmReportModal from './ConfirmReportModal';
 import SuccessReportModal from './SuccessReportModal';
@@ -369,8 +370,19 @@ const PoliceDetailScreen = () => {
         <View style={styles.spacer} />
       </ScrollView>
 
-      <TouchableOpacity style={styles.reportButton} onPress={handleReport}>
-        <Text style={styles.reportButtonText}>신고하기</Text>
+      <TouchableOpacity
+        style={[styles.findPoliceButtonBottom, isFindingPolice && styles.findPoliceButtonDisabled]}
+        onPress={handleFindPolice}
+        disabled={isFindingPolice}
+      >
+        {isFindingPolice ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <>
+            <Ionicons name="map" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.findPoliceButtonText}>가까운 경찰청 찾기</Text>
+          </>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );

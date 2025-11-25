@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 
 import { login as loginRequest } from '@/services/authAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
@@ -37,45 +39,66 @@ export default function LoginScreen() {
 
       await Promise.all([setAccessToken(accessToken), setRefreshToken(refreshToken)]);
 
-      // 로그인 성공 후 FCM 토큰 발급 및 기기 등록
+      // 로그인 성공 후 권한 요청 및 기기 등록
       try {
-        // 1. FCM 토큰 발급 (알림 권한이 있는 경우)
-        let fcmToken: string | undefined = undefined;
-
-        // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
-        let firebaseApp: any = null;
-        let getMessagingFunc: any = null;
-        let getTokenFunc: any = null;
+        // 1. 위치 권한 확인 및 요청
+        let locationPermissionGranted = false;
         try {
-          const app = require('@react-native-firebase/app').default;
-          const messagingModule = require('@react-native-firebase/messaging');
-          firebaseApp = app;
-          getMessagingFunc = messagingModule.getMessaging;
-          getTokenFunc = messagingModule.getToken;
-        } catch (e) {
-          // Expo Go에서는 Firebase 사용 불가
-        }
-
-        if (firebaseApp && getMessagingFunc) {
-          try {
-            const messaging = getMessagingFunc(firebaseApp);
-            const authStatus = await messaging.requestPermission();
-            const enabled = authStatus === 1 || authStatus === 2;
-
-            if (enabled) {
-              const token = await getTokenFunc(messaging);
-              if (token) {
-                fcmToken = token;
-              }
+          const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
+          if (existingStatus !== 'granted') {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            locationPermissionGranted = status === 'granted';
+            if (!locationPermissionGranted) {
+              console.log('⚠️ 위치 권한이 거부되었습니다.');
             }
-          } catch (error) {
-            console.error('FCM 토큰 발급 실패:', error);
+          } else {
+            locationPermissionGranted = true;
           }
+        } catch (error) {
+          console.error('❌ 위치 권한 요청 실패:', error);
         }
 
-        // 2. 기기 등록
+        // 2. 알림 권한 확인 및 요청
+        let fcmToken: string = '';
+        try {
+          // Expo Notifications 권한 요청
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+          
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+
+          if (finalStatus === 'granted') {
+            // Firebase는 네이티브 빌드에서만 사용 가능
+            try {
+              const messaging = require('@react-native-firebase/messaging').default;
+              const authStatus = await messaging().requestPermission();
+              const enabled = authStatus === 1 || authStatus === 2;
+
+              if (enabled) {
+                const token = await messaging().getToken();
+                if (token) {
+                  fcmToken = token;
+                  console.log('✅ FCM 토큰 발급 성공');
+                }
+              }
+            } catch (firebaseError) {
+              // Expo Go에서는 Firebase 사용 불가 (정상 동작)
+              console.log('ℹ️ Firebase 사용 불가 (Expo Go 환경)');
+            }
+          } else {
+            console.log('⚠️ 알림 권한이 거부되었습니다.');
+          }
+        } catch (error) {
+          console.error('❌ 알림 권한 요청 실패:', error);
+        }
+
+        // 3. 기기 등록
         const { registerDevice } = await import('@/services/deviceAPI');
-        await registerDevice(fcmToken || '', accessToken);
+        await registerDevice(fcmToken, accessToken);
+        console.log('✅ 기기 등록 완료');
       } catch (error) {
         console.error('❌ 로그인 후 기기 등록 실패:', error);
         // 기기 등록 실패해도 로그인은 성공 처리

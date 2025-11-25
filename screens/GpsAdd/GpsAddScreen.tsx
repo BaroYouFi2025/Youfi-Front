@@ -50,18 +50,27 @@ export default function GpsAddScreen() {
 
   const handleSearch = useCallback(
     async (term?: string) => {
+      // 빈 검색어일 때는 검색하지 않음
+      if (!term || !term.trim()) {
+        setMembers([]);
+        setSelectedUserId(null);
+        setSearchPerformed(false);
+        return;
+      }
+
       setLoading(true);
       setSearchPerformed(true);
       try {
         const token = await getAccessToken();
         if (!token) {
           Alert.alert('로그인이 필요해요', '다시 로그인한 후 검색을 진행해주세요.');
+          setLoading(false);
           return;
         }
 
         const response = await searchUsers(
           {
-            uid: term?.trim() || undefined,
+            uid: term.trim(),
             page: 0,
             size: 20,
           },
@@ -85,9 +94,10 @@ export default function GpsAddScreen() {
     [],
   );
 
-  useEffect(() => {
-    handleSearch();
-  }, [handleSearch]);
+  // 초기 로드 시 검색하지 않음
+  // useEffect(() => {
+  //   handleSearch();
+  // }, [handleSearch]);
 
   const selectedMemberName =
     members.find((member) => member.userId === selectedUserId)?.name ||
