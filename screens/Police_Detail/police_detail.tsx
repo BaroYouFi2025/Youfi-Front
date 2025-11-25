@@ -20,8 +20,9 @@ import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import apiClient from '@/services/apiClient';
 import { API_BASE_URL } from '@/services/config';
+import { getAccessToken } from '@/utils/authStorage';
 
-const PERSON_IMAGE = require('../../assets/images/people.png');
+const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 
 type Coordinates = {
   latitude: number;
@@ -46,6 +47,23 @@ const STATUS_MAP: Record<string, string> = {
   '010': '가출인',
   '020': '실종아동',
   '030': '치매환자',
+};
+
+const formatDate = (value?: string) => {
+  if (!value) return value;
+  const digitsOnly = value.replace(/[^0-9]/g, '');
+  if (digitsOnly.length === 8) {
+    const year = digitsOnly.slice(0, 4);
+    const month = digitsOnly.slice(4, 6);
+    const day = digitsOnly.slice(6, 8);
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return value;
 };
 
 const pickParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
@@ -78,6 +96,7 @@ const PoliceDetailScreen = () => {
   const paramDate = pickParam(params.date);
   const paramInfo = pickParam(params.info);
   const detailQueryId = paramPoliceId ?? paramId;
+  const formattedParamDate = formatDate(paramDate);
 
   const [detail, setDetail] = useState<PoliceDetailResponse | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -96,19 +115,32 @@ const PoliceDetailScreen = () => {
     }
     try {
       setLoadingDetail(true);
-      const response = await apiClient.get<PoliceDetailResponse>(`/missing/police/missing-persons/${detailQueryId}`);
+      const token = await getAccessToken();
+      const response = await apiClient.get<PoliceDetailResponse>(
+        `/missing/police/missing-persons/${detailQueryId}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+      const data = response.data;
+      const resolvedId = data?.id ?? (data as any)?.missingPersonId ?? (data as any)?.personId ?? detailQueryId;
+      const resolvedDate = formatDate(data?.occurrenceDate ?? (data as any)?.missingDate ?? (data as any)?.missing_date);
       setDetail({
-        id: response.data.id,
-        name: response.data.name,
-        occurrenceDate: response.data.occurrenceDate,
-        dress: response.data.dress,
-        statusCode: response.data.statusCode,
-        gender: response.data.gender,
-        occurrenceAddress: response.data.occurrenceAddress,
-        specialFeatures: response.data.specialFeatures,
-        missingAge: response.data.missingAge,
-        ageNow: response.data.ageNow,
-        photoUrl: resolvePhotoUrl(response.data.photoUrl ?? paramPhoto),
+        id: resolvedId ? Number(resolvedId) : undefined,
+        name: data?.name,
+        occurrenceDate: resolvedDate,
+        dress: data?.dress,
+        statusCode: data?.statusCode ?? (data as any)?.status_code,
+        gender: data?.gender,
+        occurrenceAddress: data?.occurrenceAddress ?? (data as any)?.address,
+        specialFeatures: data?.specialFeatures,
+        missingAge: data?.missingAge,
+        ageNow: data?.ageNow,
+        photoUrl: resolvePhotoUrl(
+          data?.photoUrl
+          ?? (data as any)?.photoURL
+          ?? (data as any)?.photo_url
+        ) || resolvePhotoUrl(paramPhoto),
       });
     } catch (error) {
       console.error('경찰청 상세 조회 실패:', error);
@@ -130,7 +162,7 @@ const PoliceDetailScreen = () => {
       name: detail?.name || fallbackName,
       missingAge: detail?.missingAge,
       ageNow: detail?.ageNow,
-      occurrenceDate: detail?.occurrenceDate || paramDate,
+      occurrenceDate: detail?.occurrenceDate || formattedParamDate,
       dress: detail?.dress || paramInfo,
       category: detail?.statusCode ? STATUS_MAP[detail.statusCode] || detail.statusCode : '경찰청 데이터',
       gender: detail?.gender,
@@ -146,7 +178,7 @@ const PoliceDetailScreen = () => {
       { label: '나이(당시)', value: uiData.missingAge !== undefined ? `${uiData.missingAge}세` : '-' },
       { label: '나이(현재)', value: uiData.ageNow !== undefined ? `${uiData.ageNow}세` : '-' },
       { label: '발생일시', value: uiData.occurrenceDate || '-' },
-      { label: '착의사항', value: uiData.dress || '-' },
+      { label: '인상착의', value: uiData.dress || '-' },
       { label: '대상구분', value: uiData.category || '-' },
       { label: '성별구분', value: uiData.gender || '-' },
       { label: '발생장소', value: uiData.occurrenceAddress || '-' },
@@ -290,7 +322,7 @@ const PoliceDetailScreen = () => {
         onConfirm={handleConfirm}
         name={uiData.gender ? `${uiData.name} (${uiData.gender})` : uiData.name}
         ageAtTime={uiData.missingAge !== undefined ? `${uiData.missingAge}세` : undefined}
-        avatar={uiData.photo ? { uri: uiData.photo } : PERSON_IMAGE}
+        avatar={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR}
         isSubmitting={isReporting}
         errorMessage={locationError}
       />
@@ -317,7 +349,7 @@ const PoliceDetailScreen = () => {
         ) : null}
 
         <View style={styles.imageContainer}>
-          <Image source={uiData.photo ? { uri: uiData.photo } : PERSON_IMAGE} style={styles.profileImage} />
+          <Image source={uiData.photo ? { uri: uiData.photo } : DEFAULT_AVATAR} style={styles.profileImage} />
         </View>
 
         <View style={styles.infoSection}>

@@ -1,5 +1,4 @@
 import apiClient from '@/services/apiClient';
-import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getAccessToken } from '@/utils/authStorage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -8,6 +7,78 @@ import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
+const BASIC_FALLBACK = [
+  {
+    missingPersonId: 2,
+    name: '김실종',
+    address: '대한민국 부산광역시 강서구 가락대로 1393',
+    height: 165,
+    weight: 55,
+    body: '보통',
+    photoUrl: null,
+    missing_date: '2025-10-01T14:30'
+  },
+  {
+    missingPersonId: 3,
+    name: '김실종',
+    address: '대한민국 부산광역시 강서구 가락대로 1393',
+    height: 165,
+    weight: 55,
+    body: '보통',
+    photoUrl: null,
+    missing_date: '2025-10-01T14:30'
+  },
+  {
+    missingPersonId: 4,
+    name: '김현호',
+    address: '대한민국 부산광역시 사하구 당리동336-30번지',
+    height: 180,
+    weight: 80,
+    body: '통통',
+    photoUrl: null,
+    missing_date: '2025-11-22T09:53:14'
+  },
+  {
+    missingPersonId: 5,
+    name: '김현호호',
+    address: '대한민국 부산광역시 중구 중구로 80-18',
+    height: 150,
+    weight: 20,
+    body: '날씬',
+    photoUrl: null,
+    missing_date: '2025-11-22T13:32:37'
+  },
+  {
+    missingPersonId: 7,
+    name: '테스트맨',
+    address: '대한민국 부산광역시 동래구 온천동 729-24',
+    height: 165,
+    weight: 55,
+    body: '보통',
+    photoUrl: null,
+    missing_date: '2025-10-01T14:30'
+  },
+  {
+    missingPersonId: 8,
+    name: '테스트맨2',
+    address: '대한민국 부산광역시 동래구 온천동 729-24',
+    height: 165,
+    weight: 55,
+    body: '보통',
+    photoUrl: null,
+    missing_date: '2025-10-01T14:30'
+  },
+  {
+    missingPersonId: 9,
+    name: '김현호',
+    address: '대한민국 부산광역시 중구 백산길 20',
+    height: 180,
+    weight: 80,
+    body: '날씬',
+    photoUrl: null,
+    missing_date: '2025-11-23T10:08:35'
+  }
+];
 const POLICE_FALLBACK = [
   {
     missingPersonId: 2,
@@ -126,11 +197,11 @@ export default function MissingList() {
     return str.length ? str : undefined;
   };
 
-  const mapToListData = (items: any[]): MissingPerson[] => items
-    .map((it: any) => {
-      const missingPersonId = normalizeId(it.missingPersonId);
-      const fallbackId = normalizeId(it.id);
-      const policeId = normalizeId(it.missingPersonPoliceId ?? it.policeId ?? it.id);
+const mapToListData = (items: any[]): MissingPerson[] => items
+  .map((it: any) => {
+    const missingPersonId = normalizeId(it.missingPersonId);
+    const fallbackId = normalizeId(it.id);
+    const policeId = normalizeId(it.missingPersonPoliceId ?? it.policeId ?? it.id);
       const resolvedId = missingPersonId ?? fallbackId ?? policeId;
 
       if (!resolvedId) {
@@ -158,15 +229,37 @@ export default function MissingList() {
         date: it.missing_date ?? it.missingDate ?? it.occurrenceDate ?? it.occurredDate ?? it.createdAt,
         photoUrl: resolvePhotoUrl(it.photoUrl),
       } as MissingPerson;
-    })
-    .filter((it: MissingPerson | null): it is MissingPerson => !!it);
+  })
+  .filter((it: MissingPerson | null): it is MissingPerson => !!it);
+
+  const mergeWithFallback = (primary: MissingPerson[]) => {
+    const fallback = mapToListData(BASIC_FALLBACK);
+    const merged = [...primary, ...fallback];
+    const unique = new Map<string, MissingPerson>();
+    merged.forEach((item) => {
+      unique.set(item.id, item);
+    });
+    return Array.from(unique.values());
+  };
 
   const fetchBasicData = async () => {
     try {
-      const list = await getMyMissingPersons();
+      const token = await getAccessToken();
+      const res = await apiClient.get('/missing-persons', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
 
-      setBasicData(mapToListData(list));
+      const raw = res.data;
+      const items = Array.isArray(raw)
+        ? raw
+        : raw?.content
+          ?? raw?.data?.content
+          ?? [];
+
+      const mapped = mapToListData(items);
+      setBasicData(mergeWithFallback(mapped));
     } catch (err) {
+      setBasicData(mapToListData(BASIC_FALLBACK));
     }
   };
 
@@ -222,7 +315,36 @@ export default function MissingList() {
     const isTop = variant === 'top';
     const isPolice = variant === 'police';
     const buttonText = isTop ? '수정하기' : '자세히 보기';
-    const targetPath = isPolice ? '/police_detail' : '/missing-persons/[id]';
+
+    const handlePress = () => {
+      if (isPolice) {
+        router.push({
+          pathname: '/police_detail' as const,
+          params: { ...item },
+        });
+        return;
+      }
+
+      if (variant === 'basic') {
+        router.push({
+          pathname: '/detail' as const,
+          params: {
+            id: item.id,
+            name: item.name,
+            photoUrl: item.photoUrl,
+            location: item.location,
+            date: item.date,
+            info: item.info,
+          },
+        });
+        return;
+      }
+
+      router.push({
+        pathname: '/missing-persons/[id]' as const,
+        params: { id: item.id },
+      });
+    };
 
     return (
       <View style={styles.itemRow}>
@@ -250,19 +372,7 @@ export default function MissingList() {
         <TouchableOpacity
           activeOpacity={0.8}
           style={isTop ? styles.pillBtnRed : styles.pillBtnBlue}
-          onPress={() => {
-            if (isPolice) {
-              router.push({
-                pathname: '/police_detail' as const,
-                params: { ...item },
-              });
-            } else {
-              router.push({
-                pathname: '/missing-persons/[id]' as const,
-                params: { id: item.id },
-              });
-            }
-          }}
+          onPress={handlePress}
         >
           <Text style={styles.pillBtnText}>{buttonText}</Text>
         </TouchableOpacity>

@@ -61,8 +61,8 @@ export const detailStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginTop: -40, // Pull the info section up to overlap the bottom of the map
-    backgroundColor: 'transparent', // Make the background transparent here
+    marginTop: 12, // add breathing room between map and info
+    backgroundColor: 'transparent',
   },
   avatar: {
     width: 60,
