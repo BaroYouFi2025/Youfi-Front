@@ -2,6 +2,7 @@ import { AxiosError } from 'axios';
 
 import { SliceResponse, UserSearchRequest, UserSummary } from '@/types/UserTypes';
 import { resolveErrorMessage } from '@/utils/apiErrorHandler';
+import { getAccessToken } from '@/utils/authStorage';
 
 import apiClient from './apiClient';
 
@@ -50,6 +51,23 @@ export const searchUsers = async (
       numberOfElements: data?.numberOfElements ?? fallback.numberOfElements,
       empty: data?.empty ?? (Array.isArray(data?.content) ? data.content.length === 0 : fallback.empty),
     };
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    throw new Error(resolveErrorMessage(axiosError));
+  }
+};
+
+export const deleteMe = async (password: string): Promise<void> => {
+  try {
+    const accessToken = await getAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+    await apiClient.delete('/users/me', {
+      headers,
+      data: { password },
+    });
   } catch (error) {
     const axiosError = error as AxiosError;
     throw new Error(resolveErrorMessage(axiosError));

@@ -3,169 +3,16 @@ import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import { getAccessToken } from '@/utils/authStorage';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
-import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, Linking, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
-const BASIC_FALLBACK = [
-  {
-    missingPersonId: 2,
-    name: '김실종',
-    address: '대한민국 부산광역시 강서구 가락대로 1393',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 3,
-    name: '김실종',
-    address: '대한민국 부산광역시 강서구 가락대로 1393',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 4,
-    name: '김현호',
-    address: '대한민국 부산광역시 사하구 당리동336-30번지',
-    height: 180,
-    weight: 80,
-    body: '통통',
-    photoUrl: null,
-    missing_date: '2025-11-22T09:53:14'
-  },
-  {
-    missingPersonId: 5,
-    name: '김현호호',
-    address: '대한민국 부산광역시 중구 중구로 80-18',
-    height: 150,
-    weight: 20,
-    body: '날씬',
-    photoUrl: null,
-    missing_date: '2025-11-22T13:32:37'
-  },
-  {
-    missingPersonId: 7,
-    name: '테스트맨',
-    address: '대한민국 부산광역시 동래구 온천동 729-24',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 8,
-    name: '테스트맨2',
-    address: '대한민국 부산광역시 동래구 온천동 729-24',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 9,
-    name: '김현호',
-    address: '대한민국 부산광역시 중구 백산길 20',
-    height: 180,
-    weight: 80,
-    body: '날씬',
-    photoUrl: null,
-    missing_date: '2025-11-23T10:08:35'
-  }
-];
-const POLICE_FALLBACK = [
-  {
-    missingPersonId: 2,
-    name: '김실종',
-    address: '대한민국 부산광역시 강서구 가락대로 1393',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 3,
-    name: '김실종',
-    address: '대한민국 부산광역시 강서구 가락대로 1393',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 4,
-    name: '김현호',
-    address: '대한민국 부산광역시 사하구 당리동336-30번지',
-    height: 180,
-    weight: 80,
-    body: '통통',
-    photoUrl: null,
-    missing_date: '2025-11-22T09:53:14'
-  },
-  {
-    missingPersonId: 5,
-    name: '김현호호',
-    address: '대한민국 부산광역시 중구 중구로 80-18',
-    height: 150,
-    weight: 20,
-    body: '날씬',
-    photoUrl: null,
-    missing_date: '2025-11-22T13:32:37'
-  },
-  {
-    missingPersonId: 6,
-    name: '이지은',
-    address: '대한민국 경상남도 김해시 화목동 1752-8',
-    height: 165,
-    weight: 47,
-    body: '마름',
-    photoUrl: 'https://jjm.jojaemin.com/images/2025/11/23/64143431-b9f5-42c7-84d4-905fe488bce2.jpeg',
-    missing_date: '2025-10-01T05:30'
-  },
-  {
-    missingPersonId: 7,
-    name: '테스트맨',
-    address: '대한민국 부산광역시 동래구 온천동 729-24',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 8,
-    name: '테스트맨2',
-    address: '대한민국 부산광역시 동래구 온천동 729-24',
-    height: 165,
-    weight: 55,
-    body: '보통',
-    photoUrl: null,
-    missing_date: '2025-10-01T14:30'
-  },
-  {
-    missingPersonId: 9,
-    name: '김현호',
-    address: '대한민국 부산광역시 중구 백산길 20',
-    height: 180,
-    weight: 80,
-    body: '날씬',
-    photoUrl: null,
-    missing_date: '2025-11-23T10:08:35'
-  }
-];
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2'];
 
 type MissingPerson = {
   id: string;
@@ -193,6 +40,10 @@ export default function MissingList() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
+  const [basicHasMore, setBasicHasMore] = useState(true);
+  const [policeTotalPages, setPoliceTotalPages] = useState(1);
+  const [policeHasMore, setPoliceHasMore] = useState(true);
+  const scrollRef = useRef<ScrollView | null>(null);
 
   // ------------------------------------------------
   // 🔥 1) API 연동
@@ -206,10 +57,34 @@ const normalizeHostForDevice = (url: string) => {
   return url.replace('://127.0.0.1', '://localhost');
 };
 
+const API_BASE_FOR_DEVICE = normalizeHostForDevice(API_BASE_URL.replace(/\/+$/, ''));
+const API_HOST = (() => {
+  try {
+    return new URL(API_BASE_FOR_DEVICE).host;
+  } catch {
+    return null;
+  }
+})();
+
 const resolvePhotoUrl = (url?: string) => {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const base = API_BASE_URL.replace(/\/+$/, '');
+  const normalizedInput = normalizeHostForDevice(url);
+  const base = API_BASE_FOR_DEVICE;
+
+  try {
+    const parsed = new URL(normalizedInput);
+    const host = parsed.hostname;
+    const shouldUseApiHost = (API_HOST && host === API_HOST) || LOCAL_HOSTS.includes(host);
+
+    if (shouldUseApiHost) {
+      return `${base}${parsed.pathname}${parsed.search ?? ''}`;
+    }
+
+    return parsed.toString();
+  } catch {
+    // If parsing fails, treat as relative and attach to API base
+  }
+
   const path = url.startsWith('/') ? url : `/${url}`;
   return normalizeHostForDevice(`${base}${path}`);
 };
@@ -234,11 +109,11 @@ const normalizeId = (value: any): string | undefined => {
   return str.length ? str : undefined;
 };
 
-const mapToListData = (items: any[]): MissingPerson[] => items
-  .map((it: any) => {
-    const missingPersonId = normalizeId(it.missingPersonId);
-    const fallbackId = normalizeId(it.id);
-    const policeId = normalizeId(it.missingPersonPoliceId ?? it.policeId ?? it.id);
+  const mapToListData = (items: any[]): MissingPerson[] => items
+    .map((it: any) => {
+      const missingPersonId = normalizeId(it.missingPersonId);
+      const fallbackId = normalizeId(it.id);
+      const policeId = normalizeId(it.missingPersonPoliceId ?? it.policeId ?? it.id);
       const resolvedId = missingPersonId ?? fallbackId ?? policeId;
 
       if (!resolvedId) {
@@ -249,6 +124,20 @@ const mapToListData = (items: any[]): MissingPerson[] => items
       const weight = it.weight ? `${it.weight}kg` : '';
       const body = it.body || '';
       const dress = it.dress || '';
+      const rawPhoto =
+        it.photoUrl
+        ?? it.photoURL
+        ?? it.photo_url
+        ?? it.imageUrl
+        ?? it.image_url
+        ?? it.profileUrl
+        ?? it.profile_url
+        ?? it.appearanceImageUrl
+        ?? it.appearance_image_url
+        ?? it.predictedFaceUrl
+        ?? it.predicted_face_url
+        ?? it.image;
+      const photoUrl = resolvePhotoUrl(rawPhoto);
 
       const infoParts = [
         height && `키 ${height}`,
@@ -264,19 +153,69 @@ const mapToListData = (items: any[]): MissingPerson[] => items
         location: it.address || '위치 정보 없음',
         info: infoParts.length ? infoParts.join(', ') : '추가 정보 없음',
         date: it.missing_date ?? it.missingDate ?? it.occurrenceDate ?? it.occurredDate ?? it.createdAt,
-        photoUrl: resolvePhotoUrl(it.photoUrl),
+        photoUrl,
       } as MissingPerson;
-  })
-  .filter((it: MissingPerson | null): it is MissingPerson => !!it);
+    })
+    .filter((it: MissingPerson | null): it is MissingPerson => !!it);
 
-  const mergeWithFallback = (primary: MissingPerson[]) => {
-    const fallback = mapToListData(BASIC_FALLBACK);
-    const merged = [...primary, ...fallback];
-    const unique = new Map<string, MissingPerson>();
-    merged.forEach((item) => {
-      unique.set(item.id, item);
-    });
-    return Array.from(unique.values());
+  const enrichWithDetailPhotos = async (
+    items: MissingPerson[],
+    options?: { police?: boolean }
+  ) => {
+    const token = await getAccessToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    const fetchDetail = async (id: string, path: string) => {
+      try {
+        const res = await apiClient.get(path, { headers });
+        return res.data;
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const enriched = await Promise.all(
+      items.map(async (item) => {
+        if (item.photoUrl) return item;
+
+        const detailId = item.policeId ?? item.id;
+        const paths = options?.police
+          ? [
+              `/missing/police/missing-persons/${detailId}`,
+              `/missing/police/missing_persons/${detailId}`,
+              `/missing/police/${detailId}`,
+            ]
+          : [
+              `/missing-persons/${detailId}`,
+              `/missing_persons/${detailId}`,
+            ];
+
+        let detail = null;
+        for (const path of paths) {
+          detail = await fetchDetail(detailId, path);
+          if (detail) break;
+        }
+
+        if (detail) {
+          const detailPhoto =
+            detail?.photoUrl
+            ?? detail?.photoURL
+            ?? detail?.photo_url
+            ?? detail?.appearanceImageUrl
+            ?? detail?.appearance_image_url
+            ?? detail?.predictedFaceUrl
+            ?? detail?.predicted_face_url
+            ?? detail?.image;
+
+          if (detailPhoto) {
+            return { ...item, photoUrl: resolvePhotoUrl(detailPhoto) };
+          }
+        }
+
+        return item;
+      })
+    );
+    return enriched;
   };
 
   // "찾는 중" 섹션용: 내가 등록한 실종자 조회
@@ -284,7 +223,8 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     try {
       const items = await getMyMissingPersons();
       const mapped = mapToListData(items);
-      setMyMissingPersons(mapped);
+      const enriched = await enrichWithDetailPhotos(mapped);
+      setMyMissingPersons(enriched);
     } catch (err) {
       console.log('❌ 내가 등록한 실종자 불러오기 실패:', err);
       setMyMissingPersons([]); // API 실패 시 빈 배열
@@ -294,7 +234,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
   const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();
-      const res = await apiClient.get('/missing-persons', {
+      const res = await apiClient.get('/missing-persons/search', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         params: { page: pageIndex, size: PAGE_SIZE },
       });
@@ -306,22 +246,35 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           ?? raw?.data?.content
           ?? [];
 
-      const total = raw?.totalPages ?? raw?.data?.totalPages ?? raw?.total_pages ?? 1;
+      const totalElements = raw?.totalElements ?? raw?.data?.totalElements ?? raw?.total_elements;
+      const total = raw?.totalPages
+        ?? raw?.data?.totalPages
+        ?? raw?.total_pages
+        ?? (typeof totalElements === 'number' ? Math.ceil(totalElements / PAGE_SIZE) : 1);
 
       const mapped = mapToListData(items);
-      setBasicData(mergeWithFallback(mapped));
-      setBasicTotalPages(Math.max(1, Number(total) || 1));
+      const enriched = await enrichWithDetailPhotos(mapped);
+      setBasicData(enriched);
+      const nextTotalPages = Math.max(1, Number(total) || 1);
+      setBasicTotalPages(nextTotalPages);
+
+      const hasMoreByTotal = Number.isFinite(nextTotalPages) ? pageIndex + 1 < nextTotalPages : false;
+      const hasMoreByCount = mapped.length === PAGE_SIZE;
+      const hasMore = hasMoreByTotal || (!Number.isFinite(nextTotalPages) && hasMoreByCount);
+      setBasicHasMore(hasMore);
     } catch (err) {
-      console.log('❌ 실종자 불러오기 실패:', err);
-      setBasicData(mapToListData(BASIC_FALLBACK));
+      setBasicData([]);
       setBasicTotalPages(1);
+      setBasicHasMore(false);
     }
   };
 
   const fetchMyData = async () => {
     try {
       const list = await getMyMissingPersons();
-      setMyBasicData(mapToListData(list));
+      const mapped = mapToListData(list);
+      const enriched = await enrichWithDetailPhotos(mapped);
+      setMyBasicData(enriched);
     } catch (err) {
       setMyBasicData([]);
     }
@@ -333,6 +286,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
 
       const res = await apiClient.get('/missing/police/missing-persons', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        params: { page, size: PAGE_SIZE },
       });
 
       const raw = res.data;
@@ -342,29 +296,50 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           ?? raw?.data?.content
           ?? [];
 
+      const totalElements = raw?.totalElements ?? raw?.data?.totalElements ?? raw?.total_elements;
+      const total = raw?.totalPages
+        ?? raw?.data?.totalPages
+        ?? raw?.total_pages
+        ?? (typeof totalElements === 'number' ? Math.ceil(totalElements / PAGE_SIZE) : 1);
+
       const mapped = mapToListData(items);
-      setPoliceData(mapped.length ? mapped : mapToListData(POLICE_FALLBACK));
+      const enriched = await enrichWithDetailPhotos(mapped, { police: true });
+      setPoliceData(enriched);
+      const nextTotalPages = Math.max(1, Number(total) || 1);
+      setPoliceTotalPages(nextTotalPages);
+      const hasMoreByTotal = Number.isFinite(nextTotalPages) ? page + 1 < nextTotalPages : false;
+      const hasMoreByCount = mapped.length === PAGE_SIZE;
+      const hasMore = hasMoreByTotal || (!Number.isFinite(nextTotalPages) && hasMoreByCount);
+      setPoliceHasMore(hasMore);
     } catch (err) {
-      console.log('❌ 경찰청 실종자 불러오기 실패:', err);
-      setPoliceData(mapToListData(POLICE_FALLBACK));
+      setPoliceData([]);
+      setPoliceTotalPages(1);
+      setPoliceHasMore(false);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      fetchMyMissingPersons(); // "찾는 중" 섹션용
-      fetchBasicData();
       fetchMyData();
-      setPage(0);
-    }, [])
+      if (source === 'basic') {
+        fetchBasicData(page);
+      } else {
+        fetchPoliceData();
+      }
+    }, [source, page])
   );
 
   useEffect(() => {
-    if (source === 'police' && policeData.length === 0) {
+    if (source === 'basic') {
+      fetchBasicData(page);
+    } else {
       fetchPoliceData();
     }
+  }, [page, source]);
+
+  useEffect(() => {
     setPage(0);
-  }, [source, policeData.length]);
+  }, [source]);
 
   // 가까운 경찰청 찾기 함수
   const resolveCurrentLocation = useCallback(async (): Promise<{ latitude: number; longitude: number } | null> => {
@@ -423,12 +398,14 @@ const mapToListData = (items: any[]): MissingPerson[] => items
         return;
       }
 
+      console.log('🔎 Fetching nearby police offices with coords:', coords);
       const offices = await getNearbyPoliceOffices({
         latitude: coords.latitude,
         longitude: coords.longitude,
-        radiusMeters: 5000,
-        limit: 5,
+        radiusMeters: 2000,
+        limit: 1,
       });
+      console.log('🔎 Nearby police offices response:', offices);
 
       if (!offices.length) {
         Alert.alert('알림', '근처 경찰청을 찾지 못했습니다.');
@@ -445,9 +422,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     }
   }, [currentLocation, openKakaoDirections, resolveCurrentLocation]);
   useEffect(() => {
-    if (source === 'basic') {
-      fetchBasicData(page);
-    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [page, source]);
 
   // ------------------------------------------------
@@ -462,16 +437,15 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     if (source === 'basic') {
       return basicData;
     }
-    const start = page * PAGE_SIZE;
-    return data.slice(start, start + PAGE_SIZE);
-  }, [data, page, PAGE_SIZE, source, basicData]);
+    return policeData;
+  }, [source, basicData, policeData]);
 
-  const totalPages = useMemo(() => {
+  const displayTotalPages = useMemo(() => {
     if (source === 'basic') {
-      return basicTotalPages;
+      return Math.max(basicTotalPages, page + 1 + (basicHasMore ? 1 : 0));
     }
-    return Math.max(1, Math.ceil(data.length / PAGE_SIZE));
-  }, [source, basicTotalPages, data.length, PAGE_SIZE]);
+    return Math.max(policeTotalPages, page + 1 + (policeHasMore ? 1 : 0));
+  }, [source, basicTotalPages, page, basicHasMore, policeTotalPages, policeHasMore]);
 
   // 상단 "찾는 중" 카드에는 항상 내가 등록한 실종자 중 첫 번째 데이터를 사용
   const topItem = myBasicData[0];
@@ -550,7 +524,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent}>
 
         {/* 찾는 중 */}
         <Text style={styles.sectionTitle}>찾는 중</Text>
@@ -632,14 +606,26 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           </TouchableOpacity>
 
           <Text style={{ color: '#111', fontWeight: '700' }}>
-            {page + 1} / {totalPages}
+            {page + 1} / {displayTotalPages}
           </Text>
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-            style={[styles.pillBtnBlue, { opacity: page >= totalPages - 1 ? 0.4 : 1 }]}
+            onPress={() => {
+              if (source === 'basic' && !basicHasMore) return;
+              if (source === 'police' && !policeHasMore) return;
+              setPage((p) => p + 1);
+            }}
+            disabled={source === 'basic' ? !basicHasMore : !policeHasMore}
+            style={[
+              styles.pillBtnBlue,
+              {
+                opacity:
+                  source === 'basic'
+                    ? basicHasMore ? 1 : 0.4
+                    : policeHasMore ? 1 : 0.4,
+              },
+            ]}
           >
             <Text style={styles.pillBtnText}>다음</Text>
           </TouchableOpacity>
