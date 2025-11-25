@@ -181,6 +181,9 @@ export default function MissingList() {
   const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
+  const [basicTotalPages, setBasicTotalPages] = useState(1);
 
   // ------------------------------------------------
   // 🔥 1) API 연동
@@ -267,11 +270,12 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     return Array.from(unique.values());
   };
 
-  const fetchBasicData = async () => {
+  const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();
       const res = await apiClient.get('/missing-persons', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        params: { page: pageIndex, size: PAGE_SIZE },
       });
 
       const raw = res.data;
@@ -281,10 +285,14 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           ?? raw?.data?.content
           ?? [];
 
+      const total = raw?.totalPages ?? raw?.data?.totalPages ?? raw?.total_pages ?? 1;
+
       const mapped = mapToListData(items);
       setBasicData(mergeWithFallback(mapped));
+      setBasicTotalPages(Math.max(1, Number(total) || 1));
     } catch (err) {
       setBasicData(mapToListData(BASIC_FALLBACK));
+      setBasicTotalPages(1);
     }
   };
 
@@ -321,8 +329,9 @@ const mapToListData = (items: any[]): MissingPerson[] => items
 
   useFocusEffect(
     useCallback(() => {
-      fetchBasicData();
+      fetchBasicData(0);
       fetchMyData();
+      setPage(0);
     }, [])
   );
 
@@ -330,7 +339,14 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     if (source === 'police' && policeData.length === 0) {
       fetchPoliceData();
     }
+    setPage(0);
   }, [source, policeData.length]);
+
+  useEffect(() => {
+    if (source === 'basic') {
+      fetchBasicData(page);
+    }
+  }, [page, source]);
 
   // ------------------------------------------------
   // 🔥 2) 기본 / 경찰청 데이터 스위칭
@@ -339,6 +355,21 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     () => (source === 'basic' ? basicData : policeData),
     [source, basicData, policeData]
   );
+
+  const pagedData = useMemo(() => {
+    if (source === 'basic') {
+      return basicData;
+    }
+    const start = page * PAGE_SIZE;
+    return data.slice(start, start + PAGE_SIZE);
+  }, [data, page, PAGE_SIZE, source, basicData]);
+
+  const totalPages = useMemo(() => {
+    if (source === 'basic') {
+      return basicTotalPages;
+    }
+    return Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  }, [source, basicTotalPages, data.length, PAGE_SIZE]);
 
   // 상단 "찾는 중" 카드에는 항상 내가 등록한 실종자 중 첫 번째 데이터를 사용
   const topItem = myBasicData[0];
@@ -445,7 +476,7 @@ const mapToListData = (items: any[]): MissingPerson[] => items
         </View>
 
         <FlatList
-          data={data}
+          data={pagedData}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
             <>
@@ -459,9 +490,29 @@ const mapToListData = (items: any[]): MissingPerson[] => items
           scrollEnabled={false}
         />
 
-        <TouchableOpacity activeOpacity={0.9} style={styles.ctaBtn}>
-          <Text style={styles.ctaBtnText}>인근 실종자 목록 지도로 보기</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            style={[styles.pillBtnBlue, { opacity: page === 0 ? 0.4 : 1 }]}
+          >
+            <Text style={styles.pillBtnText}>이전</Text>
+          </TouchableOpacity>
+
+          <Text style={{ color: '#111', fontWeight: '700' }}>
+            {page + 1} / {totalPages}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            style={[styles.pillBtnBlue, { opacity: page >= totalPages - 1 ? 0.4 : 1 }]}
+          >
+            <Text style={styles.pillBtnText}>다음</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
