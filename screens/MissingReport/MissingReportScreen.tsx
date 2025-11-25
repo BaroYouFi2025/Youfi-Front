@@ -1,5 +1,9 @@
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Text } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { getMemberLocations } from '../../services/memberAPI';
+import { MemberLocation } from '../../types/MemberLocationTypes';
 import {
   BackButton,
   BackIcon,
@@ -28,6 +32,28 @@ import {
 // const imgBattery = "http://localhost:3845/assets/146ff8f9e983bba6c0eef87deb916af7baef0c43.svg";
 
 export default function MissingReportScreen() {
+  const [members, setMembers] = useState<MemberLocation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadMembers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const memberList = await getMemberLocations();
+      setMembers(memberList);
+    } catch (error) {
+      console.error('❌ 구성원 목록 불러오기 실패:', error);
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMembers();
+    }, [loadMembers])
+  );
+
   const handleBack = () => {
     router.back();
   };
@@ -64,33 +90,36 @@ export default function MissingReportScreen() {
         </Header>
 
         {/* Person List */}
-        {/* Person 1 - 김철수 */}
-        <PersonItem>
-          {/* Temporarily removed PersonImage to prevent crashes */}
-          <PersonInfo>
-            <PersonName>김철수</PersonName>
-            <PersonRelation>동생</PersonRelation>
-          </PersonInfo>
-          <PersonButton onPress={() => handleReport('김철수')}>
-            <ReportButtonText>신고 하기</ReportButtonText>
-          </PersonButton>
-        </PersonItem>
-
-        <Divider />
-
-        {/* Person 2 - 김영희 */}
-        <PersonItem>
-          {/* Temporarily removed PersonImage to prevent crashes */}
-          <PersonInfo>
-            <PersonName>김영희</PersonName>
-            <PersonRelation>누나</PersonRelation>
-          </PersonInfo>
-          <PersonButton onPress={() => handleReport('김영희')}>
-            <ReportButtonText>신고 하기</ReportButtonText>
-          </PersonButton>
-        </PersonItem>
-
-        <Divider />
+        {loading ? (
+          <PersonItem>
+            <PersonInfo>
+              <ActivityIndicator size="small" color="#25b2e2" style={{ marginRight: 8 }} />
+              <PersonName>구성원 목록을 불러오는 중...</PersonName>
+            </PersonInfo>
+          </PersonItem>
+        ) : members.length === 0 ? (
+          <PersonItem>
+            <PersonInfo>
+              <PersonName>구성원이 없습니다</PersonName>
+            </PersonInfo>
+          </PersonItem>
+        ) : (
+          members.map((member, index) => (
+            <React.Fragment key={member.userId}>
+              <PersonItem>
+                {/* Temporarily removed PersonImage to prevent crashes */}
+                <PersonInfo>
+                  <PersonName>{member.name}</PersonName>
+                  <PersonRelation>{member.relationship}</PersonRelation>
+                </PersonInfo>
+                <PersonButton onPress={() => handleReport(member.name)}>
+                  <ReportButtonText>신고 하기</ReportButtonText>
+                </PersonButton>
+              </PersonItem>
+              {index < members.length - 1 && <Divider />}
+            </React.Fragment>
+          ))
+        )}
       </ContentContainer>
 
       {/* Bottom Section */}
