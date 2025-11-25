@@ -3,11 +3,11 @@ import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import { getAccessToken } from '@/utils/authStorage';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
-import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, FlatList, Image, Linking, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './list.styles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
@@ -190,8 +190,6 @@ export default function MissingList() {
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
-  const [basicData, setBasicData] = useState<MissingPerson[]>([]);
-  const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
@@ -293,7 +291,6 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     }
   };
 
-  const fetchBasicData = async () => {
   const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();
@@ -426,12 +423,14 @@ const mapToListData = (items: any[]): MissingPerson[] => items
         return;
       }
 
+      console.log('🔎 Fetching nearby police offices with coords:', coords);
       const offices = await getNearbyPoliceOffices({
         latitude: coords.latitude,
         longitude: coords.longitude,
-        radiusMeters: 5000,
-        limit: 5,
+        radiusMeters: 2000,
+        limit: 1,
       });
+      console.log('🔎 Nearby police offices response:', offices);
 
       if (!offices.length) {
         Alert.alert('알림', '근처 경찰청을 찾지 못했습니다.');
