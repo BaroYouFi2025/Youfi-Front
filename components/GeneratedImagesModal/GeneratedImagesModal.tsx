@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, ActivityIndicator, Alert } from 'react-native';
 import { generateAIImage, applyAIImage } from '@/services/missingPersonAPI';
 import { AIAssetType } from '@/types/MissingPersonTypes';
@@ -71,7 +71,7 @@ export default function GeneratedImagesModal({
   const labels = ASSET_TYPE_LABELS[assetType];
   const showApplyButton = assetType === 'AGE_PROGRESSION';
 
-  const generateImages = async () => {
+  const generateImages = useCallback(async () => {
     setState('loading');
     setError(null);
     setImageUrls([]);
@@ -86,7 +86,7 @@ export default function GeneratedImagesModal({
       setError(message);
       setState('error');
     }
-  };
+  }, [assetType, missingPersonId]);
 
   useEffect(() => {
     if (visible) {
@@ -99,7 +99,7 @@ export default function GeneratedImagesModal({
       setSelectedImage(null);
       setCheckedImageUrl(null);
     }
-  }, [visible, missingPersonId, assetType]);
+  }, [assetType, generateImages, missingPersonId, visible]);
 
   const handleClose = () => {
     setSelectedImage(null);

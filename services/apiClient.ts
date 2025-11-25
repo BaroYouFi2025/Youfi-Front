@@ -23,21 +23,6 @@ apiClient.interceptors.request.use(async (config) => {
     }
   }
 
-  // GPS 요청 디버깅
-  if (config.url?.includes('/devices/gps')) {
-    console.log('🔍 [apiClient] GPS 요청 인터셉터:', {
-      url: config.url,
-      method: config.method,
-      hasToken: !!token,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
-      headers: {
-        Authorization: config.headers.Authorization ? 'set' : 'missing',
-        ContentType: config.headers['Content-Type'],
-      },
-      data: config.data,
-    });
-  }
-
   return config;
 });
 

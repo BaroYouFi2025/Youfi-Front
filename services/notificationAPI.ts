@@ -5,8 +5,7 @@ import {
 } from '@/types/NotificationTypes';
 import { getAccessToken } from '@/utils/authStorage';
 import axios, { AxiosError } from 'axios';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+import { API_BASE_URL } from './config';
 
 const notificationClient = axios.create({
   baseURL: API_BASE_URL,
@@ -305,4 +304,3 @@ export const getSightingDetailFromNotification = async (
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
-

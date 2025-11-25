@@ -1,6 +1,6 @@
-import styled from 'styled-components/native';
+import styledComponents from 'styled-components/native';
 
-export const ModalOverlay = styled.View`
+export const ModalOverlay = styledComponents.View`
   flex: 1;
   background-color: rgba(0, 0, 0, 0.5);
   justify-content: center;
@@ -8,7 +8,7 @@ export const ModalOverlay = styled.View`
   padding: 20px;
 `;
 
-export const ModalContainer = styled.View`
+export const ModalContainer = styledComponents.View`
   background-color: #ffffff;
   border-radius: 16px;
   width: 100%;
@@ -16,14 +16,14 @@ export const ModalContainer = styled.View`
   padding: 24px;
 `;
 
-export const ModalHeader = styled.View`
+export const ModalHeader = styledComponents.View`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 `;
 
-export const ModalTitle = styled.Text`
+export const ModalTitle = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 700;
   font-size: 20px;
@@ -32,7 +32,7 @@ export const ModalTitle = styled.Text`
   letter-spacing: -0.2px;
 `;
 
-export const CloseButton = styled.TouchableOpacity`
+export const CloseButton = styledComponents.TouchableOpacity`
   width: 32px;
   height: 32px;
   border-radius: 16px;
@@ -41,17 +41,17 @@ export const CloseButton = styled.TouchableOpacity`
   align-items: center;
 `;
 
-export const CloseButtonText = styled.Text`
+export const CloseButtonText = styledComponents.Text`
   font-size: 18px;
   color: #6b7280;
 `;
 
-export const LoadingContainer = styled.View`
+export const LoadingContainer = styledComponents.View`
   padding: 40px 0;
   align-items: center;
 `;
 
-export const LoadingText = styled.Text`
+export const LoadingText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 16px;
@@ -61,7 +61,7 @@ export const LoadingText = styled.Text`
   text-align: center;
 `;
 
-export const LoadingSubText = styled.Text`
+export const LoadingSubText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 400;
   font-size: 14px;
@@ -71,26 +71,26 @@ export const LoadingSubText = styled.Text`
   text-align: center;
 `;
 
-export const ImagesGrid = styled.View`
+export const ImagesGrid = styledComponents.View`
   flex-direction: row;
   flex-wrap: wrap;
   margin: -6px;
 `;
 
-export const ImageWrapper = styled.TouchableOpacity`
+export const ImageWrapper = styledComponents.TouchableOpacity`
   width: 50%;
   padding: 6px;
   position: relative;
 `;
 
-export const GeneratedImage = styled.Image`
+export const GeneratedImage = styledComponents.Image`
   width: 100%;
   aspect-ratio: 1;
   border-radius: 12px;
   background-color: #f2f3f4;
 `;
 
-export const CheckboxWrapper = styled.TouchableOpacity`
+export const CheckboxWrapper = styledComponents.TouchableOpacity`
   position: absolute;
   top: 12px;
   right: 12px;
@@ -103,7 +103,7 @@ export const CheckboxWrapper = styled.TouchableOpacity`
   z-index: 1;
 `;
 
-export const CheckboxInner = styled.View<{ isSelected: boolean }>`
+export const CheckboxInner = styledComponents.View<{ isSelected: boolean }>`
   width: 20px;
   height: 20px;
   border-radius: 10px;
@@ -114,13 +114,13 @@ export const CheckboxInner = styled.View<{ isSelected: boolean }>`
   align-items: center;
 `;
 
-export const CheckIcon = styled.Text`
+export const CheckIcon = styledComponents.Text`
   font-size: 12px;
   color: #ffffff;
   font-weight: bold;
 `;
 
-export const SelectedBorder = styled.View`
+export const SelectedBorder = styledComponents.View`
   position: absolute;
   top: 6px;
   left: 6px;
@@ -131,12 +131,12 @@ export const SelectedBorder = styled.View`
   border-color: #25b2e2;
 `;
 
-export const ErrorContainer = styled.View`
+export const ErrorContainer = styledComponents.View`
   padding: 40px 0;
   align-items: center;
 `;
 
-export const ErrorText = styled.Text`
+export const ErrorText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 500;
   font-size: 14px;
@@ -146,33 +146,33 @@ export const ErrorText = styled.Text`
   margin-top: 12px;
 `;
 
-export const RetryButton = styled.TouchableOpacity`
+export const RetryButton = styledComponents.TouchableOpacity`
   background-color: #25b2e2;
   border-radius: 8px;
   padding: 12px 24px;
   margin-top: 16px;
 `;
 
-export const RetryButtonText = styled.Text`
+export const RetryButtonText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 600;
   font-size: 14px;
   color: #ffffff;
 `;
 
-export const FullImageOverlay = styled.View`
+export const FullImageOverlay = styledComponents.View`
   flex: 1;
   background-color: rgba(0, 0, 0, 0.9);
   justify-content: center;
   align-items: center;
 `;
 
-export const FullImage = styled.Image`
+export const FullImage = styledComponents.Image`
   width: 100%;
   height: 80%;
 `;
 
-export const FullImageCloseButton = styled.TouchableOpacity`
+export const FullImageCloseButton = styledComponents.TouchableOpacity`
   position: absolute;
   top: 60px;
   right: 20px;
@@ -184,18 +184,18 @@ export const FullImageCloseButton = styled.TouchableOpacity`
   align-items: center;
 `;
 
-export const FullImageCloseText = styled.Text`
+export const FullImageCloseText = styledComponents.Text`
   font-size: 24px;
   color: #ffffff;
 `;
 
-export const ButtonsContainer = styled.View`
+export const ButtonsContainer = styledComponents.View`
   flex-direction: row;
   margin-top: 16px;
   gap: 12px;
 `;
 
-export const ApplyButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+export const ApplyButton = styledComponents.TouchableOpacity<{ disabled?: boolean }>`
   flex: 1;
   background-color: ${({ disabled }: { disabled?: boolean }) => (disabled ? '#d1d5db' : '#25b2e2')};
   border-radius: 8px;
@@ -203,14 +203,14 @@ export const ApplyButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   align-items: center;
 `;
 
-export const ApplyButtonText = styled.Text`
+export const ApplyButtonText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 600;
   font-size: 16px;
   color: #ffffff;
 `;
 
-export const CancelButton = styled.TouchableOpacity`
+export const CancelButton = styledComponents.TouchableOpacity`
   flex: 1;
   background-color: #f2f3f4;
   border-radius: 8px;
@@ -218,7 +218,7 @@ export const CancelButton = styled.TouchableOpacity`
   align-items: center;
 `;
 
-export const CancelButtonText = styled.Text`
+export const CancelButtonText = styledComponents.Text`
   font-family: 'Wanted Sans';
   font-weight: 600;
   font-size: 16px;

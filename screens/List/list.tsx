@@ -1,4 +1,5 @@
 import apiClient from '@/services/apiClient';
+import { API_BASE_URL } from '@/services/config';
 import { getMyMissingPersons } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
@@ -10,7 +11,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, FlatList, Image, Linking, Platform, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './list.styles';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2'];
 
@@ -33,12 +33,12 @@ export default function MissingList() {
   const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
-  
+
   // 가까운 경찰청 찾기 상태
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
   const [basicHasMore, setBasicHasMore] = useState(true);
   const [policeTotalPages, setPoliceTotalPages] = useState(1);
@@ -320,6 +320,7 @@ const normalizeId = (value: any): string | undefined => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchMyMissingPersons();
       fetchMyData();
       if (source === 'basic') {
         fetchBasicData(page);
@@ -538,9 +539,9 @@ const normalizeId = (value: any): string | undefined => {
               </React.Fragment>
             ))}
           </>
-        ) : basicData.length > 0 ? (
+        ) : myBasicData.length > 0 ? (
           <>
-            <Item item={basicData[0]} variant="top" />
+            <Item item={myBasicData[0]} variant="top" />
           </>
         ) : null}
         <View style={styles.separator} />

@@ -26,7 +26,7 @@ export default function Index() {
         const refreshed = await refreshTokens(token);
         await Promise.all([setAccessToken(refreshed.accessToken), setRefreshToken(refreshed.refreshToken)]);
         setHasToken(true);
-      } catch (error) {
+      } catch {
         await clearStoredTokens();
         setHasToken(false);
       }

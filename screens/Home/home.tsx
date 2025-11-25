@@ -266,6 +266,9 @@ export default function HomeScreen() {
       const newNotifications = mergedNotifications.filter(n => !currentNotificationIds.has(n.id));
       
       // 새로운 알림이 있을 때만 상태 업데이트 (최적화)
+      let nextUnread: NotificationResponse[] = [];
+      let nextRead: NotificationResponse[] = [];
+
       if (newNotifications.length > 0) {
         // 읽지 않은 알림과 읽은 알림 분리
         const unreadNotifications = mergedNotifications.filter(n => !n.isRead);
@@ -282,6 +285,9 @@ export default function HomeScreen() {
         );
 
         // 읽지 않은 알림과 읽은 알림을 분리해서 상태 업데이트
+        nextUnread = sortedUnread;
+        nextRead = sortedRead;
+
         setNotifications(sortedUnread);
         setReadNotifications(sortedRead);
       } else {
@@ -302,6 +308,9 @@ export default function HomeScreen() {
           }).map(n => ({ ...n, isRead: true }))
         ].filter((n, index, self) => self.findIndex(s => s.id === n.id) === index);
         
+        nextUnread = updatedUnread;
+        nextRead = updatedRead;
+
         setNotifications(updatedUnread);
         setReadNotifications(updatedRead);
       }
@@ -309,7 +318,7 @@ export default function HomeScreen() {
         if (!prev) {
           return prev;
         }
-        const stillExists = [...sortedUnread, ...sortedRead].some((notification) => notification.id === prev);
+        const stillExists = [...nextUnread, ...nextRead].some((notification) => notification.id === prev);
         return stillExists ? prev : null;
       });
     } catch (error) {

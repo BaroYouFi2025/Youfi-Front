@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface Location {
@@ -205,17 +205,17 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'error') {
-        console.error('🗺️ WebView 에러:', data.message);
+        Alert.alert('지도 오류', data.message);
       } else if (data.type === 'success') {
       }
-    } catch (error) {
-      console.error('🗺️ 메시지 파싱 에러:', error);
+    } catch {
+      Alert.alert('지도 오류', '지도 응답을 처리하지 못했습니다.');
     }
   };
 
   const handleError = (syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    console.error('🗺️ WebView 로드 에러:', nativeEvent);
+    Alert.alert('지도 로드 실패', nativeEvent?.description || '지도를 불러오는 중 문제가 발생했습니다.');
   };
 
   const handleLoadEnd = () => {

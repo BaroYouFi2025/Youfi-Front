@@ -51,7 +51,6 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         // 토큰 존재 여부 확인 (apiClient 인터셉터가 자동으로 사용)
         const accessToken = await getAccessToken();
         if (!accessToken) {
-          console.log('⚠️ AccessToken이 없어 GPS 업데이트를 건너뜁니다.');
           return;
         }
 

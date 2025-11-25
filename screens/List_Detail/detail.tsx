@@ -11,8 +11,8 @@ import { reportMissingPersonSighting } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
 import KakaoMap from '@/components/KakaoMap';
+import { API_BASE_URL } from '@/services/config';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 
 type MissingPersonDetail = {

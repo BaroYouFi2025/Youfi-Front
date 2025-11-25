@@ -1,4 +1,5 @@
 import GeneratedImagesModal from '@/components/GeneratedImagesModal';
+import { API_BASE_URL } from '@/services/config';
 import { getMissingPersonById, closeMissingPerson } from '@/services/missingPersonAPI';
 import { AIAssetType, MissingPersonDetailResponse } from '@/types/MissingPersonTypes';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -39,7 +40,7 @@ import {
 
 const DEFAULT_AVATAR = 'https://via.placeholder.com/88';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = API_BASE_URL;
 
 const convertToInternalUrl = (url?: string): string | undefined => {
   if (!url) return undefined;

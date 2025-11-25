@@ -1,5 +1,4 @@
 import { AxiosError } from 'axios';
-
 import apiClient from './apiClient';
 import { resolveErrorMessage } from '@/utils/apiErrorHandler';
 import { MemberLocation } from '@/types/MemberLocationTypes';
@@ -16,7 +15,12 @@ export interface InviteMemberRequest {
  * 구성원 초대 응답
  */
 export interface InviteMemberResponse {
-  relationshipRequestId: number;
+  id: number;
+  inviterId: number;
+  inviteeUserId: number;
+  relation: string;
+  status: string;
+  createdAt: string;
 }
 
 /**
@@ -46,4 +50,3 @@ export const getMemberLocations = async (): Promise<MemberLocation[]> => {
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
-

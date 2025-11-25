@@ -42,4 +42,6 @@ app-example
 /ios
 /android
 
+.enveas.json
 .env
+eas.json

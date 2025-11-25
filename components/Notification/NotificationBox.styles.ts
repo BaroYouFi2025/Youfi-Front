@@ -1,6 +1,6 @@
-import styled from 'styled-components/native';
+import styledComponents from 'styled-components/native';
 
-export const NotificationBoxContainer = styled.View`
+export const NotificationBoxContainer = styledComponents.View`
   width: 100%;
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
@@ -16,7 +16,7 @@ export const NotificationBoxContainer = styled.View`
   elevation: 3;
 `;
 
-export const NotificationContent = styled.Text`
+export const NotificationContent = styledComponents.Text`
   font-size: 14px;
   color: #949494;
   text-align: center;
@@ -25,7 +25,7 @@ export const NotificationContent = styled.Text`
   font-weight: 400;
 `;
 
-export const MoreButton = styled.TouchableOpacity`
+export const MoreButton = styledComponents.TouchableOpacity`
   width: 100%;
   padding: 12px;
   background-color: #f9fdfe;
@@ -36,7 +36,7 @@ export const MoreButton = styled.TouchableOpacity`
   margin-top: 8px;
 `;
 
-export const MoreButtonText = styled.Text`
+export const MoreButtonText = styledComponents.Text`
   font-size: 14px;
   font-weight: 600;
   color: #25b2e2;

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -31,7 +31,10 @@ import {
   PersonRow,
   PersonSection,
   ScreenScroll,
-  Spacer
+  Spacer,
+  BatteryShell,
+  BatteryFill,
+  BatteryCap
 } from './GpsTrackingScreen.styles';
 
 export default function GpsTrackingScreen() {
@@ -121,39 +124,32 @@ export default function GpsTrackingScreen() {
     }
   }, []);
 
-  // SSE 연결: 구성원 위치 실시간 수신
-  useEffect(() => {
-    let mounted = true;
-
-    connectMemberLocationStream({
-      onUpdate: (members) => {
-        if (mounted) {
+  // SSE 연결: 화면 포커스 시에만 구성원 위치 실시간 수신
+  useFocusEffect(
+    useCallback(() => {
+      connectMemberLocationStream({
+        onUpdate: (members) => {
           setMemberLocations(members);
           setIsSSEConnected(true);
-        }
-      },
-      onError: (error) => {
-        console.error('❌ SSE 오류:', error.message);
-        if (mounted) {
+        },
+        onError: (error) => {
+          console.error('❌ SSE 오류:', error.message);
           setIsSSEConnected(false);
           // SSE 연결 실패 시 API로 구성원 목록 불러오기
           loadMemberLocations();
-        }
-      },
-      onHeartbeat: () => {
-        // Heartbeat 로그는 너무 빈번하므로 생략 가능
-        if (mounted) {
+        },
+        onHeartbeat: () => {
+          // Heartbeat는 조용히 처리
           setIsSSEConnected(true);
-        }
-      },
-    });
+        },
+      });
 
-    // 컴포넌트 언마운트 시 연결 해제
-    return () => {
-      mounted = false;
-      disconnectMemberLocationStream();
-    };
-  }, [loadMemberLocations]);
+      // 화면 이탈 시 연결 해제
+      return () => {
+        disconnectMemberLocationStream();
+      };
+    }, [loadMemberLocations])
+  );
 
   // 구성원이 없을 때 초기 로드
   useEffect(() => {
@@ -173,7 +169,49 @@ export default function GpsTrackingScreen() {
   };
 
   const handleAddPress = () => {
-    router.push('/gps-add');
+    router.push('/gps-tracking/add-member');
+  };
+
+  const clampBatteryLevel = (level: number) => {
+    if (Number.isNaN(level)) return 0;
+    return Math.min(100, Math.max(0, level));
+  };
+
+  const getBatteryColor = (level: number) => {
+    if (level > 50) return '#24c879';
+    if (level > 20) return '#f4c430';
+    return '#ff5252';
+  };
+
+  const renderMemberRow = (member: MemberLocation, index: number) => {
+    const batteryLevel = clampBatteryLevel(member.batteryLevel);
+    const distanceText = Number.isFinite(member.distance) ? `${member.distance.toFixed(1)}km` : '- km';
+    const batteryColor = getBatteryColor(batteryLevel);
+    const batteryPercentText = `${Math.round(batteryLevel)}%`;
+
+    return (
+      <PersonRow key={`member-${member.userId}-${index}`}>
+        <Avatar />
+        <PersonContent>
+          <NameRow>
+            <NameGroup>
+              <PersonName>{member.name}</PersonName>
+              <LabelBadge>
+                <LabelText>{member.relationship}</LabelText>
+              </LabelBadge>
+            </NameGroup>
+            <DistanceText>{distanceText}</DistanceText>
+          </NameRow>
+          <BatteryRow>
+            <BatteryShell>
+              <BatteryFill $fill={Math.max(8, batteryLevel)} $color={batteryColor} />
+            </BatteryShell>
+            <BatteryCap />
+            <BatteryText>{batteryPercentText}</BatteryText>
+          </BatteryRow>
+        </PersonContent>
+      </PersonRow>
+    );
   };
 
   return (
@@ -209,37 +247,10 @@ export default function GpsTrackingScreen() {
             </PersonRow>
           ) : memberLocations.length === 0 ? (
             <PersonRow>
-              <PersonContent>
-                <NameRow>
-                  <PersonName>구성원이 없습니다</PersonName>
-                </NameRow>
-              </PersonContent>
+              <PersonName>구성원이 없습니다</PersonName>
             </PersonRow>
           ) : (
-            memberLocations.map((member, index) => (
-              <PersonRow key={member.userId}>
-                <Avatar />
-                <PersonContent>
-                  <NameRow>
-                    <NameGroup>
-                      <PersonName>{member.name}</PersonName>
-                      <LabelBadge>
-                        <LabelText>{member.relationship}</LabelText>
-                      </LabelBadge>
-                    </NameGroup>
-                    <DistanceText>{member.distance.toFixed(1)}km</DistanceText>
-                  </NameRow>
-                  <BatteryRow>
-                    <Ionicons
-                      name={member.batteryLevel > 50 ? "battery-full" : member.batteryLevel > 20 ? "battery-half" : "battery-dead"}
-                      size={20}
-                      color={member.batteryLevel > 50 ? "#24c879" : member.batteryLevel > 20 ? "#f4c430" : "#ff5252"}
-                    />
-                    <BatteryText>{member.batteryLevel}%</BatteryText>
-                  </BatteryRow>
-                </PersonContent>
-              </PersonRow>
-            ))
+            memberLocations.map(renderMemberRow)
           )}
         </PersonSection>
 
