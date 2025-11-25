@@ -40,7 +40,7 @@ export const AddButton = styled.TouchableOpacity.attrs(() => ({
 `;
 
 export const MapCard = styled.View`
-  margin: 0 16px 20px;
+  margin: 0 16px 12px;
   border-radius: 16px;
   overflow: hidden;
   background-color: #eaf6ff;
@@ -54,14 +54,17 @@ export const MapCard = styled.View`
 
 export const PersonSection = styled.View`
   margin: 0 16px;
-  padding: 12px 0 4px;
+  padding: 8px 0 4px;
   background-color: #ffffff;
 `;
 
 export const PersonRow = styled.View`
   flex-direction: row;
   align-items: center;
-  padding: 8px 0;
+  min-height: 80px;
+  padding: 12px 0;
+  border-bottom-width: 1px;
+  border-bottom-color: #f2f3f4;
 `;
 
 export const Avatar = styled.View`
@@ -80,7 +83,7 @@ export const NameRow = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 `;
 
 export const NameGroup = styled.View`
@@ -92,6 +95,7 @@ export const PersonName = styled.Text`
   font-size: 15px;
   font-weight: 500;
   color: #16171a;
+  line-height: 17px;
 `;
 
 export const LabelBadge = styled.View`
@@ -108,12 +112,14 @@ export const LabelText = styled.Text`
   font-size: 10px;
   font-weight: 500;
   color: #000000;
+  line-height: 13px;
 `;
 
 export const DistanceText = styled.Text`
   font-size: 15px;
   font-weight: 500;
   color: #848587;
+  line-height: 17px;
 `;
 
 export const BatteryRow = styled.View`
@@ -126,6 +132,7 @@ export const BatteryText = styled.Text`
   font-size: 10px;
   font-weight: 500;
   color: #16171a;
+  line-height: 13px;
 `;
 
 export const Divider = styled.View`
@@ -135,7 +142,7 @@ export const Divider = styled.View`
 `;
 
 export const ActionsContainer = styled.View`
-  margin: 24px 16px 0;
+  margin: 20px 16px 0;
 `;
 
 export const ActionButton = styled.TouchableOpacity.attrs<{ $variant: 'alert' | 'refresh' }>(() => ({
@@ -157,4 +164,30 @@ export const ActionButtonText = styled.Text`
 
 export const Spacer = styled.View`
   height: 24px;
+`;
+
+export const BatteryShell = styled.View`
+  width: 28px;
+  height: 13px;
+  border-radius: 4px;
+  border: 1px solid #b5b5b5;
+  background-color: #ffffff;
+  padding: 1px;
+  flex-direction: row;
+  align-items: center;
+`;
+
+export const BatteryFill = styled.View<{ $fill: number; $color: string }>`
+  width: ${({ $fill }) => `${$fill}%`};
+  height: 100%;
+  border-radius: 3px;
+  background-color: ${({ $color }) => $color};
+`;
+
+export const BatteryCap = styled.View`
+  width: 2px;
+  height: 7px;
+  margin-left: 2px;
+  border-radius: 2px;
+  background-color: #b5b5b5;
 `;
