@@ -96,10 +96,10 @@ export const NotificationTitleText = styled.Text<{ isUnread?: boolean }>`
   font-size: 20px;
   font-weight: 700;
   color: ${({ isUnread }: { isUnread?: boolean }) => (isUnread ? '#16171a' : '#949494')};
-  flex: 1;
   font-family: 'Wanted Sans';
   letter-spacing: -0.2px;
   line-height: 22px;
+  flex-shrink: 1;
 `;
 
 export const NotificationTime = styled.Text`
@@ -184,8 +184,8 @@ export const FoundReportTitleRow = styled.View`
   flex-direction: row;
   align-items: flex-end;
   gap: 8px;
-  height: 22px;
   margin-bottom: 8px;
+  min-height: 22px;
 `;
 
 export const FoundReportIconContainer = styled.View`
@@ -206,11 +206,9 @@ export const FoundReportIconGradient = styled.View`
 
 
 export const FoundReportMessageRow = styled.View`
-  flex-direction: row;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
   margin-top: 4px;
-  flex-wrap: wrap;
   width: 100%;
 `;
 

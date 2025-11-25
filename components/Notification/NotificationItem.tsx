@@ -248,35 +248,39 @@ export default function NotificationItem({
           pointerEvents="box-none"
         >
           <FoundReportTitleRow>
-            <NotificationTitleText 
-              isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-              style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.2, fontWeight: '700', flex: 1 }}
-            >
-              {notification.title}
-            </NotificationTitleText>
-            <NotificationTime style={{ fontSize: 10, lineHeight: 13, fontWeight: '500' }}>
+            <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+              <NotificationTitleText 
+                isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
+                style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.2, fontWeight: '700' }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {notification.title}
+              </NotificationTitleText>
+            </View>
+            <NotificationTime style={{ fontSize: 10, lineHeight: 13, fontWeight: '500', flexShrink: 0 }}>
               {timeString}
             </NotificationTime>
           </FoundReportTitleRow>
           <FoundReportMessageRow>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <NotificationMessage 
                 isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
                 style={{ fontSize: 14, lineHeight: 20, letterSpacing: -0.14, fontWeight: '500' }}
               >
                 {getFilteredMessage(notification.message)}
               </NotificationMessage>
+              {onDetail && (
+                <TouchableOpacity
+                  onPress={handleDetail}
+                  style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                >
+                  <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
+                    자세히 보기
+                  </ActionButtonText>
+                </TouchableOpacity>
+              )}
             </View>
-            {onDetail && (
-              <TouchableOpacity
-                onPress={handleDetail}
-                style={{ marginTop: 4, marginLeft: 8 }}
-              >
-                <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
-                  자세히 보기
-                </ActionButtonText>
-              </TouchableOpacity>
-            )}
           </FoundReportMessageRow>
         </NotificationSelectableArea>
         </FoundReportContainer>
@@ -368,10 +372,16 @@ export default function NotificationItem({
           pointerEvents="box-none"
         >
           <NotificationHeaderText>
-            <NotificationTitleText isUnread={isUnread !== undefined ? isUnread : !notification.isRead}>
-              {notification.title}
-            </NotificationTitleText>
-            <NotificationTime>{timeString}</NotificationTime>
+            <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+              <NotificationTitleText 
+                isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {notification.title}
+              </NotificationTitleText>
+            </View>
+            <NotificationTime style={{ flexShrink: 0 }}>{timeString}</NotificationTime>
           </NotificationHeaderText>
           <View style={{ marginTop: 4 }}>
             <NotificationMessage 
