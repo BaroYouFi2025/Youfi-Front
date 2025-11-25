@@ -173,7 +173,7 @@ export default function GpsTrackingScreen() {
   };
 
   const handleAddPress = () => {
-    router.push('/gps-add');
+    router.push('/gps-tracking/add-member');
   };
 
   return (
