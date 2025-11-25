@@ -183,14 +183,14 @@ export default function GpsTrackingScreen() {
     return '#ff5252';
   };
 
-  const renderMemberRow = (member: MemberLocation) => {
+  const renderMemberRow = (member: MemberLocation, index: number) => {
     const batteryLevel = clampBatteryLevel(member.batteryLevel);
     const distanceText = Number.isFinite(member.distance) ? `${member.distance.toFixed(1)}km` : '- km';
     const batteryColor = getBatteryColor(batteryLevel);
     const batteryPercentText = `${Math.round(batteryLevel)}%`;
 
     return (
-      <PersonRow key={member.userId}>
+      <PersonRow key={`member-${member.userId}-${index}`}>
         <Avatar />
         <PersonContent>
           <NameRow>
