@@ -42,13 +42,18 @@ export default function NotificationBox({
   }
 
   // 읽지 않은 알림과 읽은 알림을 모두 포함하여 최신순 정렬
-  const sortedNotifications = [...notifications].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const sortedNotifications = [...notifications].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  // 동일한 ID가 중복되어 들어올 때 키 충돌을 막기 위해 ID 기준으로 중복 제거
+  const uniqueNotifications = sortedNotifications.filter(
+    (notification, index, self) => self.findIndex((n) => n.id === notification.id) === index
   );
 
   // 읽지 않은 알림 우선, 그 다음 읽은 알림 순서로 정렬
-  const unreadNotifications = sortedNotifications.filter(n => !n.isRead);
-  const readNotifications = sortedNotifications.filter(n => n.isRead);
+  const unreadNotifications = uniqueNotifications.filter((n) => !n.isRead);
+  const readNotifications = uniqueNotifications.filter((n) => n.isRead);
   
   // 읽지 않은 알림을 먼저 표시하고, 부족하면 읽은 알림으로 채움 (최대 3개)
   const displayedNotifications = [
@@ -96,5 +101,4 @@ export default function NotificationBox({
     </NotificationBoxContainer>
   );
 }
-
 
