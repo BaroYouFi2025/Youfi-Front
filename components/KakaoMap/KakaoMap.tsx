@@ -221,8 +221,8 @@ export default function KakaoMap({ currentLocation, nearbyPersons = [], memberLo
   const handleLoadEnd = () => {
   };
 
-  // memberLocations가 변경될 때 WebView를 다시 렌더링하기 위한 키
-  const webViewKey = `map-${memberLocations.length}-${JSON.stringify(memberLocations.map(m => m.userId))}`;
+  // memberLocations와 currentLocation이 변경될 때 WebView를 다시 렌더링하기 위한 키
+  const webViewKey = `map-${memberLocations.length}-${JSON.stringify(memberLocations.map(m => m.userId))}-${currentLocation ? `${currentLocation.latitude}-${currentLocation.longitude}` : 'no-loc'}`;
 
   return (
     <View style={styles.container}>
