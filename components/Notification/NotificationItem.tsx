@@ -1,8 +1,8 @@
 import { NotificationResponse, NotificationType } from '@/types/NotificationTypes';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useRef, useState } from 'react';
-import { Animated, Modal, PanResponder, ScrollView, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import {
   AcceptButton,
   ActionButtonText,
@@ -45,6 +45,7 @@ interface NotificationItemProps {
   index?: number;
   totalCount?: number;
   isUnread?: boolean;
+  isActive?: boolean;
 }
 
 // 관계 옵션 목록
@@ -80,114 +81,9 @@ export default function NotificationItem({
   index = 0,
   totalCount = 0,
   isUnread,
+  isActive = false,
 }: NotificationItemProps) {
   const [relationModalVisible, setRelationModalVisible] = useState(false);
-  const pan = useRef(new Animated.ValueXY()).current;
-  const scale = useRef(new Animated.Value(1)).current;
-  const [isDragging, setIsDragging] = useState(false);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // 드래그로 간주할 최소 거리
-        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-      },
-      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        // 알림 박스 내부 터치를 캡처하여 스크롤 방지
-        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-      },
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: () => {
-        // 터치 시작 시 즉시 선택
-        if (onSelect) {
-          onSelect(notification.id);
-        }
-        // 애니메이션 초기화
-        pan.setOffset({
-          x: (pan.x as any)._value || 0,
-          y: (pan.y as any)._value || 0,
-        });
-        pan.setValue({ x: 0, y: 0 });
-        // 약간 확대 효과
-        Animated.spring(scale, {
-          toValue: 1.02,
-          useNativeDriver: true,
-          tension: 300,
-          friction: 30,
-        }).start();
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        // 드래그 애니메이션
-        pan.setValue({ x: gestureState.dx, y: gestureState.dy });
-        // 드래그 중일 때
-        if (!isDragging && (Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10)) {
-          setIsDragging(true);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        pan.flattenOffset();
-        setIsDragging(false);
-        
-        // 탭인지 드래그인지 판단
-        const isTap = Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10;
-        
-        if (isTap) {
-          // 탭인 경우: 선택만 처리하고 원위치로
-          Animated.parallel([
-            Animated.spring(pan, {
-              toValue: { x: 0, y: 0 },
-              useNativeDriver: false,
-              tension: 300,
-              friction: 30,
-            }),
-            Animated.spring(scale, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 300,
-              friction: 30,
-            }),
-          ]).start();
-        } else {
-          // 드래그인 경우: 원위치로 부드럽게 복귀
-          Animated.parallel([
-            Animated.spring(pan, {
-              toValue: { x: 0, y: 0 },
-              useNativeDriver: false,
-              tension: 200,
-              friction: 20,
-            }),
-            Animated.spring(scale, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 300,
-              friction: 30,
-            }),
-          ]).start();
-        }
-      },
-      onPanResponderTerminate: () => {
-        // 터치가 중단된 경우 원위치로
-        pan.flattenOffset();
-        setIsDragging(false);
-        Animated.parallel([
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false,
-            tension: 200,
-            friction: 20,
-          }),
-          Animated.spring(scale, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 300,
-            friction: 30,
-          }),
-        ]).start();
-      },
-    })
-  ).current;
   
   // 시간 포맷팅
   const createdAt = new Date(notification.createdAt);
@@ -196,6 +92,32 @@ export default function NotificationItem({
     minute: '2-digit',
     hour12: true,
   });
+
+  // FOUND_REPORT 타입 알림 메시지에서 "찾은 팀"과 "발견위치" 정보 제거
+  const getFilteredMessage = (message: string): string => {
+    if (notification.type !== NotificationType.FOUND_REPORT) {
+      return message;
+    }
+    
+    // "찾은 팀" 또는 "발견위치" 관련 텍스트 제거
+    let filtered = message;
+    
+    // "찾은 팀: ..." 패턴 제거
+    filtered = filtered.replace(/찾은\s*팀\s*[:：]\s*[^\n]*/gi, '');
+    filtered = filtered.replace(/찾은\s*팀\s*[^\n]*/gi, '');
+    
+    // "발견위치: ..." 패턴 제거
+    filtered = filtered.replace(/발견\s*위치\s*[:：]\s*[^\n]*/gi, '');
+    filtered = filtered.replace(/발견\s*위치\s*[^\n]*/gi, '');
+    
+    // "발견 위치: ..." 패턴 제거
+    filtered = filtered.replace(/발견\s*위치\s*[:：]\s*[^\n]*/gi, '');
+    
+    // 연속된 줄바꿈 정리
+    filtered = filtered.replace(/\n\n+/g, '\n').trim();
+    
+    return filtered;
+  };
 
   // 관계 선택 후 수락 처리
   const handleAcceptWithRelation = async (relation: string) => {
@@ -214,27 +136,50 @@ export default function NotificationItem({
     if (onSelect) {
       await onSelect(notification.id);
     }
+    
+    // 알림 클릭 시 읽음 처리
+    if (onMarkAsRead && !notification.isRead) {
+      try {
+        await onMarkAsRead(notification.id);
+      } catch (error) {
+        console.error('❌ 알림 읽음 처리 실패:', error);
+      }
+    }
+  };
+
+  // 자세히 보기 클릭 시 읽음 처리 후 상세 페이지로 이동
+  const handleDetail = async () => {
+    if (!onDetail) return;
+    
+    try {
+      // 읽지 않은 알림인 경우 읽음 처리
+      if (onMarkAsRead && !notification.isRead) {
+        await onMarkAsRead(notification.id);
+      }
+      // 상세 페이지로 이동
+      await onDetail(notification.id);
+    } catch (error) {
+      console.error('❌ 자세히 보기 처리 실패:', error);
+      // 에러가 있어도 페이지는 이동 시도
+      try {
+        await onDetail(notification.id);
+      } catch (detailError) {
+        console.error('❌ 상세 페이지 이동 실패:', detailError);
+      }
+    }
   };
 
   // FOUND_REPORT 타입일 때 특별한 디자인 렌더링
   if (notification.type === NotificationType.FOUND_REPORT) {
     return (
-      <Animated.View
-        style={{
-          transform: [
-            { translateX: pan.x },
-            { translateY: pan.y },
-            { scale: scale },
-          ],
-        }}
-        {...panResponder.panHandlers}
-      >
+      <View>
         <FoundReportContainer 
           isSelected={isSelected} 
           isLast={isLast} 
           index={index} 
           totalCount={totalCount}
           isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
+          isActive={isActive}
           collapsable={false}
         >
         {/* 읽음 상태일 때 상단 그라데이션 */}
@@ -242,7 +187,6 @@ export default function NotificationItem({
         <FoundReportIconContainer>
           <FoundReportIconGradient>
             <LinearGradient
-              key="gradient-1"
               colors={['#cef1fc', '#2ccbff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
@@ -255,7 +199,6 @@ export default function NotificationItem({
               }}
             />
             <LinearGradient
-              key="gradient-2"
               colors={['#cef1fc', '#2ccbff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
@@ -270,7 +213,6 @@ export default function NotificationItem({
               }}
             />
             <LinearGradient
-              key="gradient-3"
               colors={['#cef1fc', '#2ccbff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
@@ -285,7 +227,6 @@ export default function NotificationItem({
               }}
             />
             <LinearGradient
-              key="gradient-4"
               colors={['#cef1fc', '#2ccbff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
@@ -318,17 +259,18 @@ export default function NotificationItem({
             </NotificationTime>
           </FoundReportTitleRow>
           <FoundReportMessageRow>
-            <NotificationMessage 
-              isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-              style={{ fontSize: 14, lineHeight: 18, letterSpacing: -0.14, flex: 1, fontWeight: '500' }}
-            >
-              {notification.message}
-            </NotificationMessage>
+            <View style={{ flex: 1 }}>
+              <NotificationMessage 
+                isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
+                style={{ fontSize: 14, lineHeight: 20, letterSpacing: -0.14, fontWeight: '500' }}
+              >
+                {getFilteredMessage(notification.message)}
+              </NotificationMessage>
+            </View>
             {onDetail && (
               <TouchableOpacity
-                onPress={async () => {
-                  await onDetail(notification.id);
-                }}
+                onPress={handleDetail}
+                style={{ marginTop: 4, marginLeft: 8 }}
               >
                 <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
                   자세히 보기
@@ -338,7 +280,7 @@ export default function NotificationItem({
           </FoundReportMessageRow>
         </NotificationSelectableArea>
         </FoundReportContainer>
-      </Animated.View>
+      </View>
     );
   }
 
@@ -389,9 +331,7 @@ export default function NotificationItem({
         return (
           onDetail && (
             <DetailButton
-              onPress={async () => {
-                await onDetail(notification.id);
-              }}
+              onPress={handleDetail}
             >
               <ActionButtonText style={{ color: '#25b2e2' }}>자세히 보기</ActionButtonText>
             </DetailButton>
@@ -407,15 +347,15 @@ export default function NotificationItem({
 
   return (
     <>
-      <NotificationItemContainer 
-        isUnread={isUnread !== undefined ? isUnread : !notification.isRead} 
-        isSelected={isSelected} 
-        isLast={isLast} 
-        index={index} 
-        totalCount={totalCount}
-        {...panResponder.panHandlers}
-        collapsable={false}
-      >
+      <View>
+        <NotificationItemContainer 
+          isUnread={isUnread !== undefined ? isUnread : !notification.isRead} 
+          isSelected={isSelected} 
+          isLast={isLast} 
+          index={index} 
+          totalCount={totalCount}
+          collapsable={false}
+        >
         {/* 읽음 상태일 때 상단 그라데이션 */}
         {notification.isRead && <ReadNotificationOverlay />}
         <NotificationIconContainer>
@@ -433,15 +373,14 @@ export default function NotificationItem({
             </NotificationTitleText>
             <NotificationTime>{timeString}</NotificationTime>
           </NotificationHeaderText>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 0, height: 18, gap: 16 }}>
+          <View style={{ marginTop: 4 }}>
             <NotificationMessage 
               isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-              style={{ flex: 1 }}
             >
               {notification.message}
             </NotificationMessage>
             {notification.type === NotificationType.INVITE_REQUEST && !notification.isRead && (
-              <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                 {onReject && (
                   <RejectButton onPress={async () => { await onReject(notification.id); }}>
                     <ActionButtonText style={{ color: '#ff6f61' }}>거절</ActionButtonText>
@@ -457,6 +396,7 @@ export default function NotificationItem({
           </View>
         </NotificationSelectableArea>
       </NotificationItemContainer>
+      </View>
 
       {/* 관계 선택 모달 */}
       {notification.type === NotificationType.INVITE_REQUEST && (

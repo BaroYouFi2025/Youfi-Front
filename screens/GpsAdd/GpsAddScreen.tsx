@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 
 import KakaoMap from '@/components/KakaoMap';
+import { inviteMember } from '@/services/memberAPI';
 import { searchUsers } from '@/services/userAPI';
 import { UserSummary } from '@/types/UserTypes';
 import { getAccessToken } from '@/utils/authStorage';
@@ -109,7 +110,7 @@ export default function GpsAddScreen() {
     setSelectedRelation(relation);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedUserId) {
       Alert.alert('구성원을 먼저 선택해주세요.');
       return;
@@ -118,9 +119,43 @@ export default function GpsAddScreen() {
       Alert.alert('관계를 선택해주세요.');
       return;
     }
-    Alert.alert('추가 요청 준비 완료', `${selectedMemberName}님을 ${selectedRelation}으로 요청합니다.`, [
-      { text: '확인' },
-    ]);
+
+    setLoading(true);
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        Alert.alert('로그인이 필요해요', '다시 로그인한 후 초대를 진행해주세요.');
+        setLoading(false);
+        return;
+      }
+
+      await inviteMember({
+        inviteeUserId: selectedUserId,
+        relation: selectedRelation,
+      });
+
+      Alert.alert('초대 완료', `${selectedMemberName}님에게 ${selectedRelation} 관계로 초대 요청을 보냈습니다.`, [
+        {
+          text: '확인',
+          onPress: () => {
+            // 초대 성공 후 상태 초기화
+            setSearchTerm('');
+            setMembers([]);
+            setSelectedUserId(null);
+            setSelectedRelation(null);
+            setSearchPerformed(false);
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('❌ 구성원 초대 실패:', error);
+      Alert.alert(
+        '초대 실패',
+        error instanceof Error ? error.message : '초대 요청에 실패했습니다. 다시 시도해주세요.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

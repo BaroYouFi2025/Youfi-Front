@@ -183,15 +183,13 @@ export default function MissingList() {
 
   // 👉 API 데이터 상태
   const [myMissingPersons, setMyMissingPersons] = useState<MissingPerson[]>([]); // "찾는 중" 섹션용
+  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
   const [basicData, setBasicData] = useState<MissingPerson[]>([]);
   const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
   
   // 가까운 경찰청 찾기 상태
   const [isFindingPolice, setIsFindingPolice] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [myBasicData, setMyBasicData] = useState<MissingPerson[]>([]);
-  const [basicData, setBasicData] = useState<MissingPerson[]>([]);
-  const [policeData, setPoliceData] = useState<MissingPerson[]>([]);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
   const [basicTotalPages, setBasicTotalPages] = useState(1);
@@ -293,7 +291,6 @@ const mapToListData = (items: any[]): MissingPerson[] => items
     }
   };
 
-  const fetchBasicData = async () => {
   const fetchBasicData = async (pageIndex: number = 0) => {
     try {
       const token = await getAccessToken();

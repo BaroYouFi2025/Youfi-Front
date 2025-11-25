@@ -1,10 +1,13 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { NotificationResponse } from '@/types/NotificationTypes';
 import NotificationItem from './NotificationItem';
 import {
   NotificationBoxContainer,
   NotificationContent,
+  MoreButton,
+  MoreButtonText,
 } from './NotificationBox.styles';
 
 interface NotificationBoxProps {
@@ -28,6 +31,8 @@ export default function NotificationBox({
   onSelect,
   selectedId,
 }: NotificationBoxProps) {
+  const router = useRouter();
+
   if (loading) {
     return (
       <NotificationBoxContainer>
@@ -36,7 +41,24 @@ export default function NotificationBox({
     );
   }
 
-  if (notifications.length === 0) {
+  // 읽지 않은 알림과 읽은 알림을 모두 포함하여 최신순 정렬
+  const sortedNotifications = [...notifications].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  // 읽지 않은 알림 우선, 그 다음 읽은 알림 순서로 정렬
+  const unreadNotifications = sortedNotifications.filter(n => !n.isRead);
+  const readNotifications = sortedNotifications.filter(n => n.isRead);
+  
+  // 읽지 않은 알림을 먼저 표시하고, 부족하면 읽은 알림으로 채움 (최대 3개)
+  const displayedNotifications = [
+    ...unreadNotifications.slice(0, 3),
+    ...readNotifications.slice(0, Math.max(0, 3 - unreadNotifications.length))
+  ].slice(0, 3);
+  
+  const hasMoreNotifications = notifications.length > displayedNotifications.length;
+
+  if (displayedNotifications.length === 0) {
     return (
       <NotificationBoxContainer>
         <NotificationContent>알림이 없습니다</NotificationContent>
@@ -44,38 +66,33 @@ export default function NotificationBox({
     );
   }
 
-  // 읽지 않은 알림과 읽은 알림을 분리하여 스택 형태로 표시
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-  const readNotifications = notifications.filter(n => n.isRead);
-  // 최신 알림이 위로 오도록 역순으로 정렬 (아이폰 알림 스택처럼)
-  const allNotifications = [...unreadNotifications, ...readNotifications].reverse();
-
   return (
-    <NotificationBoxContainer
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
-      onResponderTerminationRequest={() => false}
-    >
-      {allNotifications.map((notification, index) => {
-        // 역순 인덱스 계산 (맨 위 알림이 index 0)
-        const reverseIndex = allNotifications.length - 1 - index;
-        return (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onAccept={onAccept}
-            onReject={onReject}
-            onDetail={onDetail}
-            onMarkAsRead={onMarkAsRead}
-            onSelect={onSelect}
-            isSelected={selectedId === notification.id}
-            isLast={index === allNotifications.length - 1}
-            index={reverseIndex}
-            totalCount={unreadNotifications.length}
-            isUnread={!notification.isRead}
-          />
-        );
-      })}
+    <NotificationBoxContainer>
+      <View>
+        {displayedNotifications.map((item, index) => (
+          <View key={item.id} style={{ marginBottom: index < displayedNotifications.length - 1 ? 8 : 0 }}>
+            <NotificationItem
+              notification={item}
+              onAccept={onAccept}
+              onReject={onReject}
+              onDetail={onDetail}
+              onMarkAsRead={onMarkAsRead}
+              onSelect={onSelect}
+              isSelected={selectedId === item.id}
+              isLast={index === displayedNotifications.length - 1}
+              index={index}
+              totalCount={displayedNotifications.length}
+              isUnread={!item.isRead}
+            />
+          </View>
+        ))}
+      </View>
+      
+      {hasMoreNotifications && (
+        <MoreButton onPress={() => router.push('/notifications')}>
+          <MoreButtonText>더보기</MoreButtonText>
+        </MoreButton>
+      )}
     </NotificationBoxContainer>
   );
 }

@@ -8,51 +8,27 @@ type NotificationContainerProps = {
   isLast?: boolean;
   index?: number;
   totalCount?: number;
+  isActive?: boolean;
 };
 
 export const NotificationItemContainer = styled.View<NotificationContainerProps>`
-  height: 80px;
-  padding: 16px 21px;
+  padding: 12px 16px;
   flex-direction: row;
-  align-items: center;
-  background-color: ${({ isSelected, isUnread }: NotificationContainerProps) => {
-    if (isSelected) return '#eaf7ff';
-    if (isUnread) return '#f9fdfe';
-    return '#f5f5f5';
+  align-items: flex-start;
+  background-color: ${({ isUnread }: NotificationContainerProps) => {
+    return isUnread ? '#ffffff' : '#f5f5f5';
   }};
-  border-radius: 20px;
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  overflow: hidden;
-  border-width: ${({ isSelected }: NotificationContainerProps) => (isSelected ? 1 : 0)}px;
-  border-color: #25b2e2;
-  shadow-color: #969696;
-  shadow-offset: 0px -1px;
-  shadow-opacity: 0.25;
+  border-radius: 12px;
+  position: relative;
+  width: 100%;
+  overflow: visible;
+  border-width: 1px;
+  border-color: #e5e7eb;
+  shadow-color: #000000;
+  shadow-offset: 0px 1px;
+  shadow-opacity: 0.1;
   shadow-radius: 4px;
-  elevation: 3;
-  top: ${({ index }: NotificationContainerProps) => `${10 - (index || 0) * 30}px`};
-  opacity: ${({ isUnread }: NotificationContainerProps) => {
-    // 읽은 알림은 약간 투명하게, 안 읽은 알림은 완전 불투명
-    return isUnread ? 1 : 0.6;
-  }};
-  transform: ${({ isUnread, index, totalCount }: NotificationContainerProps) => {
-    if (isUnread) return 'scale(1) translateY(0px)';
-    // 읽은 알림은 뒤로 갈수록 작고 위로 밀려나게
-    const readIndex = (index || 0) - (totalCount || 0);
-    if (readIndex < 0) return 'scale(0.95) translateY(-2px)';
-    if (readIndex === 0) return 'scale(0.93) translateY(-4px)';
-    const scale = Math.max(0.85, 0.93 - readIndex * 0.03);
-    const translateY = -(4 + readIndex * 2);
-    return `scale(${scale}) translateY(${translateY}px)`;
-  }};
-  z-index: ${({ isSelected, isUnread, index }: NotificationContainerProps) => {
-    if (isSelected) return 100;
-    // 위에 있는 알림(작은 index)이 더 높은 z-index
-    if (isUnread) return 50 - (index || 0);
-    return 50 - (index || 0);
-  }};
+  elevation: 2;
 `;
 
 export const ReadNotificationOverlay = styled(LinearGradient).attrs({
@@ -113,8 +89,7 @@ export const NotificationHeaderText = styled.View`
   flex-direction: row;
   align-items: flex-end;
   justify-content: space-between;
-  height: 22px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 `;
 
 export const NotificationTitleText = styled.Text<{ isUnread?: boolean }>`
@@ -141,9 +116,10 @@ export const NotificationMessage = styled.Text<{ isUnread?: boolean }>`
   font-weight: 500;
   color: ${({ isUnread }: { isUnread?: boolean }) => (isUnread ? '#16171a' : '#949494')};
   margin-bottom: 0px;
-  line-height: 18px;
+  line-height: 20px;
   font-family: 'Wanted Sans';
   letter-spacing: -0.14px;
+  flex-shrink: 1;
 `;
 
 export const NotificationActions = styled.View`
@@ -184,45 +160,24 @@ type FoundReportProps = {
   isLast?: boolean;
 };
 
-export const FoundReportContainer = styled.View<FoundReportProps & { index?: number; totalCount?: number; isUnread?: boolean }>`
-  height: 80px;
-  padding: 16px 21px;
+export const FoundReportContainer = styled.View<FoundReportProps & { index?: number; totalCount?: number; isUnread?: boolean; isActive?: boolean }>`
+  padding: 12px 16px;
   flex-direction: row;
-  align-items: center;
-  background-color: ${({ isSelected, isUnread }: { isSelected?: boolean; isUnread?: boolean }) => {
-    if (isSelected) return '#eaf7ff';
-    if (isUnread) return '#ffffff';
-    return '#f5f5f5';
+  align-items: flex-start;
+  background-color: ${({ isUnread }: { isUnread?: boolean }) => {
+    return isUnread ? '#ffffff' : '#f5f5f5';
   }};
-  border-radius: 20px;
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  overflow: hidden;
-  shadow-color: #969696;
-  shadow-offset: 0px -1px;
-  shadow-opacity: 0.25;
+  border-radius: 12px;
+  position: relative;
+  width: 100%;
+  overflow: visible;
+  border-width: 1px;
+  border-color: #e5e7eb;
+  shadow-color: #000000;
+  shadow-offset: 0px 1px;
+  shadow-opacity: 0.1;
   shadow-radius: 4px;
-  elevation: 3;
-  border-width: ${({ isSelected }: FoundReportProps) => (isSelected ? 1 : 0)}px;
-  border-color: #25b2e2;
-  top: ${({ index = 0 }: { index?: number }) => `${10 - index * 30}px`};
-  opacity: ${({ isUnread }: { isUnread?: boolean }) => {
-    return isUnread ? 1 : 0.6;
-  }};
-  transform: ${({ isSelected, index = 0, totalCount = 0 }: { isSelected?: boolean; index?: number; totalCount?: number }) => {
-    if (isSelected) return 'scale(1) translateY(0px)';
-    const readIndex = index - totalCount;
-    if (readIndex < 0) return 'scale(0.95) translateY(-2px)';
-    if (readIndex === 0) return 'scale(0.93) translateY(-4px)';
-    const scale = Math.max(0.85, 0.93 - readIndex * 0.03);
-    const translateY = -(4 + readIndex * 2);
-    return `scale(${scale}) translateY(${translateY}px)`;
-  }};
-  z-index: ${({ isSelected, index = 0 }: { isSelected?: boolean; index?: number }) => {
-    if (isSelected) return 100;
-    return 50 - index;
-  }};
+  elevation: 2;
 `;
 
 export const FoundReportTitleRow = styled.View`
@@ -252,11 +207,11 @@ export const FoundReportIconGradient = styled.View`
 
 export const FoundReportMessageRow = styled.View`
   flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  margin-top: 0px;
-  height: 18px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
   flex-wrap: wrap;
+  width: 100%;
 `;
 
 // 관계 선택 모달 스타일
@@ -318,9 +273,8 @@ export const RelationModalCloseText = styled.Text`
 export const NotificationSelectableArea = styled(TouchableOpacity)`
   flex: 1;
   flex-direction: column;
-  justify-content: center;
-  height: 80px;
-  padding-vertical: 16px;
+  justify-content: flex-start;
+  padding-vertical: 0;
 `;
 
 
