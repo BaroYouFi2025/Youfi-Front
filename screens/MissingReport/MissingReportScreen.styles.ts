@@ -6,40 +6,12 @@ export const Container = styled.View`
   background-color: #ffffff;
 `;
 
-export const StatusBarContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding-horizontal: 16px;
-  padding-top: 21px;
-  height: 54px;
-  background-color: #ffffff;
-`;
-
-export const StatusBarTime = styled.Text`
-  font-family: 'SF Pro';
-  font-weight: 600;
-  font-size: 17px;
-  color: #000000;
-`;
-
-export const StatusBarIcons = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 7px;
-`;
-
-export const StatusIcon = styled.Image`
-  width: auto;
-  height: 12px;
-`;
-
 export const ContentContainer = styled.View`
   flex: 1;
   background-color: #ffffff;
   border-top-left-radius: 32px;
   border-top-right-radius: 32px;
-  margin-top: 74px;
+  margin-top: 60px;
   shadow-color: #000000;
   shadow-offset: 0px -2px;
   shadow-opacity: 0.25;
@@ -55,23 +27,6 @@ export const Header = styled.View`
   padding-horizontal: 16px;
   padding-top: 24px;
   position: relative;
-`;
-
-export const BackButton = styled(TouchableOpacity)`
-  position: absolute;
-  left: 185px;
-  top: 8px;
-  width: 32px;
-  height: 32px;
-  justify-content: center;
-  align-items: center;
-`;
-
-export const BackIcon = styled.View`
-  width: 32px;
-  height: 3px;
-  background-color: #000000;
-  border-radius: 1.5px;
 `;
 
 export const Title = styled.Text`

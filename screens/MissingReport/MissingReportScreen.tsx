@@ -5,8 +5,6 @@ import { useFocusEffect } from 'expo-router';
 import { getMemberLocations } from '../../services/memberAPI';
 import { MemberLocation } from '../../types/MemberLocationTypes';
 import {
-  BackButton,
-  BackIcon,
   BottomContainer,
   Container,
   ContentContainer,
@@ -20,8 +18,6 @@ import {
   PersonRelation,
   ReportButton,
   ReportButtonText,
-  StatusBarContainer,
-  StatusBarTime,
   Title
 } from './MissingReportScreen.styles';
 
@@ -77,19 +73,10 @@ export default function MissingReportScreen() {
 
   return (
     <Container>
-      {/* Status Bar */}
-      <StatusBarContainer>
-        <StatusBarTime>9:41</StatusBarTime>
-        {/* StatusBarIcons temporarily removed to prevent crashes */}
-      </StatusBarContainer>
-
       {/* Content */}
       <ContentContainer>
         {/* Header */}
         <Header>
-          <BackButton onPress={handleBack}>
-            <BackIcon />
-          </BackButton>
           <Title>실종 신고</Title>
         </Header>
 
