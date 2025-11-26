@@ -1,6 +1,8 @@
+import Entypo from '@expo/vector-icons/Entypo';
+import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, TouchableOpacity, View } from 'react-native';
 
 import FormInput from '@/components/FormInput';
 import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
@@ -11,13 +13,16 @@ import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 import {
   BottomSpace,
   ButtonContainer,
-  CalendarIcon,
   Container,
   FormContainer,
   HeaderContainer,
   HeaderTitle,
   HomeIndicator,
   HomeIndicatorBar,
+  PickerActionText,
+  PickerActions,
+  PickerContainer,
+  PickerOverlay,
   ScrollContainer,
   SignupButton,
   SignupButtonText,
@@ -51,6 +56,12 @@ interface FormState {
 }
 
 const BIRTHDATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const normalizeDateValue = (value?: string) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 export default function SignupScreen() {
   const params = useLocalSearchParams<{ phoneNumber?: string | string[]; verified?: string | string[] }>();
@@ -97,6 +108,10 @@ export default function SignupScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // DatePicker States
+  const [activePicker, setActivePicker] = useState<'birth' | null>(null);
+  const [pickerValue, setPickerValue] = useState<Date>(new Date());
 
   const updateFormData = (key: keyof FormState, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -241,6 +256,61 @@ export default function SignupScreen() {
     }
   };
 
+  const openAndroidBirthPicker = (currentValue: Date) => {
+    DateTimePickerAndroid.open({
+      value: currentValue,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, date) => {
+        if (event.type === 'set' && date) {
+          updateFormData('birthDate', date.toISOString().split('T')[0]);
+        }
+      },
+    });
+  };
+
+  const openPicker = () => {
+    const currentValue = normalizeDateValue(formData.birthDate) ?? new Date();
+
+    if (Platform.OS === 'android') {
+      openAndroidBirthPicker(currentValue);
+      return;
+    }
+
+    setPickerValue(currentValue);
+    setActivePicker('birth');
+  };
+
+  const handlePickerChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (event.type === 'dismissed') {
+      setActivePicker(null);
+      return;
+    }
+    if (date && Platform.OS === 'ios') {
+      setPickerValue(date);
+    }
+  };
+
+  const handlePickerConfirm = () => {
+    updateFormData('birthDate', pickerValue.toISOString().split('T')[0]);
+    setActivePicker(null);
+  };
+
+  const handlePickerCancel = () => {
+    setActivePicker(null);
+  };
+
+  const handleAndroidDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (event.type === 'dismissed') {
+      setActivePicker(null);
+      return;
+    }
+    if (event.type === 'set' && date) {
+      updateFormData('birthDate', date.toISOString().split('T')[0]);
+      setActivePicker(null);
+    }
+  };
+
   return (
     <Container>
       <ScrollContainer showsVerticalScrollIndicator={false}>
@@ -291,14 +361,17 @@ export default function SignupScreen() {
             placeholder=""
           />
 
-          <FormInput
-            label="생년월일"
-            value={formData.birthDate}
-            onChangeText={(text) => updateFormData('birthDate', text)}
-            placeholder="YYYY-MM-DD"
-            keyboardType="numbers-and-punctuation"
-            rightIcon={<CalendarIcon>📅</CalendarIcon>}
-          />
+          <TouchableOpacity activeOpacity={0.8} onPress={openPicker}>
+            <View pointerEvents="none">
+              <FormInput
+                label="생년월일"
+                value={formData.birthDate}
+                placeholder="YYYY-MM-DD"
+                editable={false}
+                rightIcon={<Entypo name="calendar" size={24} color="#949494" />}
+              />
+            </View>
+          </TouchableOpacity>
         </FormContainer>
 
         <ButtonContainer>
@@ -327,6 +400,39 @@ export default function SignupScreen() {
         visible={isPrivacyPolicyVisible}
         onAgree={() => setIsPrivacyPolicyVisible(false)}
       />
+
+      {/* iOS Picker Modal */}
+      {activePicker === 'birth' && Platform.OS === 'ios' && (
+        <Modal transparent animationType="fade" visible>
+          <PickerOverlay>
+            <PickerContainer>
+              <PickerActions>
+                <PickerActionText onPress={handlePickerCancel}>취소</PickerActionText>
+                <PickerActionText onPress={handlePickerConfirm}>완료</PickerActionText>
+              </PickerActions>
+              <DateTimePicker
+                value={pickerValue}
+                mode="date"
+                display="spinner"
+                onChange={handlePickerChange}
+                themeVariant="light"
+                textColor="#0f172a"
+                style={{ backgroundColor: '#ffffff', height: 220 }}
+              />
+            </PickerContainer>
+          </PickerOverlay>
+        </Modal>
+      )}
+
+      {/* Android Picker (Fallback if not using DateTimePickerAndroid.open) - usually not needed if openAndroidBirthPicker is used */}
+      {activePicker === 'birth' && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          onChange={handleAndroidDateChange}
+        />
+      )}
     </Container>
   );
 }

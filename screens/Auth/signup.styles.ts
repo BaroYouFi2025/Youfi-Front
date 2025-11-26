@@ -83,3 +83,28 @@ export const HomeIndicatorBar = styled.View`
   background-color: #000000;
   border-radius: 100px;
 `;
+
+export const PickerOverlay = styled.View`
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.35);
+  justify-content: flex-end;
+`;
+
+export const PickerContainer = styled.View`
+  background-color: #ffffff;
+  padding: 12px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+`;
+
+export const PickerActions = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+export const PickerActionText = styled.Text`
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+`;
