@@ -157,10 +157,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.homeIndicator}>
-        <View style={styles.homeIndicatorBar} />
-      </View>
     </View>
   );
 }
@@ -260,16 +256,5 @@ const styles = StyleSheet.create({
     color: '#25b2e2',
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  homeIndicator: {
-    height: 34,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  homeIndicatorBar: {
-    width: 144,
-    height: 5,
-    backgroundColor: '#000000',
-    borderRadius: 100,
   },
 });
