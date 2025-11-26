@@ -238,7 +238,6 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="phone-verification" options={{ headerShown: false }} />
           <Stack.Screen name="signup" options={{ headerShown: false }} />
-          <Stack.Screen name="gps-tracking" options={{ headerShown: false }} />
           <Stack.Screen name="missing-report" options={{ headerShown: false }} />
           <Stack.Screen name="gps-add" options={{ headerShown: false }} />
           <Stack.Screen name="person-found" options={{ headerShown: false }} />
