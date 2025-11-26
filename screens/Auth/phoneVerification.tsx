@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 import { checkPhoneVerificationStatus, requestPhoneVerificationToken } from '@/services/phoneVerificationAPI';
-import { openEmailWithToken } from '@/utils/emailUtils';
+import TutorialModal from '@/components/TutorialModal/TutorialModal';
 
 import {
   ActionGroup,
@@ -24,6 +25,9 @@ import {
   TokenContainer,
   TokenLabel,
   TokenValue,
+  TokenRow,
+  CopyButton,
+  CopyButtonText,
 } from './phoneVerification.styles';
 
 const MIN_PHONE_LENGTH = 11;
@@ -33,6 +37,7 @@ export default function PhoneVerificationScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isTutorialVisible, setIsTutorialVisible] = useState(false);
 
   const handlePhoneChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, '');
@@ -51,23 +56,24 @@ export default function PhoneVerificationScreen() {
       const response = await requestPhoneVerificationToken({ phoneNumber });
       setToken(response.token);
 
-      // 이메일 앱으로 토큰 발송
-      await openEmailWithToken(response.token, phoneNumber);
+      // 관리자 이메일 주소 복사
+      await Clipboard.setStringAsync('verifybaro@gmail.com');
+      
+      // 튜토리얼 모달 표시
+      setIsTutorialVisible(true);
 
-      Alert.alert(
-        '인증 토큰 발급 완료',
-        '이메일 앱에서 인증 토큰이 포함된 이메일을 확인해주세요. 이메일을 전송하면 관리자가 인증을 진행합니다.',
-        [
-          {
-            text: '확인',
-          },
-        ]
-      );
     } catch (error) {
       const message = error instanceof Error ? error.message : '인증 토큰 발급에 실패했습니다.';
       Alert.alert('오류', message);
     } finally {
       setIsRequesting(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (token) {
+      await Clipboard.setStringAsync(token);
+      Alert.alert('복사 완료', '인증 토큰이 클립보드에 복사되었습니다.');
     }
   };
 
@@ -114,8 +120,8 @@ export default function PhoneVerificationScreen() {
           <HeaderArea>
             <Title>전화번호 인증</Title>
             <Description>
-              회원가입을 위해 먼저 휴대폰 번호 인증을 완료해주세요. 토큰을 발급받으면 자동으로 이메일 앱이 열리며,
-              관리자에게 인증 요청 이메일이 작성됩니다. 이메일을 전송하면 관리자가 인증을 진행합니다.
+              회원가입을 위해 먼저 휴대폰 번호 인증을 완료해주세요. 토큰 발급 후 복사된 이메일 주소로
+              인증 토큰을 전송해주시면 관리자가 확인 후 인증을 진행합니다.
             </Description>
           </HeaderArea>
 
@@ -135,10 +141,15 @@ export default function PhoneVerificationScreen() {
           {token && (
             <TokenContainer>
               <TokenLabel>발급된 토큰</TokenLabel>
-              <TokenValue>{token}</TokenValue>
+              <TokenRow>
+                <TokenValue selectable>{token}</TokenValue>
+                <CopyButton onPress={handleCopyToken}>
+                  <CopyButtonText>복사</CopyButtonText>
+                </CopyButton>
+              </TokenRow>
               <HelperText>
-                토큰은 1회용이며 인증 완료 전까지 유효합니다. 토큰을 재발급하면 이전 토큰은
-                사용할 수 없습니다. 이메일 앱에서 작성된 내용을 확인하고 전송해주세요.
+                관리자 이메일 주소(verifybaro@gmail.com)가 클립보드에 복사되었습니다. 
+                이메일 앱을 열고 받는 사람에 붙여넣은 뒤, 위 토큰을 내용으로 하여 메일을 보내주세요.
               </HelperText>
             </TokenContainer>
           )}
@@ -168,6 +179,11 @@ export default function PhoneVerificationScreen() {
           <HelperText>
             이메일을 전송한 후 관리자가 인증을 완료하면 위 버튼을 눌러 인증 상태를 확인해주세요.
           </HelperText>
+
+          <TutorialModal 
+            visible={isTutorialVisible} 
+            onClose={() => setIsTutorialVisible(false)} 
+          />
         </Content>
       </ScrollContainer>
     </Container>

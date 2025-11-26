@@ -81,11 +81,30 @@ export const TokenLabel = styled.Text`
   color: #4b5563;
 `;
 
+export const TokenRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+`;
+
 export const TokenValue = styled.Text`
   font-size: 20px;
   font-weight: 700;
   color: #1f2937;
   letter-spacing: 4px;
+`;
+
+export const CopyButton = styled.TouchableOpacity`
+  background-color: #e2e8f0;
+  padding-horizontal: 12px;
+  padding-vertical: 6px;
+  border-radius: 6px;
+`;
+
+export const CopyButtonText = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
 `;
 
 export const HelperText = styled.Text`
