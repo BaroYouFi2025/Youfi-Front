@@ -256,13 +256,13 @@ const PickerActionText = styledComponents.Text`
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ name?: string }>();
+  const params = useLocalSearchParams<{ name?: string; latitude?: string; longitude?: string }>();
 
   const [formData, setFormData] = useState<MissingPersonData>({
     name: params.name || '',
     birthDate: '',
     gender: 'MALE',
-    missingDate: '',
+    missingDate: new Date().toISOString(),
     height: '',
     weight: '',
     body: '',
@@ -270,6 +270,10 @@ export default function RegisterScreen() {
     clothesTop: '',
     clothesBottom: '',
     clothesEtc: '',
+    location: params.latitude && params.longitude ? {
+      latitude: parseFloat(params.latitude),
+      longitude: parseFloat(params.longitude),
+    } : undefined,
   });
 
   const [errors, setErrors] = useState<MissingPersonFormErrors>({});
@@ -475,6 +479,22 @@ export default function RegisterScreen() {
     };
 
     loadCurrentLocation();
+  }, []);
+
+  // 구성원 위치 정보가 있으면 지도와 선택된 위치 초기화
+  useEffect(() => {
+    if (formData.location) {
+      const location = {
+        latitude: formData.location.latitude,
+        longitude: formData.location.longitude,
+      };
+      setSelectedLocation(location);
+      setMapRegion(prev => ({
+        ...prev,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      }));
+    }
   }, []);
 
   const handleSubmit = async () => {

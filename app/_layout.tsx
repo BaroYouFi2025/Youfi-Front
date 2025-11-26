@@ -248,6 +248,7 @@ export default function RootLayout() {
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="missing-persons/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="missing-persons/edit/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="notifications" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

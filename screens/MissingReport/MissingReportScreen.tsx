@@ -58,11 +58,15 @@ export default function MissingReportScreen() {
     router.back();
   };
 
-  const handleReport = (personName: string) => {
-    // 선택한 구성원의 이름을 전달하여 실종자 등록 화면으로 이동
+  const handleReport = (member: MemberLocation) => {
+    // 선택한 구성원의 정보를 전달하여 실종자 등록 화면으로 이동
     router.push({
       pathname: '/(tabs)/register',
-      params: { name: personName }
+      params: {
+        name: member.name,
+        latitude: member.location.latitude.toString(),
+        longitude: member.location.longitude.toString(),
+      }
     });
   };
 
@@ -112,7 +116,7 @@ export default function MissingReportScreen() {
                   <PersonName>{member.name}</PersonName>
                   <PersonRelation>{member.relationship}</PersonRelation>
                 </PersonInfo>
-                <PersonButton onPress={() => handleReport(member.name)}>
+                <PersonButton onPress={() => handleReport(member)}>
                   <ReportButtonText>신고 하기</ReportButtonText>
                 </PersonButton>
               </PersonItem>
