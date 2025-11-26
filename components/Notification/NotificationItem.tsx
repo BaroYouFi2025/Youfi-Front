@@ -1,18 +1,10 @@
 import { NotificationResponse, NotificationType } from '@/types/NotificationTypes';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import {
   AcceptButton,
   ActionButtonText,
-  DetailButton,
-  FoundReportContainer,
-  FoundReportIconContainer,
-  FoundReportIconGradient,
-  FoundReportMessageRow,
-  FoundReportTitleRow,
-  NotificationActions,
   NotificationHeaderText,
   NotificationIcon,
   NotificationIconContainer,
@@ -186,125 +178,6 @@ export default function NotificationItem({
     }
   };
 
-  // FOUND_REPORT 타입일 때 특별한 디자인 렌더링
-  if (notification.type === NotificationType.FOUND_REPORT) {
-    return (
-      <View>
-        <FoundReportContainer 
-          isSelected={isSelected} 
-          isLast={isLast} 
-          index={index} 
-          totalCount={totalCount}
-          isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-          isActive={isActive}
-          collapsable={false}
-        >
-        {/* 읽음 상태일 때 상단 그라데이션 */}
-        {notification.isRead && <ReadNotificationOverlay />}
-        <FoundReportIconContainer>
-          <FoundReportIconGradient>
-            <LinearGradient
-              colors={['#cef1fc', '#2ccbff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={{
-                position: 'absolute',
-                width: 28.8,
-                height: 28.8,
-                borderRadius: 6,
-                transform: [{ rotate: '314.314deg' }],
-              }}
-            />
-            <LinearGradient
-              colors={['#cef1fc', '#2ccbff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={{
-                position: 'absolute',
-                width: 22.629,
-                height: 22.628,
-                borderRadius: 6,
-                left: 4.42,
-                top: 6.17,
-                transform: [{ rotate: '314.314deg' }],
-              }}
-            />
-            <LinearGradient
-              colors={['#cef1fc', '#2ccbff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={{
-                position: 'absolute',
-                width: 18.514,
-                height: 18.514,
-                borderRadius: 6,
-                left: 7.36,
-                top: 10.29,
-                transform: [{ rotate: '314.314deg' }],
-              }}
-            />
-            <LinearGradient
-              colors={['#cef1fc', '#2ccbff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={{
-                position: 'absolute',
-                width: 14.4,
-                height: 14.4,
-                borderRadius: 4.8,
-                left: 10.3,
-                top: 14.4,
-                transform: [{ rotate: '314.314deg' }],
-              }}
-            />
-          </FoundReportIconGradient>
-        </FoundReportIconContainer>
-        <NotificationSelectableArea 
-          activeOpacity={0.7} 
-          onPress={handleSelect}
-          pointerEvents="box-none"
-        >
-          <FoundReportTitleRow>
-            <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
-              <NotificationTitleText 
-                isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-                style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.2, fontWeight: '700' }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {notification.title}
-              </NotificationTitleText>
-            </View>
-            <NotificationTime style={{ fontSize: 10, lineHeight: 13, fontWeight: '500', flexShrink: 0 }}>
-              {timeString}
-            </NotificationTime>
-          </FoundReportTitleRow>
-          <FoundReportMessageRow>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <NotificationMessage 
-                isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
-                style={{ fontSize: 14, lineHeight: 20, letterSpacing: -0.14, fontWeight: '500' }}
-              >
-                {getFilteredMessage(notification.message)}
-              </NotificationMessage>
-              {onDetail && (
-                <TouchableOpacity
-                  onPress={handleDetail}
-                  style={{ marginTop: 8, alignSelf: 'flex-start' }}
-                >
-                  <ActionButtonText style={{ color: '#25b2e2', fontSize: 13, lineHeight: 16, letterSpacing: -0.13, fontWeight: '500' }}>
-                    자세히 보기
-                  </ActionButtonText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </FoundReportMessageRow>
-        </NotificationSelectableArea>
-        </FoundReportContainer>
-      </View>
-    );
-  }
-
   // 타입별 아이콘 렌더링
   const renderIcon = () => {
     switch (notification.type) {
@@ -319,52 +192,6 @@ export default function NotificationItem({
     }
   };
 
-  // 타입별 액션 렌더링
-  const renderActions = () => {
-    switch (notification.type) {
-      case NotificationType.INVITE_REQUEST:
-        // 읽음 상태면 버튼을 표시하지 않음
-        if (notification.isRead === true) {
-          return null;
-        }
-        // 읽지 않은 알림일 때만 버튼 표시
-        return (
-          <NotificationActions>
-            {onAccept && (
-              <AcceptButton
-                onPress={handleAcceptClick}
-              >
-                <ActionButtonText style={{ color: '#25b2e2' }}>수락</ActionButtonText>
-              </AcceptButton>
-            )}
-            {onReject && (
-              <RejectButton
-                onPress={async () => {
-                  await onReject(notification.id);
-                }}
-              >
-                <ActionButtonText style={{ color: '#ff6f61' }}>거절</ActionButtonText>
-              </RejectButton>
-            )}
-          </NotificationActions>
-        );
-      case NotificationType.FOUND_REPORT:
-        return (
-          onDetail && (
-            <DetailButton
-              onPress={handleDetail}
-            >
-              <ActionButtonText style={{ color: '#25b2e2' }}>자세히 보기</ActionButtonText>
-            </DetailButton>
-          )
-        );
-      case NotificationType.NEARBY_ALERT:
-        // 주변 실종자 알림은 자세히 보기 버튼 없음
-        return null;
-      default:
-        return null;
-    }
-  };
 
   return (
     <>
@@ -404,8 +231,12 @@ export default function NotificationItem({
             <NotificationMessage 
               isUnread={isUnread !== undefined ? isUnread : !notification.isRead}
             >
-              {notification.message}
+              {notification.type === NotificationType.FOUND_REPORT 
+                ? getFilteredMessage(notification.message) 
+                : notification.message}
             </NotificationMessage>
+            
+            {/* INVITE_REQUEST: 수락/거절 버튼 */}
             {notification.type === NotificationType.INVITE_REQUEST && !notification.isRead && (
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                 {onReject && (
@@ -419,6 +250,16 @@ export default function NotificationItem({
                   </AcceptButton>
                 )}
               </View>
+            )}
+            
+            {/* FOUND_REPORT: 자세히 보기 버튼 */}
+            {notification.type === NotificationType.FOUND_REPORT && onDetail && (
+              <TouchableOpacity
+                onPress={handleDetail}
+                style={{ marginTop: 8, alignSelf: 'flex-start' }}
+              >
+                <ActionButtonText style={{ color: '#25b2e2' }}>자세히 보기</ActionButtonText>
+              </TouchableOpacity>
             )}
           </View>
         </NotificationSelectableArea>
