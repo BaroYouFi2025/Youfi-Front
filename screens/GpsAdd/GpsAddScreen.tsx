@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GoogleMap from '@/components/GoogleMap';
 import { inviteMember } from '@/services/memberAPI';
@@ -36,10 +37,10 @@ import {
   SubmitButtonText,
   Title
 } from './GpsAddScreen.styles';
-
 const RELATION_OPTIONS = ['가족', '친구', '연인', '이웃', '아버지', '어머니', '기타'];
 
 export default function GpsAddScreen() {
+  const insets = useSafeAreaInsets();
   const [members, setMembers] = useState<UserSummary[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRelation, setSelectedRelation] = useState<string | null>(null);
@@ -223,7 +224,7 @@ export default function GpsAddScreen() {
             )}
           </MemberSection>
 
-          <BottomPanel>
+          <BottomPanel style={{ paddingBottom: Math.max(insets.bottom + 12, 56) }}>
             <PanelTitle>{`${selectedMemberName}님의 관계를 선택해주세요.`}</PanelTitle>
             <ChipsWrap>
               {relations.map((relation) => (
