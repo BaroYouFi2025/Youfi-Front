@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { Alert, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -575,15 +575,17 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>생년월일</InputLabel>
             <TouchableOpacity activeOpacity={0.8} onPress={() => openPicker('birth')}>
-              <DateInputContainer>
-                <DateInput
-                  placeholder="생년월일을 선택하세요"
-                  value={birthDateDisplay}
-                  editable={false}
-                  caretHidden
-                />
-                <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
-              </DateInputContainer>
+              <View pointerEvents="none">
+                <DateInputContainer>
+                  <DateInput
+                    placeholder="생년월일을 선택하세요"
+                    value={birthDateDisplay}
+                    editable={false}
+                    caretHidden
+                  />
+                  <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
+                </DateInputContainer>
+              </View>
             </TouchableOpacity>
             {errors.birthDate && <ErrorText>{errors.birthDate}</ErrorText>}
           </InputGroup>
@@ -623,15 +625,17 @@ export default function RegisterScreen() {
           <InputGroup>
             <InputLabel>실종일자</InputLabel>
             <TouchableOpacity activeOpacity={0.8} onPress={() => openPicker('missing')}>
-              <DateInputContainer>
-                <DateInput
-                  placeholder="실종일자와 시간을 선택하세요"
-                  value={missingDateDisplay}
-                  editable={false}
-                  caretHidden
-                />
-                <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
-              </DateInputContainer>
+              <View pointerEvents="none">
+                <DateInputContainer>
+                  <DateInput
+                    placeholder="실종일자와 시간을 선택하세요"
+                    value={missingDateDisplay}
+                    editable={false}
+                    caretHidden
+                  />
+                  <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
+                </DateInputContainer>
+              </View>
             </TouchableOpacity>
             {errors.missingDate && <ErrorText>{errors.missingDate}</ErrorText>}
           </InputGroup>

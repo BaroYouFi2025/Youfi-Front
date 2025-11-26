@@ -1,16 +1,15 @@
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { getMissingPersonById, updateMissingPerson, uploadPhoto } from '@/services/missingPersonAPI';
 import { MissingPersonData, MissingPersonFormErrors } from '@/types/MissingPersonTypes';
 import { hasFormErrors, validateMissingPersonForm } from '@/utils/validation';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
+import DateTimePicker, { DateTimePickerAndroid, DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import MapView, { LatLng, MapPressEvent, Marker, Region } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BackButton,
   BackButtonText,
@@ -374,15 +373,17 @@ export default function MissingPersonEditScreen() {
           <InputGroup>
             <InputLabel>생년월일</InputLabel>
             <TouchableOpacity activeOpacity={0.8} onPress={() => openPicker('birth')}>
-              <DateInputContainer>
-                <DateInput
-                  placeholder="생년월일을 선택하세요"
-                  value={birthDateDisplay}
-                  editable={false}
-                  caretHidden
-                />
-                <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
-              </DateInputContainer>
+              <View pointerEvents="none">
+                <DateInputContainer>
+                  <DateInput
+                    placeholder="생년월일을 선택하세요"
+                    value={birthDateDisplay}
+                    editable={false}
+                    caretHidden
+                  />
+                  <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
+                </DateInputContainer>
+              </View>
             </TouchableOpacity>
             {errors.birthDate && <ErrorText>{errors.birthDate}</ErrorText>}
           </InputGroup>
@@ -422,15 +423,17 @@ export default function MissingPersonEditScreen() {
           <InputGroup>
             <InputLabel>실종일자</InputLabel>
             <TouchableOpacity activeOpacity={0.8} onPress={() => openPicker('missing')}>
-              <DateInputContainer>
-                <DateInput
-                  placeholder="실종일자와 시간을 선택하세요"
-                  value={missingDateDisplay}
-                  editable={false}
-                  caretHidden
-                />
-                <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
-              </DateInputContainer>
+              <View pointerEvents="none">
+                <DateInputContainer>
+                  <DateInput
+                    placeholder="실종일자와 시간을 선택하세요"
+                    value={missingDateDisplay}
+                    editable={false}
+                    caretHidden
+                  />
+                  <CalendarIcon><Entypo name="calendar" size={24} color="#949494" /></CalendarIcon>
+                </DateInputContainer>
+              </View>
             </TouchableOpacity>
             {errors.missingDate && <ErrorText>{errors.missingDate}</ErrorText>}
           </InputGroup>
@@ -500,7 +503,7 @@ export default function MissingPersonEditScreen() {
           <InputGroup>
             <InputLabel>기타 인상 착의 특징</InputLabel>
             <InputField
-              placeholder="기타 인상 착의 특징이 있다면 입력해주세요"
+              placeholder="실종자의 기타 인상 착의 특징이 있다면 입력해주세요"
               value={formData.clothesEtc}
               onChangeText={(value: string) => handleInputChange('clothesEtc', value)}
             />
