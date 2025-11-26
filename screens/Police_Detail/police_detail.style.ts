@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
   // --- Scroll Content Style ---
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // 버튼 영역만큼 여백 확보
+    paddingBottom: 180, // 버튼 영역만큼 여백 확보
   },
   // --- Image Style ---
   imageContainer: {
@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
   // --- Find Police Button Style (Bottom) ---
   findPoliceButtonBottom: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 80,
     left: 0,
     right: 0,
     backgroundColor: '#25b2e2',
