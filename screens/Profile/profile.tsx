@@ -125,8 +125,8 @@ export default function ProfileScreen() {
           style={styles.settingBtn}
           onPress={() => router.push('/settings')}
         >
-          {/* 🌟 설정 아이콘: Ionicons 컴포넌트로 교체 */}
-          <Ionicons name="settings" style={styles.settingIcon} />
+          {/* 🌟 설정 아이콘: Ionicons 컴포넌트로 교체 (Outline 스타일) */}
+          <Ionicons name="settings-outline" style={styles.settingIcon} />
         </TouchableOpacity>
       </View>
 

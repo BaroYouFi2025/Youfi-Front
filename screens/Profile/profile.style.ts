@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
   // 🌟 settingIcon 스타일: <Ionicons> 컴포넌트에 적용
   settingIcon: {
     fontSize: 24,
-    color: "#007AFF",
+    color: "#888",
   },
 
   /* -------------------------
