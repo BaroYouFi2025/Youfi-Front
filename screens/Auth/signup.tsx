@@ -8,23 +8,6 @@ import { signup as signupRequest } from '@/services/authAPI';
 import { registerDevice } from '@/services/deviceAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
 
-// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
-let firebaseApp: any = null;
-let getMessagingFunc: any = null;
-let requestPermissionFunc: any = null;
-let getTokenFunc: any = null;
-
-try {
-  const app = require('@react-native-firebase/app').default;
-  const messagingModule = require('@react-native-firebase/messaging');
-  firebaseApp = app;
-  getMessagingFunc = messagingModule.getMessaging;
-  requestPermissionFunc = messagingModule.requestPermission;
-  getTokenFunc = messagingModule.getToken;
-} catch (e) {
-  // Expo Go에서는 Firebase 사용 불가
-}
-
 import {
   BottomSpace,
   ButtonContainer,
@@ -41,6 +24,23 @@ import {
   StatusBarSpace,
   WarningText,
 } from './signup.styles';
+
+// Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
+let firebaseApp: any = null;
+let getMessagingFunc: any = null;
+let requestPermissionFunc: any = null;
+let getTokenFunc: any = null;
+
+try {
+  const app = require('@react-native-firebase/app').default;
+  const messagingModule = require('@react-native-firebase/messaging');
+  firebaseApp = app;
+  getMessagingFunc = messagingModule.getMessaging;
+  requestPermissionFunc = messagingModule.requestPermission;
+  getTokenFunc = messagingModule.getToken;
+} catch (e) {
+  // Expo Go에서는 Firebase 사용 불가
+}
 
 interface FormState {
   uid: string;
