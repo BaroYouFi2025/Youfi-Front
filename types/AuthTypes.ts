@@ -1,6 +1,7 @@
 export interface LoginRequest {
   uid: string;
   password: string;
+  deviceUuid: string;
 }
 
 export interface SignupRequest {
@@ -17,7 +18,7 @@ export interface AuthTokensResponse {
   expiresIn: number;
 }
 
-export interface AuthTokensWithRefresh extends AuthTokensResponse {}
+export interface AuthTokensWithRefresh extends AuthTokensResponse { }
 
 export interface RefreshRequest {
   refreshToken: string;

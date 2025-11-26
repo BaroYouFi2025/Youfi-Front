@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Image, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { styles, colors } from './setting.style';
 import { logout as logoutRequest } from '@/services/authAPI';
-import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
-import axios from 'axios';
 import { deleteMe } from '@/services/userAPI';
+import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { colors, styles } from './setting.style';
 
 const defaultProfile = require('../../assets/images/default_profile.png');
 
@@ -57,6 +57,10 @@ const SettingScreen: React.FC = () => {
               }
             } catch (e) {
             } finally {
+              // 백그라운드 위치 추적 중지
+              const { stopBackgroundLocationTracking } = await import('@/services/locationService');
+              await stopBackgroundLocationTracking();
+
               await clearStoredTokens();
               router.replace('/login');
             }
