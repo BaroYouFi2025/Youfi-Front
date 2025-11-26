@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -193,7 +193,7 @@ export const detailStyles = StyleSheet.create({
   // --- Report Button (Fixed at Bottom) ---
   reportButtonContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 80,
     left: 0,
     right: 0,
     paddingHorizontal: 20,

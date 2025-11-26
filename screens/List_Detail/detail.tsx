@@ -1,17 +1,17 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
-import axios from 'axios';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Location from 'expo-location';
-import { detailStyles } from './detail.styles';
-import ConfirmReportModal from './ConfirmReportModal';
-import SuccessReportModal from './SuccessReportModal';
-import { getAccessToken } from '@/utils/authStorage';
+import GoogleMap from '@/components/GoogleMap';
+import { API_BASE_URL } from '@/services/config';
 import { reportMissingPersonSighting } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
-import GoogleMap from '@/components/GoogleMap';
-import { API_BASE_URL } from '@/services/config';
+import { getAccessToken } from '@/utils/authStorage';
+import axios from 'axios';
+import * as Location from 'expo-location';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import ConfirmReportModal from './ConfirmReportModal';
+import { detailStyles } from './detail.styles';
+import SuccessReportModal from './SuccessReportModal';
 
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
 
@@ -450,7 +450,7 @@ const DetailScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 180 }} />
 
         {/* 신고 버튼 */}
         <View style={detailStyles.reportButtonContainer}>
