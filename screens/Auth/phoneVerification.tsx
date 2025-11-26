@@ -1,10 +1,10 @@
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Platform } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 
-import { checkPhoneVerificationStatus, requestPhoneVerificationToken } from '@/services/phoneVerificationAPI';
 import TutorialModal from '@/components/TutorialModal/TutorialModal';
+import { checkPhoneVerificationStatus, requestPhoneVerificationToken } from '@/services/phoneVerificationAPI';
 
 import {
   ActionGroup,
@@ -12,6 +12,8 @@ import {
   ButtonText,
   Container,
   Content,
+  CopyButton,
+  CopyButtonText,
   Description,
   HeaderArea,
   HelperText,
@@ -24,10 +26,8 @@ import {
   Title,
   TokenContainer,
   TokenLabel,
-  TokenValue,
   TokenRow,
-  CopyButton,
-  CopyButtonText,
+  TokenValue,
 } from './phoneVerification.styles';
 
 const MIN_PHONE_LENGTH = 11;
