@@ -16,6 +16,9 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
   ios: {
     bundleIdentifier: 'baro.youfi',
     supportsTablet: true,
+    infoPlist: {
+      NSUserNotificationsUsageDescription: 'YouFi는 실종자 발견 알림 및 중요한 정보를 전달하기 위해 알림 권한이 필요합니다.',
+    },
     config: {
       googleMapsApiKey,
     },
@@ -28,6 +31,15 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
       backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/YouFi_Icon.png',
     },
+    permissions: [
+      'ACCESS_COARSE_LOCATION',
+      'ACCESS_FINE_LOCATION',
+      'ACCESS_BACKGROUND_LOCATION',
+      'RECEIVE_BOOT_COMPLETED',
+      'POST_NOTIFICATIONS',
+      'VIBRATE',
+      'WAKE_LOCK',
+    ],
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     config: {
@@ -57,6 +69,15 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
     'expo-web-browser',
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
+    [
+      'expo-notifications',
+      {
+        icon: './assets/images/YouFi_Icon.png',
+        color: '#ffffff',
+        sounds: ['default'],
+        mode: 'production',
+      },
+    ],
     [
       'expo-location',
       {

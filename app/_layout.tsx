@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { startBackgroundLocationTracking } from '@/services/locationService';
 import { getAccessToken } from '@/utils/authStorage';
+import { configureNotificationHandler, initializeNotifications } from '@/utils/notificationPermissions';
 
 // Firebase는 네이티브 빌드에서만 사용 가능 (v22+ 모듈식 API)
 let firebaseApp: any = null;
@@ -47,6 +48,33 @@ export default function RootLayout() {
       SplashScreen.hideAsync().catch(() => null);
     }
   }, [fontsLoaded]);
+
+  // Expo Notifications 초기화 (앱 시작 시)
+  useEffect(() => {
+    const setupExpoNotifications = async () => {
+      try {
+        // 포그라운드 알림 표시 방식 설정
+        configureNotificationHandler();
+
+        // 알림 권한 요청 및 초기화
+        const { hasPermission, expoPushToken } = await initializeNotifications();
+
+        if (hasPermission) {
+          console.log('✅ Expo 알림 권한이 허용되었습니다.');
+          if (expoPushToken) {
+            console.log('✅ Expo Push Token:', expoPushToken);
+            // TODO: 필요시 서버에 Expo Push Token 등록
+          }
+        } else {
+          console.warn('⚠️ Expo 알림 권한이 거부되었습니다.');
+        }
+      } catch (error) {
+        console.error('❌ Expo 알림 초기화 실패:', error);
+      }
+    };
+
+    setupExpoNotifications();
+  }, []);
 
   // 알림 권한 확인 및 요청, FCM 토큰 발급 (앱 진입 시 및 포그라운드 복귀 시)
   useEffect(() => {
