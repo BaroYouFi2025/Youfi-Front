@@ -484,7 +484,6 @@ export default function HomeScreen() {
             notifications={[...notifications, ...readNotifications]}
             loading={loadingNotifications}
             selectedId={selectedNotificationId}
-            onSelect={handleSelectNotification}
             onAccept={async (id, relation) => {
               try {
                 setSelectedNotificationId(id);

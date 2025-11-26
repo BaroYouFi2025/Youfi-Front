@@ -137,13 +137,30 @@ export default function NotificationItem({
       await onSelect(notification.id);
     }
     
-    // 알림 클릭 시 읽음 처리
-    if (onMarkAsRead && !notification.isRead) {
-      try {
-        await onMarkAsRead(notification.id);
-      } catch (error) {
-        console.error('❌ 알림 읽음 처리 실패:', error);
-      }
+    // 알림 타입별 클릭 동작 처리
+    switch (notification.type) {
+      case NotificationType.FOUND_REPORT:
+        // "자세히 보기" 버튼이 있는 알림: 클릭 시 자세히 보기 효과
+        if (onDetail) {
+          await handleDetail();
+        }
+        break;
+      
+      case NotificationType.INVITE_REQUEST:
+        // "수락/거절" 버튼이 있는 알림: 클릭해도 아무 동작 없음
+        // 수락/거절 버튼을 눌렀을 때만 읽음 처리됨
+        break;
+      
+      default:
+        // 그 외 알림: 클릭 시 읽음 처리만 수행
+        if (onMarkAsRead && !notification.isRead) {
+          try {
+            await onMarkAsRead(notification.id);
+          } catch (error) {
+            console.error('❌ 알림 읽음 처리 실패:', error);
+          }
+        }
+        break;
     }
   };
 

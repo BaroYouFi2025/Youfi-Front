@@ -1,10 +1,10 @@
+import NotificationItem from '@/components/Notification/NotificationItem';
 import { acceptInvitationFromNotification, getMyNotifications, markAsRead, rejectInvitationFromNotification } from '@/services/notificationAPI';
 import { NotificationResponse } from '@/types/NotificationTypes';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import NotificationItem from '@/components/Notification/NotificationItem';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import styled from 'styled-components/native';
 
 const Container = styled.View`
