@@ -46,7 +46,20 @@ export const getMemberLocations = async (): Promise<MemberLocation[]> => {
     const response = await apiClient.get<MemberLocation[]>('/members/locations');
     return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    const axiosError = error as AxiosError;
+    const axiosError = error as AxiosError<{ errorCode?: string; code?: string }>;
+    const status = axiosError.response?.status;
+    const backendErrorCode = axiosError.response?.data?.errorCode || axiosError.response?.data?.code;
+
+    if (status || backendErrorCode) {
+      console.error('❌ 구성원 위치 목록 조회 실패 (백엔드 에러코드 포함):', {
+        status,
+        errorCode: backendErrorCode ?? '없음',
+        responseData: axiosError.response?.data,
+      });
+    } else {
+      console.error('❌ 구성원 위치 목록 조회 실패:', axiosError.message);
+    }
+
     throw new Error(resolveErrorMessage(axiosError));
   }
 };
