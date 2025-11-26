@@ -9,7 +9,7 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
   slug: 'YouFi',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './assets/images/YouFi_Icon.png',
   scheme: 'youfi',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
@@ -24,8 +24,9 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
     package: 'baro.youfi',
     googleServicesFile: './google-services.json',
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
-      foregroundImage: './assets/images/adaptive-icon.png',
+      // Use the main app icon for Android adaptive icon as well
+      backgroundColor: '#FFFFFF',
+      foregroundImage: './assets/images/YouFi_Icon.png',
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,

@@ -15,10 +15,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    paddingRight: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: 28,
     color: '#000',
   },
   // --- Scroll Content Style ---

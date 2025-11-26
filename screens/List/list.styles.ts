@@ -157,4 +157,11 @@ export const styles = StyleSheet.create({
     fontWeight: '800', 
     letterSpacing: 0.2 
   },
+  apiSourceNote: {
+    marginBottom: 8,
+    color: COLORS.sub,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
 });

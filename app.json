@@ -4,7 +4,7 @@
     "slug": "YouFi",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/YouFi_Icon.png",
     "scheme": "youfi",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

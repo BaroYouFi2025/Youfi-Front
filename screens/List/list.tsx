@@ -596,6 +596,10 @@ const normalizeId = (value: any): string | undefined => {
           scrollEnabled={false}
         />
 
+        {source === 'police' && (
+          <Text style={styles.apiSourceNote}>API 출처: 경찰청</Text>
+        )}
+
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
           <TouchableOpacity
             activeOpacity={0.7}
