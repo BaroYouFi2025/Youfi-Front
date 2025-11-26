@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 interface Location {
@@ -115,10 +115,15 @@ export default function GoogleMap({
                 latitude: person.latitude,
                 longitude: person.longitude,
               }}
-              title={person.name}
-              description={person.address}
-              pinColor="red"
-            />
+              anchor={{ x: 0.5, y: 0.3 }}
+            >
+              <View style={styles.markerContainer}>
+                <View style={styles.markerPin} />
+                <View style={styles.nameContainer}>
+                  <Text style={styles.nameText} numberOfLines={1}>{person.name}</Text>
+                </View>
+              </View>
+            </Marker>
           );
         })}
 
@@ -130,10 +135,15 @@ export default function GoogleMap({
               latitude: member.location.latitude,
               longitude: member.location.longitude,
             }}
-            title={`${member.name} (${member.relationship})`}
-            description={`배터리: ${member.batteryLevel}%`}
-            pinColor="green"
-          />
+            anchor={{ x: 0.5, y: 0.3 }}
+          >
+            <View style={styles.markerContainer}>
+              <View style={styles.memberMarkerPin} />
+              <View style={styles.memberNameContainer}>
+                <Text style={styles.memberNameText} numberOfLines={1}>{member.name}</Text>
+              </View>
+            </View>
+          </Marker>
         ))}
       </MapView>
     </View>
@@ -149,5 +159,74 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  markerContainer: {
+    alignItems: 'center',
+  },
+  markerPin: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ff4444',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  nameContainer: {
+    marginTop: 1,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    backgroundColor: '#fff',
+    borderRadius: 3,
+    borderWidth: 0.5,
+    borderColor: '#ff4444',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0.5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  nameText: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: '#ff4444',
+    textAlign: 'center',
+  },
+  memberMarkerPin: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  memberNameContainer: {
+    marginTop: 1,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    backgroundColor: '#fff',
+    borderRadius: 3,
+    borderWidth: 0.5,
+    borderColor: '#4CAF50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0.5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  memberNameText: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: '#4CAF50',
+    textAlign: 'center',
   },
 });
