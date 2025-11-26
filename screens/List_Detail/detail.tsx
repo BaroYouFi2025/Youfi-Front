@@ -10,7 +10,7 @@ import { getAccessToken } from '@/utils/authStorage';
 import { reportMissingPersonSighting } from '@/services/missingPersonAPI';
 import { getNearbyPoliceOffices } from '@/services/policeOfficeAPI';
 import { PoliceOffice } from '@/types/PoliceOfficeTypes';
-import KakaoMap from '@/components/KakaoMap';
+import GoogleMap from '@/components/GoogleMap';
 import { API_BASE_URL } from '@/services/config';
 
 const DEFAULT_AVATAR = require('@/assets/images/default_profile.png');
@@ -347,7 +347,7 @@ const DetailScreen: React.FC = () => {
         <View style={detailStyles.mapContainer}>
           {uiData.latitude && uiData.longitude ? (
             <>
-              <KakaoMap
+              <GoogleMap
                 currentLocation={userLocation}
                 nearbyPersons={[
                   {

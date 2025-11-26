@@ -2,7 +2,7 @@ import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
-import KakaoMap from '../../components/KakaoMap/KakaoMap';
+import GoogleMap from '../../components/GoogleMap/GoogleMap';
 import { NotificationBox } from '../../components/Notification';
 import YouFiLogo from '../../components/YouFiLogo';
 import { getNearbyMissingPersons } from '../../services/missingPersonAPI';
@@ -594,7 +594,7 @@ export default function HomeScreen() {
 
           {/* Map */}
           <MapContainer>
-            <KakaoMap
+            <GoogleMap
               currentLocation={currentLocation}
               nearbyPersons={kakaoMapPersons}
             />

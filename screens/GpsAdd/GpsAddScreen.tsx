@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 
-import KakaoMap from '@/components/KakaoMap';
+import GoogleMap from '@/components/GoogleMap';
 import { inviteMember } from '@/services/memberAPI';
 import { searchUsers } from '@/services/userAPI';
 import { UserSummary } from '@/types/UserTypes';
@@ -162,7 +162,7 @@ export default function GpsAddScreen() {
     <Container edges={['top']}>
       <StatusBar style="dark" />
       <MapWrapper>
-        <KakaoMap currentLocation={{ latitude: 37.5665, longitude: 126.9780 }} nearbyPersons={[]} />
+        <GoogleMap currentLocation={{ latitude: 37.5665, longitude: 126.9780 }} nearbyPersons={[]} />
       </MapWrapper>
 
       <ContentCard>

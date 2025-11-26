@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import KakaoMap from '../../components/KakaoMap';
+import GoogleMap from '../../components/GoogleMap';
 import YouFiLogo from '../../components/YouFiLogo';
 import { getMemberLocations } from '../../services/memberAPI';
 import { connectMemberLocationStream, disconnectMemberLocationStream } from '../../services/memberLocationAPI';
@@ -226,7 +226,7 @@ export default function GpsTrackingScreen() {
         </Header>
 
         <MapCard>
-          <KakaoMap
+          <GoogleMap
             currentLocation={userLocation}
             nearbyPersons={[]}
             memberLocations={memberLocations}
