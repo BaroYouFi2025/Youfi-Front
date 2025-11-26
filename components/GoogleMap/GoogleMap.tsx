@@ -41,23 +41,59 @@ export default function GoogleMap({
 }: GoogleMapProps) {
   const mapRef = useRef<MapView>(null);
 
+  // 실종자 위치가 있으면 실종자 위치를, 없으면 사용자 위치를 기본으로
+  const firstMissingPerson = nearbyPersons.length > 0 ? nearbyPersons[0] : null;
   const defaultRegion: Region = {
-    latitude: currentLocation?.latitude || 37.5665,
-    longitude: currentLocation?.longitude || 126.9780,
+    latitude: firstMissingPerson?.latitude || currentLocation?.latitude || 37.5665,
+    longitude: firstMissingPerson?.longitude || currentLocation?.longitude || 126.9780,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
 
   useEffect(() => {
-    if (currentLocation && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 1000);
+    // 지도와 마커들이 준비되면 모든 위치를 포함하도록 조정
+    if (!mapRef.current) return;
+
+    const coordinates: Array<{ latitude: number; longitude: number }> = [];
+
+    // 실종자 위치 추가
+    nearbyPersons.forEach((person) => {
+      coordinates.push({
+        latitude: person.latitude,
+        longitude: person.longitude,
+      });
+    });
+
+    // 멤버 위치 추가
+    memberLocations.forEach((member) => {
+      coordinates.push(member.location);
+    });
+
+    // 사용자 위치 추가
+    if (currentLocation) {
+      coordinates.push(currentLocation);
     }
-  }, [currentLocation]);
+
+    // 좌표가 2개 이상이면 모두 포함하도록 지도 조정
+    if (coordinates.length >= 2) {
+      // 약간의 지연을 주어 지도가 완전히 렌더링된 후 실행
+      setTimeout(() => {
+        mapRef.current?.fitToCoordinates(coordinates, {
+          edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
+          animated: true,
+        });
+      }, 500);
+    } else if (coordinates.length === 1) {
+      // 좌표가 1개만 있으면 그 위치로 이동
+      setTimeout(() => {
+        mapRef.current?.animateToRegion({
+          ...coordinates[0],
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      }, 500);
+    }
+  }, [currentLocation, nearbyPersons, memberLocations]);
 
   return (
     <View style={styles.container}>
