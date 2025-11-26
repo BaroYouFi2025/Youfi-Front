@@ -1,0 +1,21 @@
+# Build artifacts
+apk-output/
+build/
+*.apk
+*.apks
+*.aab
+*.jar
+bundletool-*.jar
+
+# Dependencies and system files
+node_modules/
+.git/
+.DS_Store
+.expo/
+dist/
+web-build/
+
+# Native folders (generated) - if you want EAS to rebuild from scratch using prebuild
+# android/
+# ios/
+

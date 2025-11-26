@@ -57,7 +57,7 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
     [
       'expo-splash-screen',
       {
-        image: './assets/images/splash-icon.png',
+        image: './assets/images/YouFi_Icon.png',
         imageWidth: 200,
         resizeMode: 'contain',
         backgroundColor: '#ffffff',
@@ -73,9 +73,7 @@ const defineConfig = ({ config }: ConfigContext): ExpoConfig => {
       'expo-notifications',
       {
         icon: './assets/images/YouFi_Icon.png',
-        color: '#ffffff',
-        sounds: ['default'],
-        mode: 'production',
+        color: "#ffffff",
       },
     ],
     [
