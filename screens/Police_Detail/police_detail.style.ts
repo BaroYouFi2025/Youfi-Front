@@ -79,14 +79,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  findPoliceButtonDisabled: {
-    opacity: 0.6,
-  },
-  findPoliceButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  // 이전에는 여기서 findPoliceButtonDisabled, findPoliceButtonText가 중복 선언되어 있었음 (아래에서만 사용)
   
   centeredView: {
     flex: 1,
@@ -275,3 +268,5 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+// NOTE: findPoliceButtonDisabled, findPoliceButtonText 스타일이 중복 선언되어 있었던 문제 해결 (이제 한 번씩만 정의됨)
