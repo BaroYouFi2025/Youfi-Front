@@ -1,8 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
-import * as Location from 'expo-location';
-import * as Notifications from 'expo-notifications';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { login as loginRequest } from '@/services/authAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
@@ -28,9 +26,18 @@ export default function LoginScreen() {
     setErrorMessage(null);
 
     try {
+      // deviceUuid 가져오기 또는 생성
+      const { getDeviceUuid, generateDeviceUuid, setDeviceUuid } = await import('@/utils/authStorage');
+      let deviceUuid = await getDeviceUuid();
+      if (!deviceUuid) {
+        deviceUuid = generateDeviceUuid();
+        await setDeviceUuid(deviceUuid);
+      }
+
       const { accessToken, refreshToken } = await loginRequest({
         uid: userId.trim(),
         password,
+        deviceUuid,
       });
 
       if (!refreshToken) {

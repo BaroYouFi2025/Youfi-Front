@@ -1,8 +1,7 @@
-import { logout as logoutRequest } from '@/services/authAPI';
 import apiClient from '@/services/apiClient';
+import { logout as logoutRequest } from '@/services/authAPI';
 import { clearStoredTokens, getAccessToken, getRefreshToken } from '@/utils/authStorage';
-import axios from 'axios';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 // 🌟 Ionicons 컴포넌트 임포트 추가
@@ -50,6 +49,10 @@ export default function ProfileScreen() {
               }
             } catch (e) {
             } finally {
+              // 백그라운드 위치 추적 중지
+              const { stopBackgroundLocationTracking } = await import('@/services/locationService');
+              await stopBackgroundLocationTracking();
+
               await clearStoredTokens();
               router.replace('/login');
             }
@@ -62,27 +65,27 @@ export default function ProfileScreen() {
   // 프로필 GET - 🌟 useFocusEffect로 변경하여 화면 포커스 시마다 데이터 새로고침 🌟
   useFocusEffect(
     useCallback(() => {
-        const fetchProfile = async () => {
-            setLoading(true); // 데이터 재로딩 시 로딩 상태 설정
-            try {
-                const token = await getAccessToken();
-                if (!token) return router.replace('/login');
+      const fetchProfile = async () => {
+        setLoading(true); // 데이터 재로딩 시 로딩 상태 설정
+        try {
+          const token = await getAccessToken();
+          if (!token) return router.replace('/login');
 
-                const res = await apiClient.get('/users/me', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setProfile(res.data);
-            } catch (e) {
-                setProfile(null); // 로딩 실패 시 프로필 실패 화면을 띄우기 위함
-            } finally {
-                setLoading(false);
-            }
-        };
+          const res = await apiClient.get('/users/me', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setProfile(res.data);
+        } catch (e) {
+          setProfile(null); // 로딩 실패 시 프로필 실패 화면을 띄우기 위함
+        } finally {
+          setLoading(false);
+        }
+      };
 
-        fetchProfile();
-        
-        // 클린업 함수는 필요하지 않으므로 비워둡니다.
-        return () => {};
+      fetchProfile();
+
+      // 클린업 함수는 필요하지 않으므로 비워둡니다.
+      return () => { };
     }, [])
   );
 
@@ -100,7 +103,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <Text style={{ marginBottom: 20 }}>프로필 정보를 불러올 수 없습니다.</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.editBtn, { backgroundColor: '#ff4444' }]}
           onPress={handleLogout}
         >
@@ -118,17 +121,17 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-        <TouchableOpacity 
-          style={styles.settingBtn} 
+        <TouchableOpacity
+          style={styles.settingBtn}
           onPress={() => router.push('/settings')}
         >
           {/* 🌟 설정 아이콘: Ionicons 컴포넌트로 교체 */}
-          <Ionicons name="settings" style={styles.settingIcon} /> 
+          <Ionicons name="settings" style={styles.settingIcon} />
         </TouchableOpacity>
       </View>
 
       {/* 메인 카드 */}
-      <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}> 
+      <View style={[styles.card, { backgroundColor: profile.profileBackgroundColor || '#fff' }]}>
         {/* 🌟 배경색이 profile.profileBackgroundColor 값으로 적용됩니다. */}
 
         {/* 기본 이미지 + 서버 프로필 이미지 */}
@@ -149,7 +152,7 @@ export default function ProfileScreen() {
         <Text style={styles.expText}>{profile.exp} / 100</Text>
 
         {profile.title && titleGradeMap[profile.title] ? (
-          <Image 
+          <Image
             source={badgeImages[titleGradeMap[profile.title]]}
             style={styles.badgeImage}
           />
@@ -158,16 +161,16 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      <TouchableOpacity 
-        style={styles.editBtn} 
+      <TouchableOpacity
+        style={styles.editBtn}
         onPress={() => router.push('/profileEdit')}
       >
         {/* 🌟 편집 버튼: 오류 방지용 <View> 컨테이너 사용 */}
         <View style={styles.editBtnContent}>
-            <Ionicons name="pencil" style={styles.editIcon} /> 
-            <Text style={styles.editBtnText}>
-                프로필 편집
-            </Text>
+          <Ionicons name="pencil" style={styles.editIcon} />
+          <Text style={styles.editBtnText}>
+            프로필 편집
+          </Text>
         </View>
       </TouchableOpacity>
     </View>
