@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 
 import FormInput from '@/components/FormInput';
+import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
 import { signup as signupRequest } from '@/services/authAPI';
 import { registerDevice } from '@/services/deviceAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
@@ -91,6 +92,8 @@ export default function SignupScreen() {
     username: '',
     birthDate: '',
   });
+
+  const [isPrivacyPolicyVisible, setIsPrivacyPolicyVisible] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -319,6 +322,11 @@ export default function SignupScreen() {
       <HomeIndicator>
         <HomeIndicatorBar />
       </HomeIndicator>
+
+      <PrivacyPolicyModal
+        visible={isPrivacyPolicyVisible}
+        onAgree={() => setIsPrivacyPolicyVisible(false)}
+      />
     </Container>
   );
 }
