@@ -1,16 +1,20 @@
 import GeneratedImagesModal from '@/components/GeneratedImagesModal';
 import { API_BASE_URL } from '@/services/config';
-import { getMissingPersonById, closeMissingPerson } from '@/services/missingPersonAPI';
+import { closeMissingPerson, getMissingPersonById } from '@/services/missingPersonAPI';
 import { AIAssetType, MissingPersonDetailResponse } from '@/types/MissingPersonTypes';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ImageSourcePropType, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Avatar,
   Bullet,
   CloseButton,
   CloseButtonText,
+  ConfirmButton,
+  ConfirmButtonText,
+  ConfirmModalDescription,
   Container,
   Divider,
   EditButton,
@@ -26,16 +30,13 @@ import {
   NameColumn,
   NameText,
   ScrollArea,
-  SelectionModalOverlay,
-  SelectionModalContainer,
-  SelectionModalTitle,
   SelectionButton,
   SelectionButtonText,
   SelectionCancelButton,
   SelectionCancelButtonText,
-  ConfirmModalDescription,
-  ConfirmButton,
-  ConfirmButtonText,
+  SelectionModalContainer,
+  SelectionModalOverlay,
+  SelectionModalTitle,
 } from './MissingPersonDetail.styles';
 
 const DEFAULT_AVATAR = 'https://via.placeholder.com/88';
@@ -108,6 +109,7 @@ const buildBodyInfo = (detail?: MissingPersonDetailResponse | null) => {
 };
 
 export default function MissingPersonDetailScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [detail, setDetail] = useState<MissingPersonDetailResponse | null>(null);
@@ -251,7 +253,7 @@ export default function MissingPersonDetailScreen() {
   }
 
   return (
-    <Container>
+    <Container style={{ paddingTop: insets.top + 50 }}>
       <ScrollArea showsVerticalScrollIndicator={false}>
         <HeaderRow>
           <Avatar
