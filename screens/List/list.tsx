@@ -503,11 +503,19 @@ const normalizeId = (value: any): string | undefined => {
             {item.name}
           </Text>
 
-      {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
-      <Text style={styles.locationDateText}>
-        {item.location}
-        {item.date ? ` • ${formatDateWithWeekday(item.date)}` : ''}
-      </Text>
+          {/* 2. 위치 및 날짜 (이름 아래, itemSub보다 굵게) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            <Text 
+              style={[styles.locationDateText, { marginTop: 0, flexShrink: 1 }]} 
+              numberOfLines={1} 
+              ellipsizeMode="tail"
+            >
+              {item.location}
+            </Text>
+            <Text style={[styles.locationDateText, { marginTop: 0 }]}>
+              {item.date ? ` • ${formatDateWithWeekday(item.date)}` : ''}
+            </Text>
+          </View>
 
           {/* 3. 인상착의 정보 (가장 작게) */}
           <Text style={styles.itemSub}>{item.info}</Text>

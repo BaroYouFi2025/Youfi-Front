@@ -622,7 +622,9 @@ export default function HomeScreen() {
                       <PersonMainInfo>
                         <PersonText>{person.name}</PersonText>
                         <Dot />
-                        <PersonText>{person.address || `${person.latitude.toFixed(4)}, ${person.longitude.toFixed(4)}`}</PersonText>
+                        <PersonText style={{ flex: 1 }} numberOfLines={1} ellipsizeMode="tail">
+                          {person.address || `${person.latitude.toFixed(4)}, ${person.longitude.toFixed(4)}`}
+                        </PersonText>
                       </PersonMainInfo>
                       <PersonDescription>
                         {person.missing_date} • {person.hasDementia ? '치매' : '일반'}

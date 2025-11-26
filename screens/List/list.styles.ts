@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#D1D5DB',
     marginRight: 12, // 마진 줄임
   },
-  itemTextWrap: { flex: 1 },
+  itemTextWrap: { flex: 1, marginRight: 12 },
   
   // ❌ 기존 itemTitle 제거, 아래 두 개로 대체
   // itemTitle: { ... }, 
