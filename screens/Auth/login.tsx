@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { login as loginRequest } from '@/services/authAPI';
 import { setAccessToken, setRefreshToken } from '@/utils/authStorage';
@@ -129,7 +130,7 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword((prev) => !prev)}
                 style={styles.visibilityIcon}
               >
-                <Text style={styles.visibilityText}>👁</Text>
+                <Ionicons name={!showPassword ? 'eye-off' : 'eye'} size={24} color="#bbbcbe" />
               </TouchableOpacity>
             </View>
             <View style={styles.inputLine} />
@@ -209,10 +210,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 8,
-  },
-  visibilityText: {
-    fontSize: 18,
-    color: '#bbbcbe',
   },
   inputLine: {
     height: 1,
